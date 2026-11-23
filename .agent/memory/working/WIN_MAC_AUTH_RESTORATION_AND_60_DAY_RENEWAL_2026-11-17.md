@@ -143,3 +143,25 @@ Timeline of the restoration session; the durable lessons live in
   no-churn rule).
 - Windows owns: ef080f01 file retention until Mac confirms destruction; long-running process
   restart note for the new pin; nothing else pending on this side.
+
+
+## Addendum 5 (2026-11-23): WC1/WC2 + five-queue closeout delivered (subagent-executed)
+
+- WC1 (receiver receipts for the 2026-11-15 Mac deliveries): 10 preserved receiver-side rows
+  (received_at/bytes/sha256 from inbox sidecars; 242 mac-origin pre-11-16 context). File
+  2026-11-23-win-wc1-receiver-receipts-nov15.md, sha256 6e2cf65f... The 87 is the Mac
+  sender-side count; our preserved receiver records for that day are these 10.
+- WC2 (runtime/qualification evidence, evidence-only): 2026-11-23-win-wc2-runtime-evidence.md,
+  sha256 05cd8312... Custodian win-cline-20261115; native qualification owner UNNAMED
+  (blocker, operator). Historical trials confirmed: scheduled p95 136.29/138.36/139.06 ms
+  vs 60 ms gate (not a pass). Corrections to earlier session claims: (1) oramasys clones DO
+  exist under worktrees (qual 5c4b3bbe w/ PR-100 tip ff81c6d, pin f33d809; v3 02e4f6d7) -
+  none contains the Mac candidate e82530b7; (2) the 150 ms provisional native-only budget is
+  NOT in the local PT memory file - it exists only as the Mac correction note assertion.
+- Five-queue closeout: 2026-11-23-win-five-queue-closeout-reply.md, sha256 9a7e382e...
+  PICKUP-03 in progress (no POSIX results yet); V1-1b blocked (no reviewer); V1-1c blocked
+  (Mac POSIX evidence never arrived; migration2 receipt out of scope); PICKUP-09 blocked
+  (PT #489 merged, orama docs follow-up NOT landed; route GPT-6.1 Terra Medium, operator go);
+  D0 blocked (Orama #493 merged, no review artifact; reviewer reassignment needed).
+- All three delivered via standard machinery (ok:true). Blockers route to the Mac
+  orchestrator / operator per the original requests.
