@@ -165,3 +165,28 @@ Timeline of the restoration session; the durable lessons live in
   D0 blocked (Orama #493 merged, no review artifact; reviewer reassignment needed).
 - All three delivered via standard machinery (ok:true). Blockers route to the Mac
   orchestrator / operator per the original requests.
+
+
+## Addendum 6 (2026-11-23): V1-1c independent review + queue dispositions + budget-blob verdict
+
+- V1-1c INDEPENDENT REVIEW (self-claimed, eligible - did not author/implement): reproduced the
+  exact 12-test run on Windows (Python 3.13.14 vs Mac 3.13.18, SQLite 3.53.1 both):
+  12 passed / 0 skipped / 0 failed, tmp DBs only, repo stayed clean. Claims (b)/(c) CONFIRMED
+  with line citations (liveness.py:8-12,131; heartbeat_monitor.py:355-366; task_queue.py:440-444).
+  Gap: the ValueError(expected_agent_id) branch is unpinned; the strongest silence-not-
+  termination test lives in an adjacent suite. Base 968a4de4 NOT in our object store - run
+  against our clean HEAD; byte-equality unprovable (recorded). VERDICT: VERIFIED-WITH-GAPS.
+  File 2026-11-23-win-independent-review-qf-v1-1c.md, sha256 58eb97e8...
+- Queue dispositions emitted to the local gossip bus (4 events: PICKUP-03 macOS result
+  recorded against claim autoresearcher-followups-CLINE-PICKUP-03-posix-test-run-e7b1aec8;
+  PICKUP-09 follow-up NOT in snapshot 5afa6cd4, routing gate retained; D0 review-target-not-
+  receipt; V1-1b unclaimed - Windows Antigravity NOT active, fallback to eligible reviewer).
+  File 2026-11-23-win-queue-dispositions-and-budget-blob.md, sha256 3211b633...
+- **C6 budget blob f93a163a NOT VERIFIED locally**: absent from ALL local PT clones; commits
+  04aeb5d0/968a4de4 invalid locally; local git history has NO Nov-16 append and NO 150 ms
+  anywhere (pickaxe empty). The 150 ms provisional native-only budget remains Mac-self-
+  reported; WC2 must cite the LAN correction message, not a locally verified blob. Offline
+  closure path documented (Mac drops blob bytes -> git hash-object equality -> operator-
+  authorized fetch for ancestry).
+- Both files delivered to the Mac via standard machinery. Caution noted: GOSSIP_SHARED_SECRET
+  visible in env dumps - rotation recommended at next operator opportunity.
