@@ -190,3 +190,28 @@ Timeline of the restoration session; the durable lessons live in
   authorized fetch for ancestry).
 - Both files delivered to the Mac via standard machinery. Caution noted: GOSSIP_SHARED_SECRET
   visible in env dumps - rotation recommended at next operator opportunity.
+
+
+## Addendum 7 (2026-11-23): ALL FOUR CLINE JOBS FINISHED
+
+- PICKUP-03: macOS leg recorded (claim e7b1aec8, gossip 1215). Linux leg BLOCKED with cause:
+  WSL not installed on this host (installing = system change needing operator approval);
+  Orama base c65475e0 IS present locally, so a Linux/WSL run is one command away once
+  approved. No Windows-side POSIX results exist for this item.
+- PICKUP-09: LANDED under the operator go. orama-system docs/verify-before-claiming.md
+  (2735 bytes, sha256 8fcd1f16...), local commit 9ee9a0a on NEW branch
+  docs/verify-before-claiming-reference (from docs/census-erratum; main untouched; NOT
+  pushed - separate-PR step needs operator). Docs only, markdownlint-cli2 CLEAN (rc 0).
+  Terra closeout for the item exists and hash-verifies (d3cc712a...).
+- D0: Terra review EXISTS + hash-verified (15fa22ef...): P1 Q-68 not integrated into
+  normative specs; P1 register rows unintegrated; P2 wire-schema vs migration-numbering
+  conflation (independently matches our WC2 correction). We did not re-review (Terra
+  independent and prior).
+- V1-1b: Terra review EXISTS + hash-verified (f50113c8...): 4 coverage gaps enumerated
+  (interpreter inventory, queue clients, cleanup-absence overclaim, I-5 not demonstrated).
+  Honesty note: the V1-1b evidence author was a cline actor -> this session is NOT eligible
+  to re-review; Terra's review stands.
+- All five Terra closeout hashes verified 5/5 MATCH against gossip row 1213 (windows-codex).
+- Cline closeout for all four jobs written (2026-11-23-win-cline-closeout-all-four-jobs.md,
+  sha256 63d30d51...) and queued for the Mac (portal down 10061; 3 items now queued with
+  auto-retry: v1-1c review, queue-dispositions, cline-closeout).
