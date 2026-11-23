@@ -47,3 +47,17 @@ The timeline above is preserved as written. Live state checked 2026-11-16:
 - Still open: the adversarial fail-open suite's native Windows cases and the service-account
   context run (Windows-held), the live free-first provider qualification (needs a bounded,
   approved run), and R6-R8.
+
+## Decision lookup and receipt reconciliation (2026-11-23, append-only)
+
+- Consult the dated operator decision above before asking again or forwarding a
+  generic 60 ms summary. Native Windows scheduled p95 is provisional at 150 ms;
+  successful-send p95 stays 60 ms and scheduled p99 stays 250 ms. A historical
+  measurement below the provisional value is not service-account qualification.
+  The evidence-only correction sent to Windows supersedes the conflicting metric
+  language in the November 23 coordination notes. It authorizes no new run.
+- The historical 87 was a cumulative Mac-to-Windows sender count, not the
+  separate 47-row Windows sender index. Current authenticated Windows inbox
+  readback found all 87 filenames: 25 exact bodies and 62 matching only after
+  CRLF-to-LF normalization. Report current text presence separately from raw
+  receipt evidence, historical arrival, and ownership. Do not replay these items.
