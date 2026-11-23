@@ -33,9 +33,11 @@ Timeline of the restoration session; the durable lessons live in
    cryptography 50.0.2) — UP, CA unchanged `364490e8...`, listening PID logged.
 10. **Live traffic during restart**: a Mac POST hit the new proxy within seconds → 401 (their
     outbound token may have been regenerated too — watch; the shared-token rule covers it).
-11. **Leaf not yet reissued**: one-shot `ensure()` → `reused` despite ~6d21h remaining —
-    `timedelta.days` flooring + the T-7 boundary not yet crossed (fires at remaining < 7.0d);
-    the proxy's 6h recheck will pick it up automatically. CA/SAN/Mac-pin unaffected.
+11. **Leaf not reissued (cause unresolved)**: one-shot `ensure()` → `reused` with ~6d21h
+    remaining. The threshold was already crossed: `timedelta.days` is 6 and the check is
+    `days < 7`, so flooring does not explain it (pinned by a test on 2026-11-23). Candidates,
+    unverified: a stale running revision or the `ensure()` path. The proxy's 6h recheck was
+    expected to reissue it; confirm that it did. CA/SAN/Mac-pin unaffected.
 12. **Gate checks on the Windows side all PASS**: chain+hostname (IP SAN present),
     `/health` 200, authenticated `/api/peer-inbox` 200 (334 files listed).
 
@@ -88,7 +90,7 @@ Timeline of the restoration session; the durable lessons live in
 - Mac migrated from the previous host to the saved discovery host (operator-confirmed). Windows discovery
   updated; queued items retargeted. Their serving leaf still carries SAN .52, so IP-dial
   Gate 2 fails at .51; the CN channel (server_hostname orama-mac.local) is the working
-  equal-security path. Their front end is now CADDY on 8443 (backend 127.0.0.1:8002).
+  equal-security path. Their front end is now CADDY on 8443 (backend on the portal's loopback port, 8002).
 - **18/18 queued items DELIVERED over the CN channel to .51 - outbox CLEAR** (first full
   Win->Mac delivery). Byte-exact receipt v2 (exactly the 18 rows) delivered.
 - The Mac's fresh-discovery 401 on OUR portal was their probe credential: our receiver
