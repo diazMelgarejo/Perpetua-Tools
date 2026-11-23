@@ -215,3 +215,16 @@ Timeline of the restoration session; the durable lessons live in
 - Cline closeout for all four jobs written (2026-11-23-win-cline-closeout-all-four-jobs.md,
   sha256 63d30d51...) and queued for the Mac (portal down 10061; 3 items now queued with
   auto-retry: v1-1c review, queue-dispositions, cline-closeout).
+
+
+## Addendum 8 (2026-11-23): handoff docs refreshed + broadcast
+
+- 4 dated handoff/action docs bannered [SUPERSEDED] (pointing to the canonical set):
+  FOR-MAC-AGENTS-AUTH-FIX..., FOR-MAC-HANDOFF-RESTORE-CONTACT..., 2026-11-17-MAC-ACTIONS-NOW...,
+  FOR-MAC-AGENTS-bidirectional-comms-and-cert-renewal... (records preserved).
+- CANONICAL set updated to 2026-11-23 state: FIX-INDEX (current-state block rewritten + 4 new
+  bundle rows), TRUST-INVENTORY (Windows leaf bb19e06a 60-day reissue VERIFIED; Mac convergence
+  leaf SERVING), agreement v2 section 8 (transitional convergence -> COMPLETE).
+- Gossip refresh broadcast emitted: addacd18f19e4d28a4ca4535a4df25ee.
+- 6 updated canonical files: pull surface self-drops ALL ok; Mac pushes ALL queued (portal
+  down 10061; auto-retry). Queued push total now 7 files.
