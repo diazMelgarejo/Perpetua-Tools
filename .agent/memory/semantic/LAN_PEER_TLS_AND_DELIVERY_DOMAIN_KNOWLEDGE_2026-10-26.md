@@ -153,3 +153,12 @@ fallback); a fleet CA with name constraints and signing-request issuance (T4); t
 readiness gate policy (P1); shutting down any temporary public download listener. Mac lane:
 `start.sh` parity (fail fast, honest fallback status), `load-local.sh` handling of `#` in quoted
 values, independent receipts for every Windows delivery.
+
+## Update (2026-11-23): later decisions
+
+The model above was the first one. Renewal agreement v2 (2026-11-17) is the later decision and
+the current policy for leaf validity (60 days, reissued at T-7, capped at the CA's expiry) and CA
+custody (one CA and pin; peers send CSRs; CA keys still never travel). This record is kept as
+written: it was correct for its date. See
+[the 2026-11-17 record](LAN_PEER_TLS_AUTH_CHAIN_AND_RENEWAL_V2_DOMAIN_KNOWLEDGE_2026-11-17.md),
+section 8.

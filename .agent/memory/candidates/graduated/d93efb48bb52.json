@@ -1,0 +1,44 @@
+{
+  "id": "d93efb48bb52",
+  "key": "manual_d93efb",
+  "name": "manual_d93efb",
+  "claim": "Never leave work uncommitted in an ephemeral worktree. A worktree in a system temp directory is purged by the operating system (macOS does this), and uncommitted work there is lost with it. Create worktrees under a durable path, and put work onto a pushed branch early: logical commits, one branch, one pull request, before the first long step and before the session ends.",
+  "conditions": [
+    "durability",
+    "ephemeral",
+    "purge",
+    "rescue",
+    "uncommitted",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-23T16:09:21.408028+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-23T16:09:21.408028+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-23T16:09:21.408028+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-23T16:09:21.583949+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On 2026-11-22 an internal session (win-cline/codex) began the MC2 generation-fencing work in an ephemeral temp-directory worktree and left it uncommitted. macOS had purged the sibling M3 worktree the same way, which destroyed work reported as 96-test-verified (source: the PT 519 description). The 5-file MC2 start (PT 519) and the controller service changes (oramasys 104) were rescued by committing them to branches before the same purge reached them. No earlier PT memory record covered this practice.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-23T16:09:21.408028+00:00"
+      ],
+      "lessons_sha": "9c6cc6eee215"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-23T16:09:21.583927+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On 2026-11-22 an internal session (win-cline/codex) began the MC2 generation-fencing work in an ephemeral temp-directory worktree and left it uncommitted. macOS had purged the sibling M3 worktree the same way, which destroyed work reported as 96-test-verified (source: the PT 519 description). The 5-file MC2 start (PT 519) and the controller service changes (oramasys 104) were rescued by committing them to branches before the same purge reached them. No earlier PT memory record covered this practice.",
+  "supersedes": null
+}

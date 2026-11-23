@@ -47,3 +47,33 @@ The timeline above is preserved as written. Live state checked 2026-11-16:
 - Still open: the adversarial fail-open suite's native Windows cases and the service-account
   context run (Windows-held), the live free-first provider qualification (needs a bounded,
   approved run), and R6-R8.
+
+## Decision lookup and receipt reconciliation (2026-11-23, append-only)
+
+- Consult the dated operator decision above before asking again or forwarding a
+  generic 60 ms summary. Native Windows scheduled p95 is provisional at 150 ms;
+  successful-send p95 stays 60 ms and scheduled p99 stays 250 ms. A historical
+  measurement below the provisional value is not service-account qualification.
+  The evidence-only correction sent to Windows supersedes the conflicting metric
+  language in the November 23 coordination notes. It authorizes no new run.
+- The historical 87 was a cumulative Mac-to-Windows sender count, not the
+  separate 47-row Windows sender index. Current authenticated Windows inbox
+  readback found all 87 filenames: 25 exact bodies and 62 matching only after
+  CRLF-to-LF normalization. Report current text presence separately from raw
+  receipt evidence, historical arrival, and ownership. Do not replay these items.
+
+## Chronology of the Windows scheduled p95 budget (2026-11-23, append-only)
+
+Both limits below were decided on their dates and neither is invalid. This is development through
+time, not a supersession of the earlier record.
+
+| Date | Source | Native Windows scheduled p95 |
+| --- | --- | --- |
+| 2026-11-08 | Windows dry-run handoff (`docs/next/windows-dryrun-20261108/HANDOFF.md`) | 60 ms |
+| 2026-11-16 | Operator decision, recorded above | 150 ms, provisional |
+
+The 2026-11-16 decision is the later one and the current policy for native Windows scheduled p95,
+service-account runs included. The handoff is a dated record and stays unedited; its 60 ms is
+still the figure for Mac and POSIX (ratified 2026-11-07). Successful-send p95 (60 ms) and
+scheduled p99 (250 ms) are the same in both. The 150 ms value stays provisional until it is
+re-measured in the service-account context, and it qualifies no run.

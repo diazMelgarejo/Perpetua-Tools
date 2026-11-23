@@ -1,0 +1,42 @@
+{
+  "id": "fceb7ac7b55e",
+  "key": "manual_fceb7a",
+  "name": "manual_fceb7a",
+  "claim": "When the Mac peer path fails, dial the saved discovery host on HTTPS port 8443 with the approved issuer certificate, not backend port 8002, the model port, or a retired leaf pin. Order is TCP, pinned health 200, unauthenticated inbox 401, authenticated inbox 200, then one receipt. A process environment pin overrides the user pin. Windows curl ignores a PEM CA file; use the pinned Python peer client.",
+  "conditions": [
+    "PEER_CA_SHA256",
+    "https portal 8443",
+    "lan peer reconnect",
+    "retired leaf pin"
+  ],
+  "evidence_ids": [
+    "2026-11-23T14:25:23.190875+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-23T14:25:23.190875+00:00",
+  "status": "provisional",
+  "decisions": [
+    {
+      "ts": "2026-11-23T14:25:23.190875+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-23T14:25:23.581882+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "On 2026-11-23 the helper defaulted to the loopback backend, the process still trusted the retired leaf, and a fresh client had TLS unset. Health 200 then inbox 401 and 200 restored delivery. Receipt means ok true, received_at, and matching bytes.",
+      "provisional": true,
+      "evidence_snapshot": [
+        "2026-11-23T14:25:23.190875+00:00"
+      ],
+      "lessons_sha": "2d0789564104"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-23T14:25:23.581882+00:00",
+  "reviewer": "learn.py",
+  "rationale": "On 2026-11-23 the helper defaulted to the loopback backend, the process still trusted the retired leaf, and a fresh client had TLS unset. Health 200 then inbox 401 and 200 restored delivery. Receipt means ok true, received_at, and matching bytes.",
+  "supersedes": null
+}
