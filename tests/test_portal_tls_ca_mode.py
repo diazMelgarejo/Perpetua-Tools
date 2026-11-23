@@ -165,6 +165,30 @@ def test_reissue_threshold_applies_to_whole_days_remaining(tmp_path, upstream, m
     assert second.pki.leaf_event == event
 
 
+def test_lifetime_rollback_applies_to_an_existing_leaf_only_after_its_files_are_removed(
+    tmp_path, upstream, monkeypatch,
+):
+    """Lowering LEAF_VALIDITY_DAYS leaves a fresh leaf in service; removing leaf.key and leaf.pem reissues it."""
+    from cryptography import x509
+
+    from orchestrator import lan_control_plane_pki as pki_mod
+
+    first = _make(tmp_path, upstream)
+    first.ensure_certificate()
+    old_fingerprint = first.pki.leaf_fingerprint
+    monkeypatch.setattr(pki_mod, "LEAF_VALIDITY_DAYS", 30)
+    kept = _make(tmp_path, upstream)
+    kept.ensure_certificate()
+    assert kept.pki.leaf_event == "reused" and kept.pki.leaf_fingerprint == old_fingerprint
+    kept.pki.leaf_key_path.unlink()
+    kept.pki.leaf_chain_path.unlink()
+    reissued = _make(tmp_path, upstream)
+    reissued.ensure_certificate()
+    leaf = x509.load_pem_x509_certificates(reissued.pki.leaf_chain_path.read_bytes())[0]
+    assert reissued.pki.leaf_fingerprint != old_fingerprint
+    assert abs((leaf.not_valid_after_utc - leaf.not_valid_before_utc).days - 30) <= 1
+
+
 def test_leaf_never_outlives_a_short_lived_ca(tmp_path, upstream, monkeypatch):
     """A leaf is capped at its CA's expiry, so the longer leaf lifetime cannot outlive a younger CA."""
     from cryptography import x509
