@@ -1,0 +1,44 @@
+{
+  "id": "9bcf2ac7d3ce",
+  "key": "manual_9bcf2a",
+  "name": "manual_9bcf2a",
+  "claim": "The W&B route is split by role. Wanda uses the OpenAI client and Weave, and her soul card forbids the Cline CLI for that route. The Biafra seats use Cline through launch_cline_wandb.py, and only under the shared spend gate, because the launcher has no gate of its own. Neither record supersedes the other: lesson_8d873e4e2f73 stays valid for the Biafra seats.",
+  "conditions": [
+    "biafra",
+    "cline",
+    "routing",
+    "spend-gate",
+    "wanda",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-23T16:46:56.656872+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-23T16:46:56.656872+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-23T16:46:56.656872+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-23T16:46:56.848126+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator ruling of 2026-11-23 on doc 76 G11. The two records bind different consumers; the Biafra live cycle already launches Cline under the shared SpendGate, and Wanda's path is the OpenAI client.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-23T16:46:56.656872+00:00"
+      ],
+      "lessons_sha": "640a392b993a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-23T16:46:56.848102+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator ruling of 2026-11-23 on doc 76 G11. The two records bind different consumers; the Biafra live cycle already launches Cline under the shared SpendGate, and Wanda's path is the OpenAI client.",
+  "supersedes": null
+}

@@ -877,3 +877,39 @@ operator chose a single consolidated delivery over a separate main-only memory c
 the operator).
 
 **Status:** decided by the operator for this work; not a general change to the main-only rule.
+
+---
+
+## 2026-11-23: G6, the outer-seat persona is accepted as written
+
+**Decision:** The operator accepted the Biafra outer-seat persona in orama's
+`bin/agents/metaresearch-outer/SOUL.md` as written, including the boundary an agent added: Biafra
+questions the work's assumptions and does not diagnose the person. Doc 76 section 15 in orama
+records it.
+
+**Rationale:** G6 was an agent-drafted elaboration beyond the operator's wording, held as a draft
+until the operator reviewed it. Acceptance is the operator's judgement, and it was given on
+2026-11-23.
+
+**Alternatives considered:** accept with edits, or keep the draft (neither chosen).
+
+**Status:** decided by the operator. No code or tests changed.
+
+---
+
+## 2026-11-23: G11, the W&B route is split by role
+
+**Decision:** The operator ruled that the route is split by role. Wanda keeps the OpenAI client and
+Weave, and her soul card (Cline CLI forbidden for her W&B route) stands. The Biafra seats use Cline
+through `launch_cline_wandb.py`, and only under the shared spend gate. `lesson_8d873e4e2f73` is not
+edited or superseded: it stays valid for the Biafra seats.
+
+**Rationale:** The two records bind different consumers, so neither is invalid. The Biafra live
+cycle already launches Cline under the shared SpendGate, while the launcher has no gate of its
+own; Wanda's path is the OpenAI client. The split matches the code that exists.
+
+**Alternatives considered:** the soul card wins (a superseding lesson, and a change to the live
+cycle); the lesson wins (an edit to Wanda's soul card and a spend-gate wrapper for her).
+
+**Status:** decided by the operator. Orama states the scope in Wanda's soul card and in doc 76
+section 15. A new Cline caller must go through the shared spend gate.
