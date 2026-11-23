@@ -6,11 +6,11 @@ Timeline of the restoration session; the durable lessons live in
 ## Timeline (all times local machine clock)
 
 1. **Mac reports cert fixed** (`2026-11-17-mac-action-flush-now-for-win.md`): new leaf
-   `4d735f60...` claims "same SANs incl. IP 192.168.8.52", verified by `openssl verify` (chain
+   `4d735f60...` claims "same SANs incl. the previous Mac host", verified by `openssl verify` (chain
    only) + `/health` (no auth). Asks Windows to flush the queued outbox.
 2. **Flush attempt** (`flush-outbox --peer --state queued`): 0 delivered, 11 still queued —
    every item: `certificate verify failed: IP address mismatch, certificate is not valid for
-   '192.168.8.52'`. New failure mode: chain now verifies, hostname does not.
+   the previous Mac host`. New failure mode: chain now verifies, hostname does not.
 3. **SAN probe** (CERT_NONE): served leaf IS `4d735f60...` (CA-signed ✓) but has **NO SAN
    extension at all** — the note's SAN claim was false.
 4. **CN-fallback probe**: `server_hostname='orama-mac.local'` (the CN) PASSES full
@@ -54,7 +54,7 @@ Timeline of the restoration session; the durable lessons live in
 - Windows: on Mac completing steps 1–2, run `flush-outbox --peer --state queued`, send the
   byte-exact receipt (assignee mac), acknowledge per file.
 - Windows: sign the Mac's CSR when it arrives (60-day, SAN `DNS:orama-mac.local,
-  IP:192.168.8.52`); after they serve it, drop the `ef080f01` pin and keep only `364490e8`.
+  the previous Mac host`); after they serve it, drop the `ef080f01` pin and keep only `364490e8`.
 - Both: maintain `TRUST-INVENTORY.md`; stagger renewals; 4 gates per renewal.
 
 ## Addendum (same day, later): pull-publish adopted; Mac layers 2+3 PASS
@@ -85,7 +85,7 @@ Timeline of the restoration session; the durable lessons live in
 
 ## Addendum 2 (2026-11-22): IP migration handled; convergence CSR SIGNED
 
-- Mac migrated 192.168.8.52 -> **192.168.8.51** (operator-confirmed). Windows discovery
+- Mac migrated from the previous host to the saved discovery host (operator-confirmed). Windows discovery
   updated; queued items retargeted. Their serving leaf still carries SAN .52, so IP-dial
   Gate 2 fails at .51; the CN channel (server_hostname orama-mac.local) is the working
   equal-security path. Their front end is now CADDY on 8443 (backend 127.0.0.1:8002).
@@ -98,7 +98,7 @@ Timeline of the restoration session; the durable lessons live in
   (`canonical-fixes/OPERATOR-ONLY-credential-ferry-2026-11-22.md`); the Mac adopts the
   shared token outbound (rule 3).
 - **Convergence CSR received (mac8443.csr, file sha256 cea8b0a4...), VERIFIED (CN + SAN
-  DNS:orama-mac.local,IP:192.168.8.51, RSA-2048), SIGNED with the 364490e8 CA key:**
+  DNS:orama-mac.local and the saved discovery host, RSA-2048), SIGNED with the 364490e8 CA key:**
   leaf `2e5fdcd0...`, 60-day (2026-11-22 -> 2027-01-21). Delivered to the Mac:
   `mac8443-leaf-364490e8-20261122.pem` + `mac8443-fullchain-364490e8-20261122.pem` + signing
   status + receipt v2 - all four DELIVERED (stored byte counts confirmed by their portal).
@@ -112,7 +112,7 @@ Timeline of the restoration session; the durable lessons live in
 ## Addendum 3 (2026-11-22, later): CONVERGENCE COMPLETE - both directions green on standard machinery
 
 - Mac installed the signed convergence leaf; verified from Windows: served leaf on
-  192.168.8.51:8443 = 2e5fdcd0... (exact match), Gate 1+2 PASS with IP server_hostname and
+  the saved discovery host on port 8443 = 2e5fdcd0... (exact match), Gate 1+2 PASS with IP server_hostname and
   the 364490e8 pin; authenticated pull from their portal with the shared token = 200 (358 files).
 - Their 18-row ack verified against our raw records: 18 parsed, 0 mismatches. Outbox 46
   delivered / 0 pending. Ack-verification receipt delivered to them (direct POST; their
