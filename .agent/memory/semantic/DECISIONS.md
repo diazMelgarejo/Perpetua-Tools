@@ -913,3 +913,25 @@ cycle); the lesson wins (an edit to Wanda's soul card and a spend-gate wrapper f
 
 **Status:** decided by the operator. Orama states the scope in Wanda's soul card and in doc 76
 section 15. A new Cline caller must go through the shared spend gate.
+
+---
+
+## 2026-11-23: G11 correction, the Biafra Cline route is a designation and not a running route
+
+**Decision:** The 2026-11-23 ruling "G11, the W&B route is split by role" stands. One claim in its
+rationale and in `lesson_9bcf2ac7d3ce` is corrected: the Biafra live cycle does not launch Cline
+today. `live_cycle()` refuses with `launcher-output-bound-unsupported`, and the legacy path with
+`legacy-live-path-disabled`, until the launcher can bound total output and request count. The
+Biafra seats are therefore designated to use Cline under the shared spend gate once that bound
+exists. Wanda keeps the OpenAI client, called directly by
+`bin/orama-system/skills/wanda-wandb/scripts/wanda_chat.py` in orama-system. Orama doc 76
+section 15 holds the canonical wording.
+
+**Rationale:** The original text was written from memory of earlier code and was not re-checked at
+the merged head. A test in orama now ties the doc wording to the launcher's refusal.
+
+**Alternatives considered:** editing the merged entry and lesson in place. Rejected: records on
+`main` are append-only, and the lesson tool never rewrites a lesson.
+
+**Status:** a correction of one factual claim; the operator's ruling is unchanged. The lesson is
+provisional until the launcher bound exists.
