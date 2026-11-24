@@ -1,0 +1,42 @@
+{
+  "id": "fcc93791cb24",
+  "key": "manual_fcc937",
+  "name": "manual_fcc937",
+  "claim": "For paired review, read both repositories agent and seat cards before dispatch; MetaResearcher can occupy Biafra metaresearch-outer as reviewer on GPT-6.2 Astra Medium, while AutoResearcher occupies generic autoresearch-inner on GPT-6.2 Sol Medium for bounded hypotheses and offline measurement, distinct from Scout.",
+  "conditions": [
+    "autoresearch-inner",
+    "dispatch",
+    "metaresearch-outer",
+    "paired-review"
+  ],
+  "evidence_ids": [
+    "2026-11-24T21:54:26.681771+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-24T21:54:26.681771+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-24T21:54:26.681771+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-24T21:54:59.489005+00:00",
+      "action": "graduated",
+      "reviewer": "codex",
+      "notes": "The operator explicitly requested this pairing as a reusable pattern. The PR 521 and PR 525 review demonstrates a bounded offline application. Read the Orama seat definitions before dispatch and treat any live cycle or promotion as a separate decision.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-24T21:54:26.681771+00:00"
+      ],
+      "lessons_sha": "8c8823aca5ec"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-24T21:54:59.488988+00:00",
+  "reviewer": "codex",
+  "rationale": "The operator explicitly requested this pairing as a reusable pattern. The PR 521 and PR 525 review demonstrates a bounded offline application. Read the Orama seat definitions before dispatch and treat any live cycle or promotion as a separate decision.",
+  "supersedes": null
+}
