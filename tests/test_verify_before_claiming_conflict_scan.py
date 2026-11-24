@@ -32,8 +32,12 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 ORAMA_DOC = "docs/verify-before-claiming.md"
 PT_DOC = ".agent/protocols/verify-before-claiming.md"
+if not any((ROOT / name).is_file() for name in (ORAMA_DOC, PT_DOC)):
+    # The guard-sync manifest copies this file into every repository; only the two that carry the
+    # document have anything to check.
+    pytest.skip("this repository has no verify-before-claiming document", allow_module_level=True)
 # Update this value in BOTH repositories when the block changes; run this test to see the new hash.
-PINNED_SHA256 = "3aec2ba7efb978da59e8c9089238c052d57cc201b72f03e5351050c03d7da387"
+PINNED_SHA256 = "9f3cb1144195b0ece610b527a86c67efc9333ff5fcb1a7510d9780e79573720f"
 BLOCK = re.compile(
     r"^[ \t]*<!-- conflict-scan:begin -->[ \t]*\n(.*?)^[ \t]*<!-- conflict-scan:end -->",
     re.DOTALL | re.MULTILINE,
@@ -194,6 +198,19 @@ def test_the_scan_reports_exactly_the_marker_lines_from_a_subdirectory(repo: Pat
     """Labelled, bare, diff3, CRLF and longer markers are all hit, and nothing else is."""
     here = repo / "deep/er"
     assert _hits(_scan(repo, which, cwd=here), here) == _expected(repo)
+
+
+@pytest.mark.parametrize("which", [WORKING_TREE, INDEX], ids=["working-tree", "index"])
+def test_the_scan_can_be_narrowed_to_named_paths(repo: Path, which: int) -> None:
+    """Replacing the ':/' pathspec with file names scans only those files, as the merge cards say."""
+    command = _commands()[which]
+    assert command[-1] == ":/"
+    done = subprocess.run(
+        [*command[:-1], "bare.txt", "crlf.txt"], cwd=repo, env=_env(repo), capture_output=True, text=True
+    )
+    assert done.returncode == 0, done.stderr
+    expected = {(os.path.normpath(repo / name), n) for name in ("bare.txt", "crlf.txt") for n in (2, 4, 6, 8)}
+    assert _hits(done.stdout.splitlines(), repo) == expected
 
 
 def test_ignored_files_are_not_searched(repo: Path) -> None:
