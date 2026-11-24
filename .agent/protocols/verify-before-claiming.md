@@ -74,11 +74,12 @@ continuous integration sees one repository only, so it checks the pin alone.
   The first command reads the tracked and untracked files in the working tree, the second the
   staged blobs. Treat each hit as a candidate: a `<<<<<<<`, `|||||||` or `>>>>>>>` line is a
   conflict marker unless it is quoted text, such as a fixture or documentation about conflicts. A
-  bare `=======` is often an underline: when the line above it (shown by `-B1`) is heading or
-  title text, it is a Markdown setext heading or a reST title, and only a separator with no title
-  above it is a leftover. Not searched: ignored files, submodule contents and markers shorter than
-  seven characters. A binary file is reported without a line number, and a byte-order mark before
-  a marker on line 1 hides it. Check such paths by hand.
+  bare `=======` is often a Markdown setext or reST underline, but do not dismiss it from the
+  preceding `-B1` line alone: check the file type and the surrounding context. Conflict content can
+  resemble a heading, and a separator after ordinary code (for example `value = 1`) is still a
+  leftover. Not searched: ignored files, submodule contents and markers shorter than seven
+  characters. A binary file is reported without a line number, and a byte-order mark before a
+  marker on line 1 hides it. Check such paths by hand.
   <!-- conflict-scan:end -->
 
 - Append-only episodic logs: the previous PR's complete byte stream must stay an exact prefix
