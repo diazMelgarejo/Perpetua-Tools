@@ -1,0 +1,44 @@
+{
+  "id": "053d2b247479",
+  "key": "manual_053d2b",
+  "name": "manual_053d2b",
+  "claim": "Never teach a command or regex through prose that two repositories copy by hand. Keep one block between sentinel comments, execute its commands against a throwaway fixture in a test, pin its hash, and compare it with the sibling repository's copy when both checkouts exist; a pin alone cannot catch one repository editing its block and its own pin together.",
+  "conditions": [
+    "conflict-markers",
+    "drift-guard",
+    "lockstep",
+    "pinned-hash",
+    "review-nits",
+    "sibling-repo"
+  ],
+  "evidence_ids": [
+    "2026-11-24T10:38:39.754085+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-24T10:38:39.754085+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-24T10:38:39.754085+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-24T10:38:39.942576+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Conflict-marker scan wording in the lockstep PR pair was re-flagged in five review rounds because it was hand-synced prose judged by eye. Independent reviews by Codex and a W&B-hosted Cline agent then found false claims only fixtures and a grep of the real repository exposed: reST underlines are not leftover separators, quoted markers are not conflicts, ignored files are not searched. A one-sided edit of block plus pin passed the pin and failed only the sibling comparison.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-24T10:38:39.754085+00:00"
+      ],
+      "lessons_sha": "0ae9ebd8f8d0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-24T10:38:39.942564+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Conflict-marker scan wording in the lockstep PR pair was re-flagged in five review rounds because it was hand-synced prose judged by eye. Independent reviews by Codex and a W&B-hosted Cline agent then found false claims only fixtures and a grep of the real repository exposed: reST underlines are not leftover separators, quoted markers are not conflicts, ignored files are not searched. A one-sided edit of block plus pin passed the pin and failed only the sibling comparison.",
+  "supersedes": null
+}
