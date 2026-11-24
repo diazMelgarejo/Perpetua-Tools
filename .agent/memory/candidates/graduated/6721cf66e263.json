@@ -1,0 +1,43 @@
+{
+  "id": "6721cf66e263",
+  "key": "manual_6721cf",
+  "name": "manual_6721cf",
+  "claim": "Sweep for other copies of a rule by the literal text of the old and the new content across every file type, not by neighbouring words, and repeat the sweep after the fix lands. The first sweep searched for flags and the word setext and missed a fourth, weaker copy of the conflict-marker scan in an active checklist; searching for the marker string itself found it, and the same sweep found operational scripts and merge cards that carry their own greps.",
+  "conditions": [
+    "duplicate-copies",
+    "grep",
+    "review-nits",
+    "single-source",
+    "sweep"
+  ],
+  "evidence_ids": [
+    "2026-11-24T11:06:06.603650+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-24T11:06:06.603650+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-24T11:06:06.603650+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-24T11:06:06.763953+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A reviewer found the stale copy that the author's first sweep missed. Searching for the marker text, then classifying each hit as documentation to repoint or a functional guard to leave, closed the gap and kept the diff within scope.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-24T11:06:06.603650+00:00"
+      ],
+      "lessons_sha": "abc208627de9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-24T11:06:06.763942+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A reviewer found the stale copy that the author's first sweep missed. Searching for the marker text, then classifying each hit as documentation to repoint or a functional guard to leave, closed the gap and kept the diff within scope.",
+  "supersedes": null
+}

@@ -1,0 +1,44 @@
+{
+  "id": "598529488e13",
+  "key": "manual_598529",
+  "name": "manual_598529",
+  "claim": "When adding a list to the guard-sync manifest, commit the canonical repository first because the sync refuses to run over uncommitted guard paths, then inspect the downstream diff and run the official full sync in its own commit: a lagging mirror file is upgraded by design, and a narrow copy is only for a diff that is unrelated and risky. Update every downstream test that enumerates the manifest destinations, and make a byte-identical drift-guard test skip itself where its subject is absent.",
+  "conditions": [
+    "divergence",
+    "drift-guard",
+    "guard-sync",
+    "manifest",
+    "mirror",
+    "sync"
+  ],
+  "evidence_ids": [
+    "2026-11-24T11:06:06.314367+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-24T11:06:06.314367+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-24T11:06:06.314367+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-24T11:06:06.482753+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Adding GUARD_SYNC_TESTS needed the canonical commit before the sync would run, a full sync that changed only the two expected lagging files (an agent identity allowlist entry), a downstream copy of the manifest test that failed on the new destinations, and a module-level skip so the synced test cannot fail in a repository without the verify document. Proven by installing into a scratch repository and running the copy there.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-24T11:06:06.314367+00:00"
+      ],
+      "lessons_sha": "4cb07a7248f8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-24T11:06:06.482737+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Adding GUARD_SYNC_TESTS needed the canonical commit before the sync would run, a full sync that changed only the two expected lagging files (an agent identity allowlist entry), a downstream copy of the manifest test that failed on the new destinations, and a module-level skip so the synced test cannot fail in a repository without the verify document. Proven by installing into a scratch repository and running the copy there.",
+  "supersedes": null
+}
