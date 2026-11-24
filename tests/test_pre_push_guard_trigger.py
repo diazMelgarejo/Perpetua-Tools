@@ -69,6 +69,25 @@ def _head(repo: Path) -> str:
     ).stdout.strip()
 
 
+def _guard_parity_required_paths() -> list[str]:
+    """Repository-relative files required for canonical guard parity."""
+    manifest = ROOT / "scripts" / "git" / "guard-sync-manifest.sh"
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            'source "$1" && printf "%s\\n" "${GUARD_PARITY_ROOT_REQUIRED[@]}"',
+            "_",
+            str(manifest),
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return [line for line in result.stdout.splitlines() if line]
+
+
 def _setup_repo_with_origin(base: Path) -> Path:
     """Bare origin + a local clone with main pushed, so origin/main resolves
     as the base for range_for_ref's diff — matching how the real hook is
@@ -91,6 +110,14 @@ def _setup_repo_with_origin(base: Path) -> Path:
     shutil.copytree(ROOT / "scripts", local / "scripts", dirs_exist_ok=True)
     shutil.copytree(ROOT / ".githooks", local / ".githooks", dirs_exist_ok=True)
     shutil.copytree(ROOT / ".cursor", local / ".cursor", dirs_exist_ok=True)
+    for rel in _guard_parity_required_paths():
+        source = ROOT / rel
+        if not source.is_file():
+            raise FileNotFoundError(f"Required guard parity source missing: {source}")
+        dest = local / rel
+        if not dest.is_file():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, dest)
     subprocess.run(
         ["git", "config", "core.hooksPath", ".githooks"],
         cwd=local,
