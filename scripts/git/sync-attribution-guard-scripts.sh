@@ -279,6 +279,15 @@ for rule in "${GUARD_SYNC_CURSOR_RULES[@]}"; do
     0644
 done
 
+# Drift-guard tests: byte-identical copies under tests/ (each skips itself where its subject is absent).
+for test_rel in "${GUARD_SYNC_TESTS[@]}"; do
+  [[ -f "$source_root/tests/$test_rel" ]] || continue
+  atomic_install_file \
+    "$source_root/tests/$test_rel" \
+    "$target/tests/$test_rel" \
+    0644
+done
+
 echo "synced guard scripts → $target"
 
 snippet="$source_root/scripts/git/snippets/AGENTS-cursor-cloud-git.md"
