@@ -55,10 +55,11 @@ done. Evidence and dated examples:
   a heading line is a setext underline). Run all three index scans from the repository root. To scan
   the index (the staged blobs of tracked files, not untracked files) use `git grep --cached -nE
   '^(<{7}|>{7}|\|{7})( |$)'`: opening, closing and diff3 ancestor markers. A partial resolution can
-  leave a bare `=======`: outside Markdown scan for it with `git grep --cached -nE '^={7}$' --
-  ':!*.md'`; in Markdown read the hits from `git grep --cached -nE -B1 '^={7}$' -- '*.md'`, where a
-  heading line above it is valid. A file staged as resolved can still hold markers, and `git diff
-  --name-only --diff-filter=U` lists only unmerged files.
+  leave a bare `=======`: outside Markdown scan for it with `git grep --cached -nP '^={7}\r?$' --
+  ':!*.md'`; in Markdown read the hits from `git grep --cached -nP -B1 '^={7}\r?$' -- '*.md'`, where
+  a heading line above it is valid (`-P` so `\r?` matches an optional CR in CRLF staged blobs). A
+  file staged as resolved can still hold markers, and `git diff --name-only --diff-filter=U` lists
+  only unmerged files.
 
 - Append-only episodic logs: the previous PR's complete byte stream must stay an exact prefix
   (order, duplicates, line endings). Build a stacked branch as the prior tip's bytes followed by
