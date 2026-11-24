@@ -921,7 +921,9 @@ section 15. A new Cline caller must go through the shared spend gate.
 **Decision:** The 2026-11-23 ruling "G11, the W&B route is split by role" stands. One claim in its
 rationale and in `lesson_9bcf2ac7d3ce` is corrected: the Biafra live cycle does not launch Cline
 today. `live_cycle()` refuses with `launcher-output-bound-unsupported`, and the legacy path with
-`legacy-live-path-disabled`, until the launcher can bound total output and request count. The
+`legacy-live-path-disabled` only when armed (when the gate and arm variables are unset,
+`run_program()` runs `dry_cycle()` with `called_launcher=False` instead), until the launcher can
+bound total output and request count. The
 Biafra seats are therefore designated to use Cline under the shared spend gate once that bound
 exists. Wanda keeps the OpenAI client, called directly by
 `bin/orama-system/skills/wanda-wandb/scripts/wanda_chat.py` in orama-system. That client stays
