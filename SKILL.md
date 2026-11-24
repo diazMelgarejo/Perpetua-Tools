@@ -451,8 +451,8 @@ grep -rn "192\.168\." --include="*.py" | grep -v "test_\|#\|LESSONS\|\.env"
 # All required modules importable
 python -c "import fastapi, httpx, uvicorn, pydantic, slowapi, pytest, hatchling, build"
 
-# No conflict markers in committed files
-git grep "<<<<<<< \|>>>>>>> " -- '*.py' '*.md' '*.yml'
+# No conflict markers: run the two scans in .agent/protocols/verify-before-claiming.md item 5
+# (working tree and index; one tested copy of the commands, so none are repeated here)
 ```
 
 → Full wiki: [docs/wiki/README.md](docs/wiki/README.md)
