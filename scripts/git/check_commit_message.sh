@@ -18,6 +18,7 @@ ALLOWED_EXACT_COAUTHOR_EMAILS=(
   claude@anthropic.com
   kimi-agent@kimi.ai
   cloud-kimi-agent@kimi.ai
+  openhands@all-hands.dev
 )
 
 ALLOWED_GMAIL_COAUTHORS=(
@@ -47,6 +48,7 @@ WELL_KNOWN_COAUTHOR_DOMAIN_SUFFIXES=(
   nousresearch.com
   kimi.ai
   cline.bot
+  all-hands.dev
 )
 
 WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
@@ -80,6 +82,7 @@ WELL_KNOWN_COAUTHOR_NAME_MARKERS=(
   nousresearch
   kimi
   cline
+  openhands
 )
 
 email_domain_ok() {
