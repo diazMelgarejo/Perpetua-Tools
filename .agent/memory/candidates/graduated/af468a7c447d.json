@@ -1,0 +1,44 @@
+{
+  "id": "af468a7c447d",
+  "key": "manual_af468a",
+  "name": "manual_af468a",
+  "claim": "AlphaClaw 0.9.38 and later, the fork PR 34 build (0.9.39-9) and openclaw 2026.10.6 all require node >=24.22.1 <25 or >=26.12.1, so check engines before any update. Keep exactly one 24.x under nvm (24.22.3), keep 22.22.2, mark the superseded 24.x with an OBSOLETE note and delete it only after the update works. nvm install --reinstall-packages-from under npm 11 skips package install scripts (npm prints an install-scripts warning), so run every migrated global CLI afterwards and rebuild natives that fail (omniroute stays disabled with a fix-later note beside it).",
+  "conditions": [
+    "alphaclaw",
+    "engines",
+    "node",
+    "npm11",
+    "nvm",
+    "openclaw"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:39.413989+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:39.413989+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:39.413989+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:39.586372+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-25 Node 24.14.1 to 24.22.3 migration; 12 globals moved; omniroute and ai-cli-mcp banners checked.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:39.413989+00:00"
+      ],
+      "lessons_sha": "bcb300cc82ae"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:39.586357+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-25 Node 24.14.1 to 24.22.3 migration; 12 globals moved; omniroute and ai-cli-mcp banners checked.",
+  "supersedes": null
+}

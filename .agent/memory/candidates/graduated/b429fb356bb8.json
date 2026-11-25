@@ -1,0 +1,42 @@
+{
+  "id": "b429fb356bb8",
+  "key": "manual_b429fb",
+  "name": "manual_b429fb",
+  "claim": "The AlphaClaw repository uses pnpm (pnpm-lock.yaml), so npm ci fails with EUSAGE; install with pnpm install --frozen-lockfile and test with pnpm test. The fork PR 34 head c926b622 (0.9.39-9, upstream main 0.9.38-beta.1 already an ancestor) passed 112 test files and 876 tests on node 24.22.3 with openclaw 2026.10.6, plus node --check bin/alphaclaw.js.",
+  "conditions": [
+    "alphaclaw",
+    "dry-run",
+    "pnpm",
+    "pr34"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:39.693274+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:39.693274+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:39.693274+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:39.861558+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Dry run in a disposable worktree before touching the installed runtime, 2026-11-25.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:39.693274+00:00"
+      ],
+      "lessons_sha": "18218f7ac682"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:39.861544+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Dry run in a disposable worktree before touching the installed runtime, 2026-11-25.",
+  "supersedes": null
+}

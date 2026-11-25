@@ -1,0 +1,44 @@
+{
+  "id": "6cd691a29fc8",
+  "key": "manual_6cd691",
+  "name": "manual_6cd691",
+  "claim": "OpenClaw 2026.10.6's own Google provider doc says it offers no new Gemini CLI OAuth or Antigravity OAuth setup: Google ended consumer Gemini CLI login on 2026-06-18 and the Antigravity terms prohibit third-party tools. The supported Google path is an AI Studio API key (or Vertex), with google/gemini-3.8-flash (alias gemini-flash) and thinkingLevel for effort; OpenAI Codex subscription OAuth is supported (openclaw models auth login --provider openai, add --device-code when the browser callback fails). The operator enters credentials and completes logins; the agent configures routing only.",
+  "conditions": [
+    "codex",
+    "gemini",
+    "google",
+    "oauth",
+    "openclaw",
+    "providers"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:39.967317+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:39.967317+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:39.967317+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:40.127813+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Read from the installed openclaw docs/providers/google.md and openai/setup.md on 2026-11-25.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:39.967317+00:00"
+      ],
+      "lessons_sha": "cdbc8cff0bbd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:40.127801+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Read from the installed openclaw docs/providers/google.md and openai/setup.md on 2026-11-25.",
+  "supersedes": null
+}
