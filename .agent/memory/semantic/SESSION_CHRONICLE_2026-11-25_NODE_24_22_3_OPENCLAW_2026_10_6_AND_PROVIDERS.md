@@ -63,11 +63,25 @@ lessons keep the rules. Paths use `~`; nothing here is a credential.
   (564 MB, nothing deleted). A non-interactive fresh onboarding was started with loopback bind, port
   18789, token auth, and
   no providers, channels, skills, search or hooks.
-- **Still to do:** confirm the gateway answers, install the PR 34 AlphaClaw build in the
-  `~/.alphaclaw` runtime, then
-  restore in baby steps with a health check after each: core config, agents and workspace, the W&B
-  default, the fallback
-  providers, plugins, and Telegram last. After success: delete (move to the Trash) the obsolete Node
-  24.14.1 and remove
-  its marker.
+- **Result of the fresh onboarding:** openclaw 2026.10.6 gateway running as a launch agent,
+  connectivity ok, listening on
+  the loopback interface only, IPv4 and IPv6 (no LAN). Only warning: the service uses node from a
+  version manager.
+- **AlphaClaw installed:** the PR 34 build (`@diazmelgarejo/alphaclaw` 0.9.39-9) was packed from the
+  worktree (prepack
+  builds the UI, 958 KB, 429 files), proved in a scratch folder (zero dependency problems), then
+  installed into the
+  `~/.alphaclaw` workspace from `~/.alphaclaw/vendor/` with openclaw 2026.10.6, the same as the
+  global one. The old
+  `@chrysb/alphaclaw` 0.9.16.9 was removed from the workspace and stays recoverable from the
+  verified backup. The
+  scout hook blocks running files under `node_modules`, so startup is verified through the real
+  launch, not a direct
+  call. The orama launcher status shows PT 8000, orama 8001 and Portal 8002 DOWN, as expected until
+  it is started.
+- **Still to do:** restore in baby steps with a health check after each: core config, agents and
+  workspace, the W&B
+  default, the fallback providers, plugins, and Telegram last. After success: move the obsolete Node
+  24.14.1 to the
+  Trash and remove its marker.
 - **Not pushed:** the PT lessons and this chronicle are committed locally on top of PT PR 521's tip.
