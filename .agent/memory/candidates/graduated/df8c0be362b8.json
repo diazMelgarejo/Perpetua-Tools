@@ -1,0 +1,43 @@
+{
+  "id": "df8c0be362b8",
+  "key": "manual_df8c0b",
+  "name": "manual_df8c0b",
+  "claim": "Order a batch of work by what each step needs: run independent reads first and in parallel (research, and diagnosing why a pull request conflicts); let research feed the docs and code, and the docs and memory feed the commits; make one push per repository the last step, with every ref in one command, because review replies and pull-request-body follow-ups cite pushed SHAs and so follow it. Restack stacked branches in order before that push.",
+  "conditions": [
+    "dependency",
+    "parallel-research",
+    "single-push",
+    "stacked-pr",
+    "task-order"
+  ],
+  "evidence_ids": [
+    "2026-11-25T01:52:41.520133+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T01:52:41.520133+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T01:52:41.520133+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T01:52:41.694025+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator asked for a remediation done in dependency order after an earlier batch interleaved research, edits and pushes. The order that worked was parallel model-release research and conflict diagnosis, then docs and memory, then logical commits, then a single push per repository, with replies and body follow-ups citing the pushed SHAs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T01:52:41.520133+00:00"
+      ],
+      "lessons_sha": "258ff6f04f6e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T01:52:41.694011+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator asked for a remediation done in dependency order after an earlier batch interleaved research, edits and pushes. The order that worked was parallel model-release research and conflict diagnosis, then docs and memory, then logical commits, then a single push per repository, with replies and body follow-ups citing the pushed SHAs.",
+  "supersedes": null
+}

@@ -1,0 +1,43 @@
+{
+  "id": "6baea03dbf4a",
+  "key": "manual_6baea0",
+  "name": "manual_6baea0",
+  "claim": "A keyword hit is not coverage. To confirm a lesson is reflected in canonical files, read its full claim, open the file that should state it and quote the line; run the search on a known-present term first, because an unquoted multi-word path variable silently turns every search into no match. Pin the result as a table of lesson id, file and exact phrase in a test.",
+  "conditions": [
+    "coverage-audit",
+    "keyword-search",
+    "known-term",
+    "lesson-to-canon",
+    "quote-the-line"
+  ],
+  "evidence_ids": [
+    "2026-11-25T01:52:41.820991+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T01:52:41.820991+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T01:52:41.820991+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T01:52:41.987487+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A first pass over thirteen Biafra lessons marked twelve covered from keyword hits, some in unrelated files. Reading the files and quoting lines found two real gaps (a rule recorded only as an incident, a missing framing) and a wording difference in a metric direction; the first quoting attempt returned no match everywhere because zsh did not split a string of paths. A table test now holds each phrase.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T01:52:41.820991+00:00"
+      ],
+      "lessons_sha": "5e1be4a249ff"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T01:52:41.987475+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A first pass over thirteen Biafra lessons marked twelve covered from keyword hits, some in unrelated files. Reading the files and quoting lines found two real gaps (a rule recorded only as an incident, a missing framing) and a wording difference in a metric direction; the first quoting attempt returned no match everywhere because zsh did not split a string of paths. A table test now holds each phrase.",
+  "supersedes": null
+}

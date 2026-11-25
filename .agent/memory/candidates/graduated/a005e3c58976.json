@@ -1,0 +1,42 @@
+{
+  "id": "a005e3c58976",
+  "key": "manual_a005e3",
+  "name": "manual_a005e3",
+  "claim": "Treat model names and effort levels as dated operator rulings: keep them in one code table with a test that ties every card and doc to it, record each model first public availability with its sources and say when the best source carries no date, label an earlier ad hoc pairing as ephemeral, and re-verify when the provider updates its frontier models.",
+  "conditions": [
+    "model-policy",
+    "operator-ruling",
+    "release-date",
+    "table-test"
+  ],
+  "evidence_ids": [
+    "2026-11-25T01:52:49.269538+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T01:52:49.269538+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T01:52:49.269538+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T01:52:49.436447+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator ruled that GPT-6.2 Astra at high and GPT-6.2 Sol at medium are the durable pair, superseding an ad hoc Astra-at-Medium pairing and the older GPT-6 Astra and GPT-6.1 Sol entries. Release research found 2026-11-17 in a dated changelog while the vendor page showed no calendar date and an encyclopedia gave the press-coverage date a day later; a test now fails if any card names a model the table does not.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T01:52:49.269538+00:00"
+      ],
+      "lessons_sha": "82910905beb0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T01:52:49.436433+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator ruled that GPT-6.2 Astra at high and GPT-6.2 Sol at medium are the durable pair, superseding an ad hoc Astra-at-Medium pairing and the older GPT-6 Astra and GPT-6.1 Sol entries. Release research found 2026-11-17 in a dated changelog while the vendor page showed no calendar date and an encyclopedia gave the press-coverage date a day later; a test now fails if any card names a model the table does not.",
+  "supersedes": null
+}

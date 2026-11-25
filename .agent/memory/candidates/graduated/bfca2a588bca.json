@@ -1,0 +1,43 @@
+{
+  "id": "bfca2a588bca",
+  "key": "manual_bfca2a",
+  "name": "manual_bfca2a",
+  "claim": "When asked for a clean history on a pull request that is already pushed, base the rebuild on the pull request last pushed commit, not on main: keep a backup ref of the old tip, rebuild only the unpushed work as logical commits, prove the final tree is identical to the backup, and fetch first because other agents may have pushed meanwhile. Rewrite the remote only when a stacked branch must be restacked, and push that with a lease in the same single push.",
+  "conditions": [
+    "backup-ref",
+    "clean-history",
+    "force-with-lease",
+    "git-history",
+    "stacked-branches"
+  ],
+  "evidence_ids": [
+    "2026-11-25T01:52:42.106090+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T01:52:42.106090+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T01:52:42.106090+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T01:52:42.270295+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A rebuild from main would have rewritten twenty pushed commits and orphaned the SHAs cited in review replies. Rebuilding on the last pushed commit changed only unpushed work, kept every cited SHA valid, and a diff against the backup proved the trees identical; the remote moved twice during the work.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T01:52:42.106090+00:00"
+      ],
+      "lessons_sha": "5820780abd7f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T01:52:42.270280+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A rebuild from main would have rewritten twenty pushed commits and orphaned the SHAs cited in review replies. Rebuilding on the last pushed commit changed only unpushed work, kept every cited SHA valid, and a diff against the backup proved the trees identical; the remote moved twice during the work.",
+  "supersedes": null
+}

@@ -1,0 +1,44 @@
+{
+  "id": "4fae818c1cd8",
+  "key": "manual_4fae81",
+  "name": "manual_4fae81",
+  "claim": "Make a shell-safety hook table-driven: each rule is data (id, level, hint) with bad and good fixtures that a self-test and the tests execute; rules that guess at runtime state only warn; a rollout starts in warn mode with a log of rule ids and a command hash, never the command text; the installer defaults to a read-only check, validates settings before changing anything, backs them up and merges without clobbering. Generate the rule table in the docs from the registry and test that it matches.",
+  "conditions": [
+    "fixtures",
+    "hook",
+    "installer",
+    "rules-as-data",
+    "settings",
+    "warn-mode"
+  ],
+  "evidence_ids": [
+    "2026-11-25T01:52:48.683556+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T01:52:48.683556+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T01:52:48.683556+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T01:52:48.857412+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A hook for zsh and macOS traps was reviewed by three agents. Fixtures caught two pattern bugs on the first run, the generated-table test caught a stale doc after rules were demoted, the installer test caught files being copied before an invalid settings file was detected, and a side note showed an unmatched-glob rule would block a command that creates the files first.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T01:52:48.683556+00:00"
+      ],
+      "lessons_sha": "f0759f6d4511"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T01:52:48.857397+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A hook for zsh and macOS traps was reviewed by three agents. Fixtures caught two pattern bugs on the first run, the generated-table test caught a stale doc after rules were demoted, the installer test caught files being copied before an invalid settings file was detected, and a side note showed an unmatched-glob rule would block a command that creates the files first.",
+  "supersedes": null
+}
