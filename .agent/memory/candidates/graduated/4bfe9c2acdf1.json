@@ -1,0 +1,45 @@
+{
+  "id": "4bfe9c2acdf1",
+  "key": "manual_4bfe9c",
+  "name": "manual_4bfe9c",
+  "claim": "Never put a Mac LM Studio model in any automatic fallback chain alongside Ollama on the same Mac, even as the last entry: a fallback switches on its own exactly when the first model fails or times out, which for Ollama means overload, and it would then load a second large model on the same machine. That is the concurrent-load situation that once caused an overheat and forced shutdown, and the closed invariant is to never run both engines under load. Define the Mac LM Studio provider as a manual choice only, disabled and absent from openclaw.json and from every fallbacks list; keep its ready-to-use definition in a local reference snippet. Restoring a provider from an old config must check each agent's fallbacks for same-host engines, and a side agent's warning of this kind is verified against the invariant before it is overruled or accepted.",
+  "conditions": [
+    "fallback",
+    "invariant",
+    "lmstudio",
+    "mac",
+    "ollama",
+    "openclaw",
+    "overload"
+  ],
+  "evidence_ids": [
+    "2026-11-25T15:37:49.750197+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T15:37:49.750197+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T15:37:49.750197+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T15:37:49.871974+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator ruling 2026-11-25 after a side agent's warning during the OpenClaw staged restore; overrides the earlier choice to restore Mac LM Studio as a last-resort fallback.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T15:37:49.750197+00:00"
+      ],
+      "lessons_sha": "39523f4397d0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T15:37:49.871967+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator ruling 2026-11-25 after a side agent's warning during the OpenClaw staged restore; overrides the earlier choice to restore Mac LM Studio as a last-resort fallback.",
+  "supersedes": null
+}

@@ -992,6 +992,13 @@ ClinePass through the Cline launcher; Google by AI Studio API key (OpenClaw 2026
 login); the authenticated OpenAI Codex login; local Ollama as the generic default. The Google key already exists
 in the operator environment and is configured by reference. Plugins and Telegram are restored last.
 
+**Mac LM Studio (operator ruling, supersedes the earlier "last-resort fallback" choice):** a manual choice only,
+disabled and absent from the OpenClaw config and from every `fallbacks` list, because a fallback switches on its own
+exactly when Ollama is overloaded and would load a second large model on the same Mac, the closed overheat
+invariant. Windows LM Studio comes back from the discovery file, never from an old address. The W&B default uses the
+canonical `WANDB_API_KEY`, set as a by-reference alias of the PT launcher's `DEEPSEEK_V4_FLASH_WANDB` in the
+operator's env file (one source of truth, no second copy of the key).
+
 **Working rules:** commit only in durable canonical folders, base on the latest PR tip, no push until told.
 
 **Status:** confirmed by the operator. Implemented on local branches, not pushed: PT PR 521's branch (commits
