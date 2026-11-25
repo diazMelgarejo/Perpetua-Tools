@@ -94,6 +94,13 @@ GUARD_SYNC_CURSOR_RULES=(
   zero-banned-attribution-everywhere.mdc
 )
 
+# Drift-guard tests (mode 0644, installed under tests/). Each is byte-identical in every repo; a
+# test that guards text shared between repos (the verify-before-claiming conflict-scan block) skips
+# itself where its subject is absent, so syncing it never adds a failing test to a repo.
+GUARD_SYNC_TESTS=(
+  test_verify_before_claiming_conflict_scan.py
+)
+
 # Compatibility view for callers that address the legacy scripts/git-relative
 # manifest. New code must use GUARD_PARITY_ROOT_REQUIRED below.
 GUARD_PARITY_REQUIRED=(
@@ -116,6 +123,9 @@ for _guard_sync_rel in "${GUARD_SYNC_CURSOR_COMMANDS[@]}"; do
 done
 for _guard_sync_rel in "${GUARD_SYNC_CURSOR_RULES[@]}"; do
   GUARD_PARITY_ROOT_REQUIRED+=(".cursor/rules/${_guard_sync_rel}")
+done
+for _guard_sync_rel in "${GUARD_SYNC_TESTS[@]}"; do
+  GUARD_PARITY_ROOT_REQUIRED+=("tests/${_guard_sync_rel}")
 done
 unset _guard_sync_rel
 

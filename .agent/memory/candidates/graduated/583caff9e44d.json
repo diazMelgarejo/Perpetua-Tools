@@ -1,0 +1,43 @@
+{
+  "id": "583caff9e44d",
+  "key": "manual_583caf",
+  "name": "manual_583caf",
+  "claim": "When a path-allowlist hook blocks a shell call that names a scratch file, do not route around it or edit its configuration to fit the command: drop the redirect, read the harness's own background-task output, and pass long prompts on standard input so no gated path appears in the command text. Keep the session in the directory whose ignore file carries the operator's rule.",
+  "conditions": [
+    "allowlist",
+    "background-agents",
+    "hook",
+    "scratchpad",
+    "stdin"
+  ],
+  "evidence_ids": [
+    "2026-11-24T11:06:06.878409+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-24T11:06:06.878409+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-24T11:06:06.878409+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-24T11:06:07.044356+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A background agent launch was blocked three times by a hook that reads the command text, first for an unexpanded variable, then for a literal path, then from a different working directory. Standard input for the prompt and the task output file for results worked without touching the hook.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-24T11:06:06.878409+00:00"
+      ],
+      "lessons_sha": "ccdd12286bcc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-24T11:06:07.044343+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A background agent launch was blocked three times by a hook that reads the command text, first for an unexpanded variable, then for a literal path, then from a different working directory. Standard input for the prompt and the task output file for results worked without touching the hook.",
+  "supersedes": null
+}

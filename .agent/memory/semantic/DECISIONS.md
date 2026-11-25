@@ -913,3 +913,54 @@ cycle); the lesson wins (an edit to Wanda's soul card and a spend-gate wrapper f
 
 **Status:** decided by the operator. Orama states the scope in Wanda's soul card and in doc 76
 section 15. A new Cline caller must go through the shared spend gate.
+
+---
+
+## 2026-11-23: G11 correction, the Biafra Cline route is a designation and not a running route
+
+**Decision:** The 2026-11-23 ruling "G11, the W&B route is split by role" stands. One claim in its
+rationale and in `lesson_9bcf2ac7d3ce` is corrected: the Biafra live cycle does not launch Cline
+today. `live_cycle()` refuses with `launcher-output-bound-unsupported`, and the legacy path with
+`legacy-live-path-disabled` only when armed (when the gate and arm variables are unset,
+`run_program()` runs `dry_cycle()` with `called_launcher=False` instead), until the launcher can
+bound total output and request count. The
+Biafra seats are therefore designated to use Cline under the shared spend gate once that bound
+exists. Wanda keeps the OpenAI client, called directly by
+`bin/orama-system/skills/wanda-wandb/scripts/wanda_chat.py` in orama-system. That client stays
+outside the spend gate and is not an authorized unattended or paid path. Orama doc 76
+section 15 holds the canonical wording.
+
+**Rationale:** The original text was written from memory of earlier code and was not re-checked at
+the merged head. A test in orama now ties the doc wording to the launcher's refusal.
+
+**Alternatives considered:** editing the merged entry and lesson in place. Rejected: records on
+`main` are append-only, and the lesson tool never rewrites a lesson.
+
+**Status:** a correction of one factual claim; the operator's ruling is unchanged. The lesson is
+provisional until the launcher bound exists.
+
+---
+
+## 2026-11-23: LAN control-plane leaf validity of 60 days confirmed as current policy
+
+**Decision:** The operator confirmed the 60-day LAN control-plane leaf lifetime as current policy:
+renewal agreement v2 (2026-11-17), `LEAF_VALIDITY_DAYS = 60` in
+`orchestrator/lan_control_plane_pki.py`, a leaf reissued when under 7 days remain
+(`LEAF_MIN_REMAINING_DAYS`), and `not_after` capped at the CA's expiry. Until now it was only an
+assumption recorded in the domain-knowledge document
+`LAN_PEER_TLS_AUTH_CHAIN_AND_RENEWAL_V2_DOMAIN_KNOWLEDGE_2026-11-17.md` (section 8, policy
+lineage). It is the later decision in that lineage and does not invalidate the 2026-10-26 record,
+which described the earlier 30-day model and was correct for its date.
+
+**Rationale:** The 2026-11-15 to 11-17 outage showed the cost of the first model, and v2 replaced
+it. The trade-off is accepted: a stolen leaf key is usable for up to 60 days instead of 30, and
+`lan_control_plane_pki.py` has no CRL or OCSP path, so a compromised leaf that still chains to the
+pinned CA stays trusted until it expires. For a compromised leaf the answer is a two-sided CA
+migration (new CA and new pin on both peers), not reissue.
+
+**Alternatives considered:** revert to 30 days (set `LEAF_VALIDITY_DAYS` back to 30; the tests
+derive their numbers from it; existing leaves stay in service until under 7 days remain unless
+`leaf.key` and `leaf.pem` are removed, which forces reissue); leave it as an assumption (declined,
+since the operator has now ruled).
+
+**Status:** confirmed by the operator. No code change.

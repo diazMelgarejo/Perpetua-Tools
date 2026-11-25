@@ -1,0 +1,43 @@
+{
+  "id": "0243b49fd5d0",
+  "key": "manual_0243b4",
+  "name": "manual_0243b4",
+  "claim": "Verify the verifier before trusting a green result. A mutation test proves nothing unless the mutation demonstrably changed the guarded text, so assert the replacement count before reading the outcome; freeze the files while independent reviewers read them, because a review of a half-edited state reports false defects; and treat a read-only reviewer that cannot run tests as reading evidence only, so the author supplies the execution evidence.",
+  "conditions": [
+    "drift-guard",
+    "mutation-testing",
+    "read-only-review",
+    "reviewer-agents",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-11-24T10:48:20.023978+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-24T10:48:20.023978+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-24T10:48:20.023978+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-24T10:48:20.196084+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In the lockstep conflict-scan remediation, a first mutation check only appended a space that the hash normalization ignored and stayed green, two further mutations matched no text, and a Codex reviewer flagged a wrong pinned hash only because the block was edited after its review began. Reviewers in read-only sandboxes could not run pytest. Asserting the match count, freezing files during review, and running the tests as the author exposed all three.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-24T10:48:20.023978+00:00"
+      ],
+      "lessons_sha": "67c6e95bc9c5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-24T10:48:20.196075+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In the lockstep conflict-scan remediation, a first mutation check only appended a space that the hash normalization ignored and stayed green, two further mutations matched no text, and a Codex reviewer flagged a wrong pinned hash only because the block was edited after its review began. Reviewers in read-only sandboxes could not run pytest. Asserting the match count, freezing files during review, and running the tests as the author exposed all three.",
+  "supersedes": null
+}

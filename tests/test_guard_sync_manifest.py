@@ -115,8 +115,19 @@ def test_parity_required_expands_in_bash() -> None:
         *(f"scripts/cursor/{rel}" for rel in _bash_array("GUARD_SYNC_CURSOR_EXECUTABLES")),
         *(f".cursor/commands/{rel}" for rel in _bash_array("GUARD_SYNC_CURSOR_COMMANDS")),
         *(f".cursor/rules/{rel}" for rel in _bash_array("GUARD_SYNC_CURSOR_RULES")),
+        *(f"tests/{rel}" for rel in _bash_array("GUARD_SYNC_TESTS")),
     }
     assert parity == expected
+    assert _bash_array("GUARD_SYNC_TESTS"), "the drift-guard test must stay in the manifest"
+
+
+@pytest.mark.unit
+def test_synced_drift_guard_tests_are_plain_data_files() -> None:
+    """Synced drift-guard tests are not executable and exist in the canonical tree."""
+    for rel in _bash_array("GUARD_SYNC_TESTS"):
+        path = ROOT / "tests" / rel
+        assert path.is_file(), f"manifest lists tests/{rel} but it is missing"
+        assert not path.stat().st_mode & 0o111, f"tests/{rel} must stay mode 0644 like its synced copies"
 
 
 @pytest.mark.unit

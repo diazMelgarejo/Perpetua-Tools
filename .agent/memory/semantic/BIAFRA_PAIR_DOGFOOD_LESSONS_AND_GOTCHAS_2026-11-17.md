@@ -84,3 +84,11 @@ Operator decisions: whether Wanda's soul card or the W&B Cline launcher governs 
 stall window default (3); where the evaluator digest is pinned at run start; the persona
 elaboration for Biafra; applying the home `node_modules` restore. Pushes of both branches wait for
 the operator.
+
+## Later status (2026-11-23, append-only)
+
+Two of the operator decisions listed under "Open items" were made on 2026-11-23. G11: the W&B route
+is split by role; Wanda keeps the OpenAI client and the Biafra seats are designated to use Cline
+under the shared spend gate once the launcher can bound total output and request count. G6: the
+persona is accepted as written. See the `DECISIONS.md` entries of that date. The other items listed
+there are unchanged.

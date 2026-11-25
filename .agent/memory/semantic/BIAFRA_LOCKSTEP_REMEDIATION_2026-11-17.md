@@ -180,3 +180,10 @@ settlement-failure regression and the paired Orama adapter/live-cycle regression
 exercise the retained-liability path; actual provider billing remains external
 evidence. This append supersedes item 12's accounting claim without rewriting
 the historical record or claiming the complete private authority exists.
+
+## Later status (2026-11-23, append-only)
+
+`lesson_371473e17ad0` was retracted as redundant on 2026-11-23; its `supersedes` field was null, not
+one id. `lesson_d4ac6209ce38` names it as the same correction in shorter form and covers every
+point. The G6 and G11 items listed above as open were ruled on by the operator on 2026-11-23; see
+the `DECISIONS.md` entries of that date.

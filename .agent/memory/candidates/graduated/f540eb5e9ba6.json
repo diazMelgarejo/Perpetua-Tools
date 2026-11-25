@@ -1,0 +1,42 @@
+{
+  "id": "f540eb5e9ba6",
+  "key": "manual_f540eb",
+  "name": "manual_f540eb",
+  "claim": "A path-allowlist hook that resolves its project root from the shell working directory reads only that directory rules, with patterns relative to it: test a candidate rule against the plugin own matcher before writing it, put the rule in every directory you work from, and when a command is blocked report it instead of reshaping the command. Operator-approved exceptions go in the allowlist file.",
+  "conditions": [
+    "allowlist",
+    "hook",
+    "relative-patterns",
+    "working-directory"
+  ],
+  "evidence_ids": [
+    "2026-11-25T01:52:48.979533+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T01:52:48.979533+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T01:52:48.979533+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T01:52:49.150863+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Scratchpad and backup-folder rules written with a leading slash never matched, and the same rule worked or failed depending on the directory the previous command left the shell in. Testing patterns against the matcher showed that a negation of the single folder was enough and that a baseline pattern, not the rule, blocked scratchpad logs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T01:52:48.979533+00:00"
+      ],
+      "lessons_sha": "476fcafd1f94"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T01:52:49.150846+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Scratchpad and backup-folder rules written with a leading slash never matched, and the same rule worked or failed depending on the directory the previous command left the shell in. Testing patterns against the matcher showed that a negation of the single folder was enough and that a baseline pattern, not the rule, blocked scratchpad logs.",
+  "supersedes": null
+}
