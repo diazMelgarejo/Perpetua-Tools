@@ -999,6 +999,12 @@ invariant. Windows LM Studio comes back from the discovery file, never from an o
 canonical `WANDB_API_KEY`, set as a by-reference alias of the PT launcher's `DEEPSEEK_V4_FLASH_WANDB` in the
 operator's env file (one source of truth, no second copy of the key).
 
+**Fallback order for the restored OpenClaw models (operator ruling 2026-11-25, subject to change):** W&B
+DeepSeek-V4.1-Flash-1017 at high; Google `gemini-3.8-flash` at medium (key by reference); the authenticated OpenAI
+Codex login; local Ollama; **OpenRouter free (`openrouter/free`) second to last**; Mac LM Studio last but disabled,
+meaning manual only and in no chain. The last active fallback is therefore OpenRouter free. ClinePass runs through the
+Cline launcher, not an OpenClaw chain. No chain pairs Ollama with a Mac LM Studio model.
+
 **Working rules:** commit only in durable canonical folders, base on the latest PR tip, no push until told.
 
 **Status:** confirmed by the operator. Implemented on local branches, not pushed: PT PR 521's branch (commits
