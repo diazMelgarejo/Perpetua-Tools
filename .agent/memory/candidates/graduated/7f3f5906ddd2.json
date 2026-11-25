@@ -1,0 +1,44 @@
+{
+  "id": "7f3f5906ddd2",
+  "key": "manual_7f3f59",
+  "name": "manual_7f3f59",
+  "claim": "Decision (operator-approved 2026-11-25): the OpenClaw gateway launch agent must never name a node version. A stable link (~/.local/share/openclaw-node) points at the single nvm node that satisfies the engines range (>=24.22.1 <25 or >=26.12.1) and carries the global openclaw version that AlphaClaw pins; the plist's ProgramArguments use the link. One owner, perpetua_tools.openclaw_runtime, with --check (read-only, exit 1 on drift) and --apply (repoint, rewrite, reload only on change). Rejected: reinstalling the service after every Node change (the step that gets forgotten), a second dedicated node (breaks the one-24.x rule and doubles patching), and an auto-repointing watcher (it could move the gateway onto a half-migrated node, so the watcher alerts only).",
+  "conditions": [
+    "decision",
+    "gateway",
+    "launchd",
+    "node",
+    "openclaw",
+    "stable-link"
+  ],
+  "evidence_ids": [
+    "2026-11-25T15:16:28.947463+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T15:16:28.947463+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T15:16:28.947463+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T15:16:29.082607+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A plist that stored the exact nvm version folder left a KeepAlive service crash-looping when that node was removed; the new service file carried the version twice (node binary and openclaw entry).",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T15:16:28.947463+00:00"
+      ],
+      "lessons_sha": "2671e2ad1f3f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T15:16:29.082599+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A plist that stored the exact nvm version folder left a KeepAlive service crash-looping when that node was removed; the new service file carried the version twice (node binary and openclaw entry).",
+  "supersedes": null
+}

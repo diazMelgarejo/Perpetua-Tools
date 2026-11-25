@@ -1,0 +1,44 @@
+{
+  "id": "3abcefa00700",
+  "key": "manual_3abcef",
+  "name": "manual_3abcef",
+  "claim": "Working rules the operator set on 2026-11-25 for this kind of multi-repo night: commit only in durable canonical folders (the repo checkouts and worktrees under the code directories), never in <local-tmp-dir> or a TMPDIR, because those are cleared on reboot; base new work on the latest open PR tip after fetching; and do not push until told, so commits stay local and the one push per repo comes last. Codex helper worktrees under <local-tmp-dir> are theirs; take their commits by fast-forwarding a durable branch to the ref, never by working in the temporary folder.",
+  "conditions": [
+    "base",
+    "commit",
+    "durable",
+    "no-push",
+    "tmp",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-25T15:16:29.568018+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T15:16:29.568018+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T15:16:29.568018+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T15:16:29.684082+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator instruction during the AlphaClaw/OpenClaw update; the reboot that night cleared scratch folders.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T15:16:29.568018+00:00"
+      ],
+      "lessons_sha": "93315074bbdc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T15:16:29.684074+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator instruction during the AlphaClaw/OpenClaw update; the reboot that night cleared scratch folders.",
+  "supersedes": null
+}

@@ -1,0 +1,44 @@
+{
+  "id": "f5a5b47c0e6c",
+  "key": "manual_f5a5b4",
+  "name": "manual_f5a5b4",
+  "claim": "launchd bootout is asynchronous, so a reload must wait for the port to be released, check bootstrap's return code and retry it, and trust a readiness probe only after the old service has gone. On 2026-11-25 the first live apply ran bootstrap while the old process was still being torn down, the return code was ignored, and a probe that hit the dying service passed, which hid an unloaded gateway until a later status check said stopped. Fixed test-first with a fake launchd that fails bootstrap on the first calls and records ordering; the live gateway was recovered by a manual bootstrap.",
+  "conditions": [
+    "bootout",
+    "bootstrap",
+    "launchd",
+    "probe",
+    "race",
+    "regression"
+  ],
+  "evidence_ids": [
+    "2026-11-25T15:16:29.164206+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T15:16:29.164206+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T15:16:29.164206+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T15:16:29.281726+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found by verifying with openclaw gateway status after the apply instead of trusting the module's own success message.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T15:16:29.164206+00:00"
+      ],
+      "lessons_sha": "1667d1640bfd"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T15:16:29.281717+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found by verifying with openclaw gateway status after the apply instead of trusting the module's own success message.",
+  "supersedes": null
+}
