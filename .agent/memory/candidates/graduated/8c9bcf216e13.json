@@ -1,0 +1,47 @@
+{
+  "id": "8c9bcf216e13",
+  "key": "manual_8c9bcf",
+  "name": "manual_8c9bcf",
+  "claim": "OpenAI models for unattended agent work default to Terra only; Astra and Sol (including GPT-6.2 Sol) and the separate Biafra and AutoResearcher seats are human-gated: they need explicit operator approval, are never spawned by default, and are allowed outside planning mode only with that approval.",
+  "conditions": [
+    "astra",
+    "autoresearcher",
+    "biafra",
+    "env",
+    "gateway",
+    "hitl",
+    "openai",
+    "sol",
+    "terra"
+  ],
+  "evidence_ids": [
+    "2026-11-25T23:04:48.135768+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T23:04:48.135768+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T23:04:48.135768+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T23:04:48.314064+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator ruling 2026-11-26. Sol entitlement is wanted but only as a human-gated decision; automated Codex jobs run Terra. The gateway shell-env import also exposes the OpenAI API key, so every agent must carry an explicit W&B default and the key must not be spendable by an agent without a model.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T23:04:48.135768+00:00"
+      ],
+      "lessons_sha": "e061a1eb13e2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T23:04:48.314050+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator ruling 2026-11-26. Sol entitlement is wanted but only as a human-gated decision; automated Codex jobs run Terra. The gateway shell-env import also exposes the OpenAI API key, so every agent must carry an explicit W&B default and the key must not be spendable by an agent without a model.",
+  "supersedes": null
+}
