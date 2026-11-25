@@ -966,6 +966,30 @@ def _ensure_autoresearch() -> None:
     except subprocess.CalledProcessError as e:
         print(f"[alphaclaw] ✗ autoresearch setup failed (non-fatal): {e}")
 
+
+def _check_runtime_link() -> None:
+    """
+    Warn when the macOS gateway launch agent names a node version instead of the stable runtime link.
+
+    Read-only and non-fatal by design: it never changes the service and never blocks a start. The fix is a
+    separate, explicit step: `python -m perpetua_tools.openclaw_runtime --apply`. Silent off macOS, where no
+    launch agent exists.
+    """
+    if sys.platform != "darwin":
+        return
+    try:
+        from perpetua_tools import openclaw_runtime
+        findings = openclaw_runtime.inspect(openclaw_runtime.Paths.under(Path.home()))
+    except Exception as exc:  # a diagnostic must never break the bootstrap
+        print(f"[alphaclaw] ⚠ runtime link check skipped (non-fatal): {exc}")
+        return
+    if not findings:
+        print("[alphaclaw] ✓ gateway service uses the stable node link")
+        return
+    for finding in findings:
+        print(f"[alphaclaw] ⚠ runtime {finding.code}: {finding.message}")
+    print("[alphaclaw] → fix: python -m perpetua_tools.openclaw_runtime --apply")
+
 # ── first-run credentials ─────────────────────────────────────────────────────
 
 _DEFAULT_SETUP_PASSWORD = "alpha1claw"
@@ -1251,6 +1275,9 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
 
     # Step 7: autoresearch
     _ensure_autoresearch()
+
+    # Step 8: the gateway service must not name a node version (read-only check, never blocks the start)
+    _check_runtime_link()
     return asdict(
         AlphaClawBootstrapResult(
             ok=ready,
