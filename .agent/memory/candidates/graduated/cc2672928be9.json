@@ -1,0 +1,39 @@
+{
+  "id": "cc2672928be9",
+  "key": "manual_cc2672",
+  "name": "manual_cc2672",
+  "claim": "Verify a tool deny list with a live turn, not config alone: denying exec removed it for one OpenClaw seat, while the identical seat on the same harness still reported an exec tool that could not run commands; treat the Codex native surface as separate and test each seat.",
+  "conditions": [
+    "openclaw tools deny exec codex seat verify"
+  ],
+  "evidence_ids": [
+    "2026-11-26T00:38:15.710572+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T00:38:15.710572+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T00:38:15.710572+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T00:38:15.872489+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 live test of biafra and autoresearcher after denying exec, process, browser, canvas, nodes, cron and gateway.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T00:38:15.710572+00:00"
+      ],
+      "lessons_sha": "79b850f649f7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T00:38:15.872471+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 live test of biafra and autoresearcher after denying exec, process, browser, canvas, nodes, cron and gateway.",
+  "supersedes": null
+}

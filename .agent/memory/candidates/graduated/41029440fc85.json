@@ -1,0 +1,39 @@
+{
+  "id": "41029440fc85",
+  "key": "manual_410294",
+  "name": "manual_410294",
+  "claim": "Moving the OpenClaw state folder aside strands launchd scripts that live inside it; after any clean-state cutover list launch agents whose program paths sit under the state folder and restore those non-secret wrapper scripts, or the discovery file never reappears.",
+  "conditions": [
+    "openclaw launchd state watcher discovery cutover"
+  ],
+  "evidence_ids": [
+    "2026-11-26T00:38:15.161435+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T00:38:15.161435+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T00:38:15.161435+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T00:38:15.321793+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26: the network-watch and coord-pulse agents pointed at wrapper scripts left in the aside folder, coord-pulse exited 127, and the discovery file stayed missing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T00:38:15.161435+00:00"
+      ],
+      "lessons_sha": "8016622c8b5e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T00:38:15.321783+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26: the network-watch and coord-pulse agents pointed at wrapper scripts left in the aside folder, coord-pulse exited 127, and the discovery file stayed missing.",
+  "supersedes": null
+}
