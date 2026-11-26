@@ -207,6 +207,29 @@ credential handling and the backup and recovery process are one card in orama-sy
 `bin/orama-system/references/openclaw-staged-restore-and-recovery.md`. The dated record is
 `.agent/memory/semantic/SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RESTORE.md`.
 
+### OpenClaw defaults: one source of truth (2026-11-27)
+
+The model chain, the two research seats, the seat tool policy, the env rules and the baseline live in
+`config/openclaw-defaults.json`: names only, never a key value. `perpetua_tools.openclaw_defaults`
+loads and
+validates it (no Mac LM Studio in any chain, W&B in every chain, Astra and Sol human-gated, no secret-looking
+value), renders the config patches the staged restore applies, and reports drift read-only.
+
+```bash
+python -m perpetua_tools.openclaw_defaults --validate
+python -m perpetua_tools.openclaw_defaults --render-patch --shape entries  # emits only
+python -m perpetua_tools.openclaw_defaults --check ~/.openclaw/openclaw.json
+python -m perpetua_tools.openclaw_defaults --vendor-copy                   # prints only
+```
+
+Consumers in other repositories read the live file first, then a **stamped vendored copy**. The
+stamp holds the
+source fingerprint, the source date and the copy date. A copy that differs from the live file, is
+older than
+30 days while the live file is unreachable, or was edited by hand is reported loudly at start-up. A
+sync never
+runs by itself: it shows the diff and waits for a human to confirm.
+
 ### Restore in baby steps (after step 5)
 
 Check the gateway after each stage: 1 core config; 2 agents and workspace; 3 the W&B default; 4
