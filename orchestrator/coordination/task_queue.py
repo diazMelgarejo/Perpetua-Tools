@@ -592,7 +592,27 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     print(f"claimed: {task_id} by {agent_id}")
 
 
-async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
+async def get_task_claim(
+    bus: GossipBus, task_id: str
+) -> Optional[tuple[str, float]]:
+    """Return (agent_id, claimed_at) for an open claim in task_claims, or None."""
+    async with bus.connect() as db:
+        await db.execute(_CREATE_CLAIMS_TABLE)
+        cursor = await db.execute(
+            "SELECT agent_id, claimed_at FROM task_claims WHERE task_id = ?",
+            (task_id,),
+        )
+        return await cursor.fetchone()
+
+
+async def queue_complete(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    notes: str,
+    *,
+    expected_claimed_at: Optional[float] = None,
+) -> bool | None:
     """Complete a still-owned task without synthesizing another agent's presence."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
@@ -619,6 +639,7 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
     # otherwise free the row with no event explaining why, or record the
     # event while the row stays held (blocking every future claim on this
     # task_id with a stale "already claimed" row forever).
+    # expected_claimed_at guards against same-agent-name reclaims (L-1r).
     result = await release_claim_with_event(
         bus,
         task_id,
@@ -631,6 +652,7 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
             "notes": notes,
         },
         expected_agent_id=agent_id,
+        expected_claimed_at=expected_claimed_at,
     )
     if result == ReleaseResult.LOST_RACE:
         return _error(
@@ -651,7 +673,14 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
     print(f"completed: {task_id}")
 
 
-async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
+async def queue_fail(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    notes: str,
+    *,
+    expected_claimed_at: Optional[float] = None,
+) -> bool | None:
     """Release or abandon a failed owned task and record its actor's activity."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
@@ -679,6 +708,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
         # QUEUED and queue_claim's atomic gate would otherwise reject every
         # future claim attempt with a stale "already claimed" row forever.
         # Release + event committed together, same reasoning as queue_complete.
+        # expected_claimed_at guards against same-agent-name reclaims (L-1r).
         result = await release_claim_with_event(
             bus,
             task_id,
@@ -694,6 +724,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
                 "notes": f"Retry {retry_count}/{max_retries}: {notes}",
             },
             expected_agent_id=agent_id,
+            expected_claimed_at=expected_claimed_at,
         )
         if result == ReleaseResult.LOST_RACE:
             return _error(
@@ -727,6 +758,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             "notes": f"Abandoned after {max_retries} retries: {notes}",
         },
         expected_agent_id=agent_id,
+        expected_claimed_at=expected_claimed_at,
     )
     if result == ReleaseResult.LOST_RACE:
         return _error(
