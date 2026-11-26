@@ -1,0 +1,46 @@
+{
+  "id": "8100266e8176",
+  "key": "manual_810026",
+  "name": "manual_810026",
+  "claim": "For W&B DeepSeek, summon Cline with launch_cline_wandb.py only under the shared spend gate: the launcher enforces max_requests and max_total_output fail-closed via process guard and stream accounting, making the route bounded-capable with BOUND_CONTRACT verified. The tokenSource manual and millisecond UTC updatedAt rules remain required for Cline 3.0.74+. ClinePass DeepSeek stays on its own wrapper and must not be sent through that launcher. Wanda keeps the direct OpenAI client outside the spend gate with a soul card that forbids the Cline CLI for her route.",
+  "conditions": [
+    "biafra",
+    "cline",
+    "clinepass",
+    "deepseek",
+    "launcher",
+    "spend-gate",
+    "tokensource",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-26T21:42:58.071892+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T21:42:58.071892+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T21:42:58.071892+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T21:43:02.381546+00:00",
+      "action": "graduated",
+      "reviewer": "Claude",
+      "notes": "Supersedes lesson_b9279f3676a9. Launcher-side boundary enforcement is verifiably active, allowing the spend-gated Cline route to operate bounded-capable rather than refusing as unverified.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T21:42:58.071892+00:00"
+      ],
+      "lessons_sha": "7a6d0054680d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T21:43:02.381533+00:00",
+  "reviewer": "Claude",
+  "rationale": "Supersedes lesson_b9279f3676a9. Launcher-side boundary enforcement is verifiably active, allowing the spend-gated Cline route to operate bounded-capable rather than refusing as unverified.",
+  "supersedes": "lesson_b9279f3676a9"
+}

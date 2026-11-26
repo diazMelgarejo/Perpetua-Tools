@@ -1131,3 +1131,15 @@ earlier the same day); editing the old row (forbidden, memory is append-only); l
 (recall can return the instruction without its gate).
 
 **Status:** done on this pull request.
+
+---
+
+## 2026-11-27: Phase 1B BOUND_CONTRACT closure — launcher-side enforcement and bounded-capable qualification
+
+**Decision:** Close the Phase 1B boundary gate by implementing launcher-side boundary enforcement in `launch_cline_wandb.py` via `run_guarded_cline`: a stream byte/token accountant and request monitor supervise child process execution and terminate fail-closed when either `max_requests` or `max_total_output` is reached. Offline harness tests in `tests/test_launch_cline_wandb.py` prove termination and fail-closed exit codes for both limits. `BOUND_CONTRACT` is flipped to `{"max_requests": True, "max_total_output": True}`, and `_launcher_boundary_problem()` lifts to `None` for valid positive bounds, transitioning the Biafra Cline route from designated to bounded-capable. Invalid, missing, or non-positive bounds continue to refuse fail-closed with `invalid-launcher-bounds`. Wanda's direct OpenAI client route and soul card forbidding Cline CLI remain intact and outside the spend gate. Legacy `run_program` remains fail-closed (`legacy-live-path-disabled`), and no live cycle is armed.
+
+**Rationale:** The installed Cline CLI 3.0.76 lacks native request-count and output-token CLI enforcement. Relying on CLI flags or client-side trust would risk unbounded provider spend. Implementing boundary enforcement directly in the launcher guarantees fail-closed termination at the process boundary, fulfilling doc 76 §15.1 and handoff §9.1 without arming live execution or violating Wanda's boundaries. Accepted superseding lessons (`lesson_f6de5491aae4` superseding `lesson_957217e78f07`, `lesson_8100266e8176` superseding `lesson_b9279f3676a9`, and `lesson_252848a6a160` superseding `lesson_80f7b1d8d9a3`) preserve structured recall.
+
+**Alternatives considered:** Wait for upstream Cline CLI boundary flags (rejected — indefinite blocker); loopback HTTP MITM proxy (rejected — complex TLS interception with questionable certificate trust and failure modes); client-side trust (rejected — violates fail-closed doctrine).
+
+**Status:** active on branch `2026-11-27-001-lane2-bound-contract-pt`.
