@@ -1,0 +1,39 @@
+{
+  "id": "1c3b31a4c0f6",
+  "key": "manual_1c3b31",
+  "name": "manual_1c3b31",
+  "claim": "git cherry marks squash-merged and rewritten-history commits as unmerged, so a long unmerged count proves nothing; compare trees instead: a branch whose merged tree equals the base adds nothing, and an older branch is only stale after a tree-level diff.",
+  "conditions": [
+    "git cherry squash tree diff unmerged stale branches"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:43.349022+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:43.349022+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:43.349022+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:43.509164+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 sweep: worktrees reported 367, 48 and 19 unmerged commits after squash merges and a main rewrite, while PR 522 merged with main to a tree identical to main.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:43.349022+00:00"
+      ],
+      "lessons_sha": "761f9332cd30"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:43.509148+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 sweep: worktrees reported 367, 48 and 19 unmerged commits after squash merges and a main rewrite, while PR 522 merged with main to a tree identical to main.",
+  "supersedes": null
+}

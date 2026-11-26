@@ -1,0 +1,39 @@
+{
+  "id": "206cac6d4709",
+  "key": "manual_206cac",
+  "name": "manual_206cac",
+  "claim": "Supersedes lesson_f7c14a35b92b: the peer outbox flush is the flush-outbox subcommand of lan_peer_assign.py, owned by the orama-system repository at bin/orama-system/skills/hermes-harness/scripts/lan_peer_assign.py with its tests in tests/test_lan_peer_assign.py. This checkout does not contain them: a Perpetua-Tools-only checkout needs the orama-system checkout available through ORAMA_SYSTEM_PATH before it can run the flush.",
+  "conditions": [
+    "flush-outbox lan_peer_assign orama_system_path outbox"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:23.284048+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:23.284048+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:23.284048+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:43.026217+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit review 6067283145: external owner, script path and ORAMA_SYSTEM_PATH requirement for the flush lesson.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:23.284048+00:00"
+      ],
+      "lessons_sha": "2ae4f089a8a8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:43.026204+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit review 6067283145: external owner, script path and ORAMA_SYSTEM_PATH requirement for the flush lesson.",
+  "supersedes": "lesson_f7c14a35b92b"
+}

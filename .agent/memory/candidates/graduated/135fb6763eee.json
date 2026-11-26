@@ -1,0 +1,39 @@
+{
+  "id": "135fb6763eee",
+  "key": "manual_135fb6",
+  "name": "manual_135fb6",
+  "claim": "Chain every step of a worktree or branch operation with and-and and run git with an explicit absolute directory: a failed worktree add followed by a failed cd let a merge run in the main checkout, and only an immediate abort and a clean-status check undid it.",
+  "conditions": [
+    "git worktree cd chain merge abort absolute"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:43.104264+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:43.104264+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:43.104264+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:43.264097+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 incident: git worktree add failed because the branch existed, cd into the missing path failed, and git merge ran in the primary checkout; it had no conflicts and was aborted at once, leaving the checkout at its original head.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:43.104264+00:00"
+      ],
+      "lessons_sha": "a0e8414553a1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:43.264084+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 incident: git worktree add failed because the branch existed, cd into the missing path failed, and git merge ran in the primary checkout; it had no conflicts and was aborted at once, leaving the checkout at its original head.",
+  "supersedes": null
+}

@@ -1,0 +1,45 @@
+{
+  "id": "bef6119db0da",
+  "key": "manual_bef611",
+  "name": "manual_bef611",
+  "claim": "PR frugality: open one consolidated PR per repository per session, stack a draft on an existing open PR only when the work truly depends on it, and never open a PR per fix, per finding or per agent; before opening or keeping any PR compare its merged tree with the base, because a PR whose tree equals main adds nothing and is closed in favour of the consolidated one; consolidate only recent still-relevant commits from every agent and park stale review lanes and never-merge branches, naming them on the board.",
+  "conditions": [
+    "consolidation",
+    "draft",
+    "duplicate",
+    "frugality",
+    "pr",
+    "stacked",
+    "tree"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:22.839800+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:22.839800+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:22.839800+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:23.005638+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator ruling 2026-11-26: frugality and efficiency on top of consolidation. PR 522 duplicated records already in main through 517, so its merged tree equalled main; the corrections went into the consolidated draft instead of a new PR, and sweeping 367-commit stale lanes would have produced an unreviewable PR.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:22.839800+00:00"
+      ],
+      "lessons_sha": "dbd20dfe5da8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:23.005621+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator ruling 2026-11-26: frugality and efficiency on top of consolidation. PR 522 duplicated records already in main through 517, so its merged tree equalled main; the corrections went into the consolidated draft instead of a new PR, and sweeping 367-commit stale lanes would have produced an unreviewable PR.",
+  "supersedes": null
+}
