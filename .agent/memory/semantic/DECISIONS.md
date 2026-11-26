@@ -1098,3 +1098,36 @@ Verified with `recall.py --quiet`: the new lesson is returned first, the retired
 
 **Status:** done on this pull request. For any later correction of a lesson that must stay recallable,
 end the chain with an accepted superseding lesson.
+
+---
+
+## 2026-11-26: lesson_8d873e4e2f73 is retired by a qualified replacement, so recall cannot return it ungated
+
+**Decision:** `lesson_b9279f3676a9` (accepted, supersedes `lesson_8d873e4e2f73`) replaces the
+unqualified launcher lesson. It keeps that lesson's `tokenSource` and `updatedAt` rule, the ClinePass
+DeepSeek boundary and the identical-prompt probe observation (Cline answered four tasks and was
+faster; Wanda matched the format on three and cut one function off, as one observation). It adds that
+launching Cline with `launch_cline_wandb.py` is only authorized under the shared spend gate, that the
+Biafra route is designated and fail-closed today (`live_cycle()` refuses with
+`launcher-output-bound-unsupported`), and that Wanda keeps the direct OpenAI client outside the gate
+with a soul card that forbids the Cline CLI for her route.
+
+**Rationale:** `lesson_8d873e4e2f73` told readers to summon Cline with the launcher and had no
+spend-gate condition, and the launcher has no gate of its own (`biafra_cycle.py` is what wraps it with
+the guard). `recall.py` scores lessons separately, and three narrow queries (the `tokenSource` rule,
+the ClinePass boundary, a plain W&B DeepSeek Cline launch) returned it first and without
+`lesson_957217e78f07`. After the replacement, the same queries return the qualified lesson first and
+the old row renders struck through.
+
+**Relation to the 2026-11-23 ruling:** that ruling said `lesson_8d873e4e2f73` stays valid and is not
+superseded, meaning neither it nor Wanda's soul card is invalidated by the other. This entry keeps that
+intent: no guidance is lost and neither record is declared wrong. Only the instruction's missing
+condition is added, in a replacement row, because an unqualified instruction can be recalled alone.
+Earlier rows, including this lesson's, are preserved. Orama doc 76 and `lesson_957217e78f07` still
+name the old id; the guidance behind that id is carried unchanged by the replacement.
+
+**Alternatives considered:** a provisional correction (hides the lesson from recall, the failure found
+earlier the same day); editing the old row (forbidden, memory is append-only); leaving it as it was
+(recall can return the instruction without its gate).
+
+**Status:** done on this pull request.
