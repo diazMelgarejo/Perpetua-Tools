@@ -1,0 +1,39 @@
+{
+  "id": "22f546516a82",
+  "key": "manual_22f546",
+  "name": "manual_22f546",
+  "claim": "Fold another agent's already-pushed branch that has no PR into the consolidated PR only after four checks: its own changes by three-dot diff, that the files are really absent from main, a clean trial merge, and the tests; replay the commits onto the consolidated branch and leave the old branch alone.",
+  "conditions": [
+    "consolidate other agent branch no pr trial merge three-dot replay"
+  ],
+  "evidence_ids": [
+    "2026-11-26T02:11:23.109982+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T02:11:23.109982+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T02:11:23.109982+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T02:11:23.268651+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26: a six-commit steipete branch pushed without a PR was new, merged cleanly in a trial merge and was replayed onto the consolidated orama draft after the checks.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T02:11:23.109982+00:00"
+      ],
+      "lessons_sha": "3c3613370759"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T02:11:23.268639+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26: a six-commit steipete branch pushed without a PR was new, merged cleanly in a trial merge and was replayed onto the consolidated orama draft after the checks.",
+  "supersedes": null
+}

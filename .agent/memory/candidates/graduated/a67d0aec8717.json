@@ -1,0 +1,39 @@
+{
+  "id": "a67d0aec8717",
+  "key": "manual_a67d0a",
+  "name": "manual_a67d0a",
+  "claim": "Before restoring old credential env files, test each key by HTTP status and compare by length and hash only; a stale key sourced after the working one silently shadows it, so strip dead lines, keep the originals, and never print values.",
+  "conditions": [
+    "env keys restore shadow credentials 401"
+  ],
+  "evidence_ids": [
+    "2026-11-26T00:38:14.894513+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T00:38:14.894513+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T00:38:14.894513+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T00:38:15.053320+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26: the old W&B, OpenRouter and Firecrawl keys returned 401 while the keys in the main env file returned 200; a masked diff script compares files without exposing values.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T00:38:14.894513+00:00"
+      ],
+      "lessons_sha": "41280c1b7d49"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T00:38:15.053309+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26: the old W&B, OpenRouter and Firecrawl keys returned 401 while the keys in the main env file returned 200; a masked diff script compares files without exposing values.",
+  "supersedes": null
+}

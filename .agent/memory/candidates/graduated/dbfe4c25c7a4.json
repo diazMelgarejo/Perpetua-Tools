@@ -1,0 +1,39 @@
+{
+  "id": "dbfe4c25c7a4",
+  "key": "manual_dbfe4c",
+  "name": "manual_dbfe4c",
+  "claim": "Retire an obsolete runtime in this order: repoint every reference to the stable link (shell profile, launch agents, tool links, system package links, MCP settings, wrapper scripts), verify each tool by version against the old copy, stop the processes still running from it, move the folder to the Trash, then let the operator empty it.",
+  "conditions": [
+    "node runtime retire repoint stable link trash processes"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:43.833890+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:43.833890+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:43.833890+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:43.990491+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 removal of node 24.14.1: references were found in six places, four processes were still running from it, and the freed 3.6 GB cleared a full disk.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:43.833890+00:00"
+      ],
+      "lessons_sha": "d124abe7b5ca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:43.990479+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 removal of node 24.14.1: references were found in six places, four processes were still running from it, and the freed 3.6 GB cleared a full disk.",
+  "supersedes": null
+}

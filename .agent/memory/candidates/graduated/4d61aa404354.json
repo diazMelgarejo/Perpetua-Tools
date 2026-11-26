@@ -1,0 +1,44 @@
+{
+  "id": "4d61aa404354",
+  "key": "manual_4d61aa",
+  "name": "manual_4d61aa",
+  "claim": "Enclose env file values that may contain a dollar sign in single quotes or escape the dollar sign with a backslash: double quotes or unquoted values still expand dollar characters in sourced shell files, silently emptying or mangling the key; and reference one working key by alias from another file instead of keeping a second copy of a dead key.",
+  "conditions": [
+    "alias",
+    "dollar",
+    "dotenv",
+    "env",
+    "quoting",
+    "shell"
+  ],
+  "evidence_ids": [
+    "2026-11-26T11:59:41.880893+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T11:59:41.880893+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T11:59:41.880893+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T11:59:49.749349+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit on PR 523: correct_lesson leaves corrections provisional by design; promote the single-quote/escape dollar-sign correction into an accepted superseding lesson so recall and LESSONS.md stay aligned.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T11:59:41.880893+00:00"
+      ],
+      "lessons_sha": "9e33fa7c0eb2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T11:59:49.749340+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit on PR 523: correct_lesson leaves corrections provisional by design; promote the single-quote/escape dollar-sign correction into an accepted superseding lesson so recall and LESSONS.md stay aligned.",
+  "supersedes": "lesson_afc087c07247"
+}

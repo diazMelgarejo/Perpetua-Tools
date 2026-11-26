@@ -1,0 +1,39 @@
+{
+  "id": "c9650f1a94a9",
+  "key": "manual_c9650f",
+  "name": "manual_c9650f",
+  "claim": "Keep generous free disk before OpenClaw plugin stages: a full disk made the codex plugin fail to load with no-space-left, the gateway restart slowly and warn about slow SQLite, and the seats lose their OAuth route; check free space first and free the agreed obsolete runtime.",
+  "conditions": [
+    "disk space enospc plugin codex gateway"
+  ],
+  "evidence_ids": [
+    "2026-11-26T00:38:15.434341+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T00:38:15.434341+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T00:38:15.434341+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T00:38:15.596114+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26: the data volume was at 100 percent with 3 GiB free; after removing the obsolete node version the plugin loaded and both seats answered on Terra via the codex harness with their saved login profile.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T00:38:15.434341+00:00"
+      ],
+      "lessons_sha": "d6a75ab33ece"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T00:38:15.596105+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26: the data volume was at 100 percent with 3 GiB free; after removing the obsolete node version the plugin loaded and both seats answered on Terra via the codex harness with their saved login profile.",
+  "supersedes": null
+}

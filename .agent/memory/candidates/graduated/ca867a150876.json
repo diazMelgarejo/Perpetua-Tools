@@ -1,0 +1,44 @@
+{
+  "id": "ca867a150876",
+  "key": "manual_ca867a",
+  "name": "manual_ca867a",
+  "claim": "Independent review of a bot-resolved thread needs the GitHub record, not hook output: GraphQL reviewThreads resolvedBy showed cursor[bot] resolved both orama 526 threads, yet the fix commit was the operator's, and it covered only the reported example. Fix the root cause once instead of per call site: extract command substitutions only where a shell would expand them (not single-quoted, not escaped), isolate each substitution's inner quoting, and state that it is a bounded lint, not a shell parser. In test design only the new false-positive regressions must fail before the patch; the controls must pass at both heads.",
+  "conditions": [
+    "graphql",
+    "mutation",
+    "resolved",
+    "review",
+    "root-cause",
+    "shell-gotchas"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:40.513116+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:40.513116+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:40.513116+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:40.674116+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "orama PR 526, 2026-11-25; codex-reviewer P1 and the Design V2 ledger.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:40.513116+00:00"
+      ],
+      "lessons_sha": "3774e455f9b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:40.674099+00:00",
+  "reviewer": "learn.py",
+  "rationale": "orama PR 526, 2026-11-25; codex-reviewer P1 and the Design V2 ledger.",
+  "supersedes": null
+}

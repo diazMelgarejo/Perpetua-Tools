@@ -1,0 +1,50 @@
+{
+  "id": "ca774be6ab39",
+  "key": "manual_ca774b",
+  "name": "manual_ca774b",
+  "claim": "Fixed-in replies on review threads can wake the Cursor autofix automation: on a closed PR its parallel passes mostly verified and declined to push, yet one pass re-created the deleted branch with duplicate lessons under the operator identity; do not post fixed-in replies on a closed PR, check for pending automation before closing the PR or deleting its branch, read the PR timeline before attributing a branch to another agent, and have the operator scope the automation to open PRs.",
+  "conditions": [
+    "autofix",
+    "automation",
+    "branch",
+    "close",
+    "closed-pr",
+    "cursor",
+    "delete",
+    "pending",
+    "recreate",
+    "reply",
+    "review",
+    "timeline"
+  ],
+  "evidence_ids": [
+    "2026-11-26T11:59:41.768570+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T11:59:41.768570+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T11:59:41.768570+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T11:59:49.295735+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit on PR 523: replies posted before closure still woke delayed automation that recreated a deleted branch; retain the closed-PR guidance and require a pending-automation check before close or branch delete.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T11:59:41.768570+00:00"
+      ],
+      "lessons_sha": "e7faef53e5ab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T11:59:49.295725+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit on PR 523: replies posted before closure still woke delayed automation that recreated a deleted branch; retain the closed-PR guidance and require a pending-automation check before close or branch delete.",
+  "supersedes": "lesson_5d6d3fac88ad"
+}

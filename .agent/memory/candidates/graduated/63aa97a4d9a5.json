@@ -1,0 +1,43 @@
+{
+  "id": "63aa97a4d9a5",
+  "key": "manual_63aa97",
+  "name": "manual_63aa97",
+  "claim": "Before planning a rollback to a 'last working baseline', check what actually runs the service. The OpenClaw gateway runs from the global npm openclaw under the nvm node, not from the copy nested in the AlphaClaw install dir; that nested copy is a stale orphan the orama resolver blacklists. On 2026-11-25 the baseline (openclaw 2026.7.1-beta.5) was the broken version itself, so a rollback would have fixed nothing and replacing the AlphaClaw copy alone would not have changed the gateway.",
+  "conditions": [
+    "alphaclaw",
+    "baseline",
+    "nvm",
+    "openclaw",
+    "rollback"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:39.142233+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:39.142233+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:39.142233+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:39.310150+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Found via launchctl print, the plist ProgramArguments and resolve-openclaw.sh.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:39.142233+00:00"
+      ],
+      "lessons_sha": "d00b02201dfc"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:39.310137+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Found via launchctl print, the plist ProgramArguments and resolve-openclaw.sh.",
+  "supersedes": null
+}

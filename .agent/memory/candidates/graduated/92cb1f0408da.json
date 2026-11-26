@@ -1,0 +1,45 @@
+{
+  "id": "92cb1f0408da",
+  "key": "manual_92cb1f",
+  "name": "manual_92cb1f",
+  "claim": "Operator provider order for the restored OpenClaw (2026-11-25, dated ruling, subject to change): default W&B DeepSeek-V4.1-Flash-1017 at high (V4.1 rejects medium); fallbacks ClinePass through the Cline launcher (not an OpenClaw provider; paid cycles still refuse until output can be bounded), then Google by AI Studio API key at medium, then the authenticated OpenAI Codex login; local Ollama qwen3.5:9b-mlx stays the generic spawned agent when no provider is requested. Plugins (codex, parallel, perplexity, brave) are reinstalled last, one at a time, and Telegram is restored last.",
+  "conditions": [
+    "clinepass",
+    "codex",
+    "google",
+    "ollama",
+    "order",
+    "providers",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:40.234207+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:40.234207+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:40.234207+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:40.400599+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator answers to the provider questions on 2026-11-25; extends the effort rule and the two-tier model policy.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:40.234207+00:00"
+      ],
+      "lessons_sha": "70184a1ceebf"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:40.400584+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator answers to the provider questions on 2026-11-25; extends the effort rule and the two-tier model policy.",
+  "supersedes": null
+}

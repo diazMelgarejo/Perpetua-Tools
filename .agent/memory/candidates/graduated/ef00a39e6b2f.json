@@ -1,0 +1,39 @@
+{
+  "id": "ef00a39e6b2f",
+  "key": "manual_ef00a3",
+  "name": "manual_ef00a3",
+  "claim": "Pin every third-party repository a script clones or updates to one reviewed commit id: clone with no checkout, check out the pin, never follow the upstream tip or fast-forward pull, take a deliberate override for a bump, and test it offline with a local fake upstream that has a newer commit.",
+  "conditions": [
+    "pin third-party clone install commit sha supply-chain no-checkout"
+  ],
+  "evidence_ids": [
+    "2026-11-26T02:11:22.599439+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T02:11:22.599439+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T02:11:22.599439+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T02:11:22.770519+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26: an opt-in installer cloned a third-party repo unpinned and followed its tip; it now pins the upstream main commit of that day and five offline tests prove the clone lands on the pin, keeps it on re-runs and leaves no unpinned files if the pin is missing.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T02:11:22.599439+00:00"
+      ],
+      "lessons_sha": "cb90d6a7c66d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T02:11:22.770505+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26: an opt-in installer cloned a third-party repo unpinned and followed its tip; it now pins the upstream main commit of that day and five offline tests prove the clone lands on the pin, keeps it on re-runs and leaves no unpinned files if the pin is missing.",
+  "supersedes": null
+}

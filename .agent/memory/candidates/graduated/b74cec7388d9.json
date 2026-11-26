@@ -1,0 +1,43 @@
+{
+  "id": "b74cec7388d9",
+  "key": "manual_b74cec",
+  "name": "manual_b74cec",
+  "claim": "Scope the backup to what matters and never rm -rf: of a 3.7 GB ~/.alphaclaw only about 5 MB is real config; the rest is regenerable (plugin-runtime-deps 1.2 GB of old openclaw runtimes, the npm cache 878 MB, lib/node_modules 502 MB, node_modules 972 MB). Keep the full checksummed archive until the update succeeds, add a slim archive that excludes those folders (19 MB), and move obsolete runtimes to the Trash instead of deleting them. A .ckignore exception is added per exact file by the operator (the single gateway log), and a variable assignment such as L=path is parsed by the hook as the path, so use the literal approved path.",
+  "conditions": [
+    "alphaclaw",
+    "archive",
+    "backup",
+    "ckignore",
+    "trash"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:41.070513+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:41.070513+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:41.070513+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:41.229749+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Backup and cleanup on 2026-11-25 before the clean gateway cutover.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:41.070513+00:00"
+      ],
+      "lessons_sha": "d4590ae781f3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:41.229737+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Backup and cleanup on 2026-11-25 before the clean gateway cutover.",
+  "supersedes": null
+}

@@ -1,0 +1,39 @@
+{
+  "id": "e4656883ddd3",
+  "key": "manual_e46568",
+  "name": "manual_e46568",
+  "claim": "Supersedes lesson_ace375ffdc97 for the launcher commands: on Windows run .\\platform\\windows\\start.ps1 --lan-peer and on Mac run ./start.sh --lan-peer --no-open (both in docs/2026-06-28-windows-handoff.md), correcting the 2026-11-15T09:56:41Z recovery record; the recorded same-LAN prerequisite is session-specific and not an established universal delivery requirement. The pin history conflicts: one entry says the local value was already a DER digest, another says it changed from a raw-file hash; the available records do not establish which is true, so both the alleged repair and the root-cause wording at 2026-11-15T11:05:00Z remain unverified. That latter entry reports outbox delivery over pinned-CA TLS and an opposite-direction inbox arrival; it does not establish the transport of that arrival independently or content identity in either direction. Verify each receiver-computed digest against its sender digest and label both raw-byte or LF-normalized before claiming content-verified reciprocal delivery.",
+  "conditions": [
+    "start.ps1 start.sh lan-peer launcher windows mac"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:23.220514+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:23.220514+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:23.220514+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:42.832721+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit review 6067283145: exact launcher commands per the handoff doc; the rest of the superseded record is restated unchanged.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:23.220514+00:00"
+      ],
+      "lessons_sha": "7d86c4c2b48e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:42.832705+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit review 6067283145: exact launcher commands per the handoff doc; the rest of the superseded record is restated unchanged.",
+  "supersedes": "lesson_ace375ffdc97"
+}

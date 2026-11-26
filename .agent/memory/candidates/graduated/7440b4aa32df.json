@@ -1,0 +1,45 @@
+{
+  "id": "7440b4aa32df",
+  "key": "manual_7440b4",
+  "name": "manual_7440b4",
+  "claim": "Make every setup step of a session reproducible in the install path, in the layer that owns it: Perpetua-Tools (runtime and state authority) holds one idempotent script, scripts/install-openclaw-runtime.sh, with --check (default, read-only), --plan (print the exact commands) and --apply, covering node, global openclaw, the AlphaClaw fork build, the stable link and an opt-in --fresh-gateway --accept-risk that renames the old state aside and onboards fresh on loopback. orama first-run install gains step 0.9 that only calls it (macOS only, honors dry-run, OPENCLAW_RUNTIME=skip opts out) and never triggers the destructive option; the default AlphaClaw bootstrap gains a read-only, non-fatal Step 8; an alert-only launchd watcher reports drift. Verify the script by running --check on the real machine: all four steps reported OK is proof it describes the actual state.",
+  "conditions": [
+    "alphaclaw",
+    "bootstrap",
+    "first-run",
+    "install",
+    "orama",
+    "perpetua-tools",
+    "reproducible"
+  ],
+  "evidence_ids": [
+    "2026-11-25T15:16:29.358225+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T15:16:29.358225+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T15:16:29.358225+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T15:16:29.483438+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator request 2026-11-25: make tonight's steps reproducible in the install steps.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T15:16:29.358225+00:00"
+      ],
+      "lessons_sha": "e888d3500afa"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T15:16:29.483426+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator request 2026-11-25: make tonight's steps reproducible in the install steps.",
+  "supersedes": null
+}

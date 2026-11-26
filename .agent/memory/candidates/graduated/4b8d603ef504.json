@@ -1,0 +1,39 @@
+{
+  "id": "4b8d603ef504",
+  "key": "manual_4b8d60",
+  "name": "manual_4b8d60",
+  "claim": "When a provider has no free status endpoint, test its key with one minimal real call after the operator agrees, and compare the key to any other copy by length and hash before persisting it in the single source of truth.",
+  "conditions": [
+    "exa key test minimal call hash persist"
+  ],
+  "evidence_ids": [
+    "2026-11-26T01:39:44.072926+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T01:39:44.072926+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T01:39:44.072926+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T01:39:44.230920+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 Exa key: one one-result search returned 200 and matched the old config key by hash before it was added to the main env file.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T01:39:44.072926+00:00"
+      ],
+      "lessons_sha": "2b4fff938268"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T01:39:44.230909+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 Exa key: one one-result search returned 200 and matched the old config key by hash before it was added to the main env file.",
+  "supersedes": null
+}

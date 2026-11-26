@@ -964,3 +964,64 @@ derive their numbers from it; existing leaves stay in service until under 7 days
 since the operator has now ruled).
 
 **Status:** confirmed by the operator. No code change.
+
+## 2026-11-25: OpenClaw runtime baseline, the stable node link and reproducible install steps
+
+**Decision:** The OpenClaw gateway launch agent never names a node version. A stable link
+(`~/.local/share/openclaw-node`) points at the one nvm node that satisfies the engines range (>=24.22.1 <25,
+or >=26.12.1) and carries the global openclaw version that AlphaClaw pins; the service file uses the link.
+`perpetua_tools.openclaw_runtime` owns it (`--check` read-only, `--apply` repoint and reload only on change).
+The dated baseline: node 24.22.3 as the nvm default (22.22.2 kept, 24.14.1 obsolete until the restore succeeds),
+openclaw 2026.10.6 globally and inside the AlphaClaw fork build (PR 34, `@diazmelgarejo/alphaclaw` 0.9.39-9,
+upstream main 0.9.38-beta.1 already inside), gateway on loopback with token auth.
+
+**Rationale:** The old plist stored the exact node folder twice (binary and openclaw entry), so removing or
+upgrading that node left a KeepAlive service crash-looping. The gateway also failed on 2026-11-25 for an older
+reason, conflicting plugin-install metadata in the shared SQLite state; a clean state with the old one renamed
+aside was the safe cure. The steps are reproducible: PT `scripts/install-openclaw-runtime.sh` (`--check`,
+`--plan`, `--apply`, and the opt-in `--fresh-gateway --accept-risk`), a read-only non-fatal Step 8 in the default
+AlphaClaw bootstrap, orama first-run step 0.9 that only calls it, and an alert-only launchd watcher.
+
+**Alternatives considered:** reinstall the service after each Node change (the forgotten step); a separate
+dedicated node such as Homebrew node@24 (more stable but breaks the one-24.x rule); an auto-repointing watcher
+(could move the gateway onto a half-migrated node); rolling back to the old baseline (declined: the old
+2026.7.1-beta.5 gateway was itself the failing one).
+
+**Provider order (operator ruling, subject to change):** W&B DeepSeek-V4.1-Flash-1017 at high as the default;
+ClinePass through the Cline launcher; Google by AI Studio API key (OpenClaw 2026.10.6 offers no new Google web
+login); the authenticated OpenAI Codex login; local Ollama as the generic default. The Google key already exists
+in the operator environment and is configured by reference. Plugins and Telegram are restored last.
+
+**Mac LM Studio (operator ruling, supersedes the earlier "last-resort fallback" choice):** a manual choice only,
+disabled and absent from the OpenClaw config and from every `fallbacks` list, because a fallback switches on its own
+exactly when Ollama is overloaded and would load a second large model on the same Mac, the closed overheat
+invariant. Windows LM Studio comes back from the discovery file, never from an old address. The W&B default uses the
+canonical `WANDB_API_KEY`, set as a by-reference alias of the PT launcher's `DEEPSEEK_V4_FLASH_WANDB` in the
+operator's env file (one source of truth, no second copy of the key).
+
+**Fallback order for the restored OpenClaw models (operator ruling 2026-11-25, subject to change):** W&B
+DeepSeek-V4.1-Flash-1017 at high; Google `gemini-3.8-flash` at medium (key by reference); the authenticated OpenAI
+Codex login; local Ollama; **OpenRouter free (`openrouter/free`) second to last**; Mac LM Studio last but disabled,
+meaning manual only and in no chain. The last active fallback is therefore OpenRouter free. ClinePass runs through the
+Cline launcher, not an OpenClaw chain. No chain pairs Ollama with a Mac LM Studio model.
+
+**Working rules:** commit only in durable canonical folders, base on the latest PR tip, no push until told.
+
+**Status:** confirmed by the operator. Implemented on local branches, not pushed: PT PR 521's branch (commits
+`753139a0`, `ddcb46d5` and the memory commits) and the orama branch
+`2026-11-25-002-openclaw-runtime-steps` (`f8416ec8`) on the PR 530 tip. The staged restore is still to do.
+
+## 2026-11-26: OpenClaw seats, env source of truth and the staged-restore procedure
+
+**Decision:** Seats `biafra` (alias MetaResearcher, guardian and companion of `autoresearcher`) and
+`autoresearcher` default to OpenAI Terra at medium effort through the codex harness with a per-agent
+login, then the default chain (W&B, Google, Ollama, OpenRouter free). Astra and Sol are human-gated and
+never default or automatic. W&B stays in every agent chain. The seats deny exec, process, browser,
+canvas, nodes, cron and gateway; a Seatbelt sandbox is a staged draft. One env file is the source of
+truth for working keys; the gateway reads custom keys from its own global env file plus a restart.
+
+**Rationale:** Each rule came from a measured failure or a ruling; the sequence, the next order and the
+open items are in `SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RESTORE.md`, and the
+procedure and recovery steps in the orama first-run card `openclaw-staged-restore-and-recovery.md`.
+
+**Status:** confirmed by the operator; committed locally, not pushed.

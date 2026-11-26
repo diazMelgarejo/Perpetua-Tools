@@ -1,0 +1,43 @@
+{
+  "id": "a97e6cbaf011",
+  "key": "manual_a97e6c",
+  "name": "manual_a97e6c",
+  "claim": "When an OpenClaw gateway launch agent is 'loaded' but exits at once and its log files are blocked or unhelpful, run the exact ProgramArguments command from the service plist in the foreground under gtimeout and read the first non-banner lines. On 2026-11-25 that showed startup migrations refusing to start because the shared SQLite state held conflicting plugin-install metadata for codex, parallel and perplexity, a state fault that predated any version change. The tool's safe repair (doctor --fix --non-interactive) hung and changed nothing, so do not assume it repairs a plugin-index conflict; back up first and choose among reinstalling the plugins, clearing the conflicting rows, or starting from a clean state.",
+  "conditions": [
+    "doctor",
+    "gateway",
+    "launchd",
+    "openclaw",
+    "sqlite"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:38.842873+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:38.842873+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:38.842873+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:39.024161+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Diagnosed by running the service command directly; the log tail held only repeated doctor banners.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:38.842873+00:00"
+      ],
+      "lessons_sha": "9e04e51f3fe2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:39.024147+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Diagnosed by running the service command directly; the log tail held only repeated doctor banners.",
+  "supersedes": null
+}

@@ -1,0 +1,44 @@
+{
+  "id": "a5d6d8653a83",
+  "key": "manual_a5d6d8",
+  "name": "manual_a5d6d8",
+  "claim": "A re-dispatch to board-only agents was ignored three times until it carried a criticism ledger that ingested every reviewer's points with an accept, modify or reject disposition and verified-false claims called out; after that the agents claimed, implemented, independently reviewed and a re-review reopened one defect before approving. Check the receipts for the model actually used (the sub-agents ran GPT-6.1 Terra medium, not the ruled GPT-6.2 Sol medium), verify each peer claim against source (a reviewer cited a lessons.audit.jsonl file that does not exist), and push once per repo as a plain fast-forward only after the coordinator reruns the tests.",
+  "conditions": [
+    "codex",
+    "dispatch",
+    "gossip-bus",
+    "ledger",
+    "models",
+    "verification"
+  ],
+  "evidence_ids": [
+    "2026-11-25T14:53:40.784491+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T14:53:40.784491+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T14:53:40.784491+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T14:53:40.962955+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Gossip-bus dispatch of PT 521 and orama 526 jobs, 2026-11-25.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T14:53:40.784491+00:00"
+      ],
+      "lessons_sha": "698e33644312"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T14:53:40.962939+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Gossip-bus dispatch of PT 521 and orama 526 jobs, 2026-11-25.",
+  "supersedes": null
+}

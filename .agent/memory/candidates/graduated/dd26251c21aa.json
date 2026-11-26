@@ -1,0 +1,43 @@
+{
+  "id": "dd26251c21aa",
+  "key": "manual_dd2625",
+  "name": "manual_dd2625",
+  "claim": "OpenClaw env.shellEnv import brings the whole login-shell environment into the gateway, including keys the operator ruled out; reference provider keys by their real variable name, because a shell alias like WANDB_API_KEY with a dollar-brace value reaches the gateway unexpanded.",
+  "conditions": [
+    "alias",
+    "env",
+    "openclaw",
+    "shellenv",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-25T23:04:48.443161+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-25T23:04:48.443161+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-25T23:04:48.443161+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-25T23:04:48.614577+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-11-26: models status showed the W&B key as an unexpanded literal until the provider pointed at DEEPSEEK_V4_FLASH_WANDB directly; a direct status-only call with that key returned 200 at high effort.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-25T23:04:48.443161+00:00"
+      ],
+      "lessons_sha": "8835ed94d2a0"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-25T23:04:48.614567+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-11-26: models status showed the W&B key as an unexpanded literal until the provider pointed at DEEPSEEK_V4_FLASH_WANDB directly; a direct status-only call with that key returned 200 at high effort.",
+  "supersedes": null
+}
