@@ -12,13 +12,13 @@ Run `python .agent/tools/list_candidates.py` for detail, then:
 
 ## Priority order (top 10)
 
-- **9991c28c75b9** (priority=16.00, size=1, rejections=0) — A protected local ownership record must bind canonical repository metadata and a
-- **4d7396e640e0** (priority=16.00, size=1, rejections=0) — Retain an unreaped POSIX child identity through every effectful group signal, re
-- **02c827dbcb5f** (priority=16.00, size=1, rejections=0) — Qualification runners should exclusively create private evidence and temporary d
-- **0992c6e96410** (priority=16.00, size=1, rejections=0) — Use isolated test ports and state rather than assuming default service ports are
-- **35de991f1652** (priority=16.00, size=1, rejections=0) — Verify service lifetime after its command runner exits; disable scheduler instal
-- **d18a82793512** (priority=16.00, size=1, rejections=0) — After an interrupted multi-agent run, re-read Gossip and live PR heads, preserve
-- **73d79fbe6645** (priority=16.00, size=1, rejections=0) — Inventory a measured Python environment without changing it: pip may intentional
-- **5f7e10031478** (priority=16.00, size=1, rejections=0) — Containment must return unknown when permission to observe process-group members
 - **67973dd9435b** (priority=16.00, size=1, rejections=0) — Provision external test tools in every CI workflow that collects dependent tests
+- **02c827dbcb5f** (priority=16.00, size=1, rejections=0) — Qualification runners should exclusively create private evidence and temporary d
+- **73d79fbe6645** (priority=16.00, size=1, rejections=0) — Inventory a measured Python environment without changing it: pip may intentional
+- **d18a82793512** (priority=16.00, size=1, rejections=0) — After an interrupted multi-agent run, re-read Gossip and live PR heads, preserve
+- **5f7e10031478** (priority=16.00, size=1, rejections=0) — Containment must return unknown when permission to observe process-group members
+- **9991c28c75b9** (priority=16.00, size=1, rejections=0) — A protected local ownership record must bind canonical repository metadata and a
+- **35de991f1652** (priority=16.00, size=1, rejections=0) — Verify service lifetime after its command runner exits; disable scheduler instal
+- **0992c6e96410** (priority=16.00, size=1, rejections=0) — Use isolated test ports and state rather than assuming default service ports are
+- **4d7396e640e0** (priority=16.00, size=1, rejections=0) — Retain an unreaped POSIX child identity through every effectful group signal, re
 - **75e0f7fa40ee** (priority=16.00, size=1, rejections=0) — Treat provider wire IDs, CLI capabilities, governance permission and verified la
