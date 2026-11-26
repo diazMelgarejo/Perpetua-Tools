@@ -1,0 +1,47 @@
+{
+  "id": "5d6d3fac88ad",
+  "key": "manual_5d6d3f",
+  "name": "manual_5d6d3f",
+  "claim": "Fixed-in replies on review threads can wake the Cursor autofix automation: on a closed PR its parallel passes mostly verified and declined to push, yet one pass re-created the deleted branch with duplicate lessons under the operator identity; do not post fixed-in replies on a closed PR, read the PR timeline before attributing a branch to another agent, and have the operator scope the automation to open PRs.",
+  "conditions": [
+    "autofix",
+    "automation",
+    "branch",
+    "closed-pr",
+    "cursor",
+    "recreate",
+    "reply",
+    "review",
+    "timeline"
+  ],
+  "evidence_ids": [
+    "2026-11-26T02:31:44.472253+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T02:31:44.472253+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T02:31:44.472253+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T02:31:44.648752+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 PR 522 timeline: replies posted before the close triggered cursor[bot] automation 2d5e7b4f; four passes declined, one pass pushed bc2e82de to a branch deleted four minutes earlier; the branch was removed again and the tip kept only as a local tag.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T02:31:44.472253+00:00"
+      ],
+      "lessons_sha": "e2debb972100"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T02:31:44.648738+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 PR 522 timeline: replies posted before the close triggered cursor[bot] automation 2d5e7b4f; four passes declined, one pass pushed bc2e82de to a branch deleted four minutes earlier; the branch was removed again and the tip kept only as a local tag.",
+  "supersedes": null
+}
