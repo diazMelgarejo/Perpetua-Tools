@@ -100,6 +100,16 @@ PY
 [ -n "$OPENCLAW_VER" ] || OPENCLAW_VER="$(pinned_openclaw)"
 [ -n "$OPENCLAW_VER" ] || OPENCLAW_VER="$DEFAULT_OPENCLAW"
 
+# An explicit --openclaw that cannot satisfy select() leaves packages mutated and the
+# link/service untouched. Compare against the pin that step 3 will leave in effect
+# (tarball first, else the installed AlphaClaw package) before any install runs.
+if [ "$EXPLICIT_OPENCLAW" = "1" ] && [ "$MODE" != "check" ]; then
+  expected_pin="$(pinned_openclaw)"
+  if [ -n "$expected_pin" ] && [ "$OPENCLAW_VER" != "$expected_pin" ]; then
+    die "--openclaw $OPENCLAW_VER mismatches AlphaClaw pin $expected_pin (from tarball or installed package); omit --openclaw or pass the matching pin"
+  fi
+fi
+
 heading() { printf '== %s\n' "$*"; }
 drift() { DRIFT=1; printf 'DRIFT %s\n' "$*"; }
 ok() { printf 'OK    %s\n' "$*"; }

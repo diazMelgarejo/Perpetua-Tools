@@ -129,14 +129,33 @@ def select(installs: list[NodeInstall], pin: str | None) -> NodeInstall | None:
     return max(fits, key=lambda i: i.version, default=None)
 
 
-def rewrite_arguments(args: list[str], link: Path) -> list[str]:
-    """Replace any ``.../.nvm/versions/node/vX.Y.Z`` prefix or Homebrew node alias with the stable link; already-linked arguments are kept."""
+def _versioned_suffix(arg: str, nvm: Path | None) -> str | None:
+    """Return the ``/rest`` after a versioned node prefix, or None when unmatched.
+
+    When ``nvm`` (``Paths.nvm`` → ``<nvm-root>/versions/node``) is set, only prefixes
+    under that root match. Without it, fall back to the legacy ``/.nvm/versions/node/``
+    regex so older call sites keep working.
+    """
+    if nvm is not None:
+        root = str(nvm).rstrip("/")
+        match = re.match(rf"^{re.escape(root)}/v\d+\.\d+\.\d+(/.*)$", arg)
+        return match.group(1) if match else None
+    match = _VERSIONED.match(arg)
+    return match.group("rest") if match else None
+
+
+def rewrite_arguments(args: list[str], link: Path, nvm: Path | None = None) -> list[str]:
+    """Replace versioned node prefixes and Homebrew aliases with the stable link.
+
+    Pass ``nvm`` (``Paths.nvm``) so custom ``NVM_DIR`` installs are rewritten; wrapper
+    arguments and already-linked paths stay unchanged.
+    """
     rewritten: list[str] = []
     for a in args:
         if a in ("/opt/homebrew/bin/node", "/usr/local/bin/node"):
             rewritten.append(f"{link}/bin/node")
-        elif (m := _VERSIONED.match(a)):
-            rewritten.append(f"{link}{m.group('rest')}")
+        elif (rest := _versioned_suffix(a, nvm)) is not None:
+            rewritten.append(f"{link}{rest}")
         else:
             rewritten.append(a)
     return rewritten
@@ -170,7 +189,7 @@ def inspect(paths: Paths) -> list[Finding]:
         findings.append(Finding("plist-missing", f"{paths.plist} does not exist; run: openclaw gateway install"))
     else:
         args = _service_arguments(paths.plist)
-        if args != rewrite_arguments(args, paths.link):
+        if args != rewrite_arguments(args, paths.link, paths.nvm):
             findings.append(Finding("plist-hardwired", "the service file names a node version instead of the stable link"))
     return findings
 
@@ -238,7 +257,7 @@ def apply(
         _atomic_symlink(chosen.prefix, paths.link)
         actions.append(f"linked {paths.link} -> {chosen.prefix.name}")
     args = _service_arguments(paths.plist)
-    new_args = rewrite_arguments(args, paths.link)
+    new_args = rewrite_arguments(args, paths.link, paths.nvm)
     if new_args != args:
         document = plistlib.loads(paths.plist.read_bytes())
         document["ProgramArguments"] = new_args

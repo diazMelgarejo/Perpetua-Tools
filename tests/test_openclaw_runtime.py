@@ -97,9 +97,10 @@ def test_plist_arguments_lose_every_version_literal_and_rewriting_twice_changes_
     prefix = _node(tmp_path, "24.22.3")
     args = ["/bin/sh", "w.sh", str(prefix / "bin" / "node"), str(prefix / "lib" / "node_modules" / "openclaw" / "dist" / "index.js"), "gateway"]
     link = tmp_path / ".local" / "share" / "openclaw-node"
-    once = rt.rewrite_arguments(args, link)
+    nvm = _paths(tmp_path).nvm
+    once = rt.rewrite_arguments(args, link, nvm)
     assert once == ["/bin/sh", "w.sh", f"{link}/bin/node", f"{link}/lib/node_modules/openclaw/dist/index.js", "gateway"]
-    assert not any("/versions/node/v" in a for a in once) and rt.rewrite_arguments(once, link) == once
+    assert not any("/versions/node/v" in a for a in once) and rt.rewrite_arguments(once, link, nvm) == once
 
 
 def test_a_fresh_install_reports_drift_and_apply_fixes_it_idempotently(tmp_path: Path) -> None:
@@ -213,6 +214,9 @@ def test_bootstrap_step_reports_drift_without_raising_or_changing_anything(
     plist = _plist(tmp_path, prefix)
     _pin(tmp_path)
     before = plist.read_bytes()
+    # Path.home is redirected to the temp home; clear ambient NVM_DIR so Paths.under
+    # keeps the fixture tree instead of the login-shell nvm root.
+    monkeypatch.delenv("NVM_DIR", raising=False)
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
     monkeypatch.setattr(boot.sys, "platform", "darwin")
     boot._check_runtime_link()
@@ -247,6 +251,31 @@ def test_custom_nvm_dir_is_discovered(tmp_path: Path, monkeypatch: pytest.Monkey
     paths = rt.Paths.under(tmp_path)
     installs = rt.discover(paths.nvm)
     assert len(installs) == 1 and installs[0].version == (24, 22, 3)
+
+
+def test_custom_nvm_dir_rewrites_and_inspects_plist(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    custom_nvm = tmp_path / "custom_nvm"
+    old = custom_nvm / "versions" / "node" / "v24.22.1"
+    new = custom_nvm / "versions" / "node" / "v24.22.3"
+    for prefix in (old, new):
+        (prefix / "bin").mkdir(parents=True)
+        (prefix / "bin" / "node").write_text("#!/bin/sh\n", encoding="utf-8")
+        pkg = prefix / "lib" / "node_modules" / "openclaw"
+        (pkg / "dist").mkdir(parents=True)
+        (pkg / "package.json").write_text(json.dumps({"version": PIN}), encoding="utf-8")
+        (pkg / "dist" / "index.js").write_text("//\n", encoding="utf-8")
+    _pin(tmp_path)
+    monkeypatch.setenv("NVM_DIR", str(custom_nvm))
+    paths = rt.Paths.under(tmp_path)
+    args = ["/bin/sh", "w.sh", str(old / "bin" / "node"), str(old / "lib" / "node_modules" / "openclaw" / "dist" / "index.js"), "gateway"]
+    rewritten = rt.rewrite_arguments(args, paths.link, paths.nvm)
+    assert rewritten == ["/bin/sh", "w.sh", f"{paths.link}/bin/node", f"{paths.link}/lib/node_modules/openclaw/dist/index.js", "gateway"]
+    # Unrelated versioned paths outside the configured root stay untouched.
+    foreign = "/opt/other/versions/node/v24.22.1/bin/node"
+    assert rt.rewrite_arguments([foreign], paths.link, paths.nvm) == [foreign]
+    paths.plist.parent.mkdir(parents=True, exist_ok=True)
+    paths.plist.write_bytes(plistlib.dumps({"Label": rt.LABEL, "ProgramArguments": args}))
+    assert "plist-hardwired" in {f.code for f in rt.inspect(paths)}
 
 
 def test_homebrew_node_alias_is_rewritten_to_link(tmp_path: Path) -> None:

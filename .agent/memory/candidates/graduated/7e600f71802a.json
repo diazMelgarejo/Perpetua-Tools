@@ -1,0 +1,47 @@
+{
+  "id": "7e600f71802a",
+  "key": "manual_7e600f",
+  "name": "manual_7e600f",
+  "claim": "A global npm install lands in the prefix of whichever node comes first on PATH only when npm uses its default prefix: set PATH explicitly for the install and print npm -g config get prefix in the same command; when NPM_CONFIG_PREFIX or npm configuration overrides the prefix, check and correct the effective prefix before installing, or the package lands under the wrong node and the intended copy stays stale.",
+  "conditions": [
+    "NPM_CONFIG_PREFIX",
+    "global",
+    "install",
+    "node",
+    "npm",
+    "nvm",
+    "path",
+    "prefix",
+    "wrong"
+  ],
+  "evidence_ids": [
+    "2026-11-26T11:59:41.807095+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T11:59:41.807095+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T11:59:41.807095+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T11:59:49.457150+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "CodeRabbit on PR 523: PATH selects the Node install only for npm's default prefix; NPM_CONFIG_PREFIX or npm config can still divert the global install.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T11:59:41.807095+00:00"
+      ],
+      "lessons_sha": "25407983864e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T11:59:49.457140+00:00",
+  "reviewer": "host-agent",
+  "rationale": "CodeRabbit on PR 523: PATH selects the Node install only for npm's default prefix; NPM_CONFIG_PREFIX or npm config can still divert the global install.",
+  "supersedes": "lesson_fea349ac79be"
+}

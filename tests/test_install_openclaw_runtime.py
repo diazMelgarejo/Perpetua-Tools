@@ -90,3 +90,30 @@ def test_tarball_pin_without_explicit_openclaw(tmp_path: Path) -> None:
     done = _run(tmp_path, "--plan", "--alphaclaw-tarball", str(tar_path))
     assert done.returncode == 0
     assert "npm install -g openclaw@2026.11.1" in done.stdout
+
+
+def test_explicit_openclaw_mismatching_tarball_pin_is_rejected_before_mutate(tmp_path: Path) -> None:
+    import json, tarfile, io
+    tar_path = tmp_path / "alphaclaw-test.tgz"
+    pkg_json = json.dumps({"name": "@diazmelgarejo/alphaclaw", "version": "0.9.40", "dependencies": {"openclaw": "2026.11.1"}}).encode()
+    with tarfile.open(tar_path, "w:gz") as tf:
+        ti = tarfile.TarInfo("package/package.json")
+        ti.size = len(pkg_json)
+        tf.addfile(ti, io.BytesIO(pkg_json))
+    done = _run(tmp_path, "--plan", "--openclaw", "2026.10.6", "--alphaclaw-tarball", str(tar_path))
+    assert done.returncode == 2
+    assert "mismatches AlphaClaw pin 2026.11.1" in done.stderr
+    assert "nvm install" not in done.stdout
+
+
+def test_explicit_openclaw_matching_tarball_pin_is_allowed(tmp_path: Path) -> None:
+    import json, tarfile, io
+    tar_path = tmp_path / "alphaclaw-test.tgz"
+    pkg_json = json.dumps({"name": "@diazmelgarejo/alphaclaw", "version": "0.9.40", "dependencies": {"openclaw": "2026.11.1"}}).encode()
+    with tarfile.open(tar_path, "w:gz") as tf:
+        ti = tarfile.TarInfo("package/package.json")
+        ti.size = len(pkg_json)
+        tf.addfile(ti, io.BytesIO(pkg_json))
+    done = _run(tmp_path, "--plan", "--openclaw", "2026.11.1", "--alphaclaw-tarball", str(tar_path))
+    assert done.returncode == 0
+    assert "npm install -g openclaw@2026.11.1" in done.stdout
