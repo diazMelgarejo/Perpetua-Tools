@@ -1075,3 +1075,26 @@ remain unchanged, and `lesson_8d873e4e2f73` remains valid for the designated Bia
 **Status:** latest PT lesson correction appended through `.agent/tools/correct_lesson.py`; actual Orama
 client enforcement, documentation/test lockstep, publication order, merge, and operator-gated activation
 remain unresolved. No Orama files were changed and no live cycle was armed.
+
+---
+
+## 2026-11-26: G11 lesson restored to accepted so recall returns it
+
+**Decision:** `lesson_957217e78f07` (accepted, supersedes `lesson_9bcf2ac7d3ce`) states together: the
+Biafra seats are designated to use Cline under the shared spend gate once the launcher enforces both
+total output and request count; the route stays fail-closed today (`BOUND_CONTRACT` keeps both
+capabilities false, so `live_cycle()` refuses with `launcher-output-bound-unsupported`); Wanda's
+boundary is unchanged; `lesson_8d873e4e2f73` stays valid. The earlier rows are preserved.
+
+**Rationale:** `recall.py` uses only the latest row per id and skips rows that are not accepted. The
+provisional correction chain, starting with the first correction on 2026-11-23, hid
+`lesson_9bcf2ac7d3ce` from structured recall, and the 2026-11-26 rows dropped the shared spend-gate
+requirement from the rendered lesson layer. `correct_lesson.py` cannot append an accepted row, so the
+tooling path is an accepted superseding lesson through `learn.py --stage-only` and `graduate.py`.
+Verified with `recall.py --quiet`: the new lesson is returned first, the retired one is not.
+
+**Alternatives considered:** leave the chain provisional (invisible to recall); edit the existing rows
+(forbidden, memory is append-only).
+
+**Status:** done on this pull request. For any later correction of a lesson that must stay recallable,
+end the chain with an accepted superseding lesson.
