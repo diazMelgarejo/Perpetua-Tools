@@ -70,8 +70,13 @@ fi
 NODE_BIN="$NVM_HOME/versions/node/v$NODE_VER/bin"
 DRIFT=0
 
+# stdout: pin when found. Exit 0 = pin found, 1 = confirmed unpinned/absent, 2 = unreadable.
 pinned_openclaw() {
-  python3 - "$HOME" "$TARBALL" <<'PY' 2>/dev/null || true
+  if ! command -v python3 >/dev/null 2>&1; then
+    return 2
+  fi
+  local out
+  if out="$(python3 - "$HOME" "$TARBALL" <<'PY' 2>/dev/null
 import json, sys, tarfile
 home, tarball = sys.argv[1], sys.argv[2]
 if tarball:
@@ -94,19 +99,37 @@ for name in ("@diazmelgarejo/alphaclaw", "@chrysb/alphaclaw"):
     pin = data.get("dependencies", {}).get("openclaw")
     if pin:
         print(pin)
-        break
+        sys.exit(0)
+sys.exit(1)
 PY
+)"; then
+    printf '%s\n' "$out"
+    return 0
+  else
+    # Capture before any other builtin; `local status=$?` can lose the python exit.
+    status=$?
+    [ "$status" -eq 1 ] && return 1
+    return 2
+  fi
 }
-[ -n "$OPENCLAW_VER" ] || OPENCLAW_VER="$(pinned_openclaw)"
+[ -n "$OPENCLAW_VER" ] || OPENCLAW_VER="$(pinned_openclaw || true)"
 [ -n "$OPENCLAW_VER" ] || OPENCLAW_VER="$DEFAULT_OPENCLAW"
 
 # An explicit --openclaw that cannot satisfy select() leaves packages mutated and the
 # link/service untouched. Compare against the pin that step 3 will leave in effect
 # (tarball first, else the installed AlphaClaw package) before any install runs.
+# Unreadable pin (no python3 / lookup failure) must fail closed; confirmed unpinned is allowed.
 if [ "$EXPLICIT_OPENCLAW" = "1" ] && [ "$MODE" != "check" ]; then
-  expected_pin="$(pinned_openclaw)"
-  if [ -n "$expected_pin" ] && [ "$OPENCLAW_VER" != "$expected_pin" ]; then
-    die "--openclaw $OPENCLAW_VER mismatches AlphaClaw pin $expected_pin (from tarball or installed package); omit --openclaw or pass the matching pin"
+  expected_pin=""
+  if expected_pin="$(pinned_openclaw)"; then
+    if [ "$OPENCLAW_VER" != "$expected_pin" ]; then
+      die "--openclaw $OPENCLAW_VER mismatches AlphaClaw pin $expected_pin (from tarball or installed package); omit --openclaw or pass the matching pin"
+    fi
+  else
+    pin_status=$?
+    if [ "$pin_status" -eq 2 ]; then
+      die "--openclaw $OPENCLAW_VER: cannot read AlphaClaw openclaw pin (python3 unavailable or lookup failed); refuse to mutate packages"
+    fi
   fi
 fi
 
@@ -177,7 +200,7 @@ step_alphaclaw() {
   node_cmd npm uninstall --prefix "$HOME/.alphaclaw" @chrysb/alphaclaw
   if [ "$EXPLICIT_OPENCLAW" = "0" ]; then
     local new_pin
-    new_pin="$(pinned_openclaw)"
+    new_pin="$(pinned_openclaw || true)"
     if [ -n "$new_pin" ] && [ "$new_pin" != "$OPENCLAW_VER" ]; then
       OPENCLAW_VER="$new_pin"
       node_cmd npm install -g "openclaw@$OPENCLAW_VER"

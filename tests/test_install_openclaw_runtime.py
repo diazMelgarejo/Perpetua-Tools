@@ -11,9 +11,31 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "install-openclaw-runtime.sh"
 
 
-def _run(home: Path, *args: str) -> subprocess.CompletedProcess[str]:
-    env = {"HOME": str(home), "PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "NVM_DIR": str(home / ".nvm")}
-    return subprocess.run(["bash", str(SCRIPT), *args], capture_output=True, text=True, env=env)
+def _run(home: Path, *args: str, path: str | None = None) -> subprocess.CompletedProcess[str]:
+    env = {
+        "HOME": str(home),
+        "PATH": path if path is not None else "/usr/bin:/bin:/usr/sbin:/sbin",
+        "NVM_DIR": str(home / ".nvm"),
+    }
+    # Absolute bash so PATH can omit python3 without losing the test runner's shell.
+    return subprocess.run(["/bin/bash", str(SCRIPT), *args], capture_output=True, text=True, env=env)
+
+
+def _path_without_python(home: Path) -> str:
+    """Coreutils-only PATH so `command -v python3` fails while dirname/pwd still work."""
+    import os
+
+    bin_dir = home / "path-bin"
+    bin_dir.mkdir(exist_ok=True)
+    for name in ("dirname", "pwd", "awk", "basename", "grep", "mkdir", "mv", "cp", "date", "id", "env", "true", "false"):
+        for root in ("/usr/bin", "/bin"):
+            src = Path(root) / name
+            if src.exists() and os.access(src, os.X_OK):
+                dest = bin_dir / name
+                if not dest.exists():
+                    dest.symlink_to(src)
+                break
+    return str(bin_dir)
 
 
 def test_the_script_parses_under_the_macos_system_bash() -> None:
@@ -117,3 +139,24 @@ def test_explicit_openclaw_matching_tarball_pin_is_allowed(tmp_path: Path) -> No
     done = _run(tmp_path, "--plan", "--openclaw", "2026.11.1", "--alphaclaw-tarball", str(tar_path))
     assert done.returncode == 0
     assert "npm install -g openclaw@2026.11.1" in done.stdout
+
+
+def test_explicit_openclaw_allows_when_confirmed_unpinned(tmp_path: Path) -> None:
+    # No tarball and no installed AlphaClaw → lookup succeeds with no pin (exit 1).
+    done = _run(tmp_path, "--plan", "--openclaw", "2026.10.6")
+    assert done.returncode == 0, done.stderr
+    assert "npm install -g openclaw@2026.10.6" in done.stdout
+
+
+def test_explicit_openclaw_rejects_unreadable_pin_before_mutate(tmp_path: Path) -> None:
+    # PATH with no python3 → pin lookup is unreadable (exit 2); must fail closed before plan steps.
+    done = _run(tmp_path, "--plan", "--openclaw", "2026.10.6", path=_path_without_python(tmp_path))
+    assert done.returncode == 2
+    assert "cannot read AlphaClaw openclaw pin" in done.stderr
+    assert "nvm install" not in done.stdout
+
+
+def test_plan_without_python_falls_back_to_default_openclaw(tmp_path: Path) -> None:
+    done = _run(tmp_path, "--plan", path=_path_without_python(tmp_path))
+    assert done.returncode == 0, done.stderr
+    assert "npm install -g openclaw@2026.10.6" in done.stdout
