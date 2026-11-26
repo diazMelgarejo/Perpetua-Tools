@@ -1025,3 +1025,53 @@ open items are in `SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RE
 procedure and recovery steps in the orama first-run card `openclaw-staged-restore-and-recovery.md`.
 
 **Status:** confirmed by the operator; committed locally, not pushed.
+
+
+## 2026-11-26: Biafra Cline launcher bounds (G11) and lockstep contract
+
+**Decision:** Enforce fail-closed `max_requests` (positive integer) and `max_total_output` (positive integer tokens/bytes) bounds in `launch_cline_wandb.py` and pass them through `biafra_cycle.py`. `_launcher_boundary_problem()` lifts to `None` ONLY when both bounds are verified active. Wanda's path remains the direct OpenAI client and Weave, outside the spend gate, and her soul card strictly forbids the Cline CLI.
+
+**Rationale:** Fulfills doc 76 §15 and G11 designation requirements, transitioning the Biafra Cline route from designated to bounded-capable without violating Wanda's boundary or arming any live cycle.
+
+**Status:** active on branch `stack/523-biafra-bounds` (stacked on PR #523).
+
+
+## 2026-11-26: G11 lockstep verification correction, the PT memory contract is not runtime qualification
+
+**Decision:** The preceding launcher-bounds entry remains the intended contract, not an implementation-complete
+status. User-authorized takeover verification of Orama branch `stack/531-biafra-bounds` found that its
+uncommitted launcher changes validate supplied positive bounds and forward `--max-requests` and
+`--max-total-output` to Cline, but still accept missing bounds. `biafra_cycle.py` still returns
+`launcher-output-bound-unsupported`, and `launcher_argv()` passes neither bound. Biafra therefore remains
+designated and fail-closed, not bounded-capable. Wanda's direct OpenAI-client boundary and Cline prohibition
+remain unchanged, and `lesson_8d873e4e2f73` remains valid for the designated Biafra route.
+
+**Rationale:** The prior decision status and lesson rationale said the launcher enforces both bounds and
+unblocks the designation. Read-only inspection did not substantiate that claim: forwarding flags is not
+proof of enforcement, and the live-cycle boundary has not been lifted. PT memory must record the contract
+without presenting unmerged Orama work as integrated or qualifying a live route.
+
+**Status:** corrected additively through `.agent/tools/correct_lesson.py`; Orama enforcement, documentation
+and test lockstep, publication order, merge, and operator-gated activation remain unresolved. No Orama files
+were changed and no live cycle was armed.
+
+
+## 2026-11-26: G11 verification update, mandatory bounds are wired but enforcement remains unverified
+
+**Decision:** A later read-only Orama snapshot supersedes the preceding verification snapshot without
+rewriting it. The launcher now requires positive `--max-requests` and `--max-total-output` values;
+`launcher_argv()` always supplies defaults of one request and 4096 output tokens; and `live_cycle()` checks
+the boundary before reservation or launch and forwards the output cap to spend preflight. Nevertheless,
+`BOUND_CONTRACT` keeps both capabilities false because Cline 3.0.75 has no verified request-count or
+cumulative-output enforcement, so `launcher_boundary_problem()` still returns
+`launcher-output-bound-unsupported`. Biafra remains designated and fail-closed, not bounded-capable.
+
+**Rationale:** Mandatory input, cycle wiring, and forwarding are necessary but do not prove that either
+cap terminates work. Tests that simulate a supported client by setting both capability flags true are not
+qualification of the installed client. Doc 76 still describes the earlier optional/no-wiring state, so the
+documentation has not caught up with the code. Wanda's direct OpenAI-client boundary and Cline prohibition
+remain unchanged, and `lesson_8d873e4e2f73` remains valid for the designated Biafra route.
+
+**Status:** latest PT lesson correction appended through `.agent/tools/correct_lesson.py`; actual Orama
+client enforcement, documentation/test lockstep, publication order, merge, and operator-gated activation
+remain unresolved. No Orama files were changed and no live cycle was armed.
