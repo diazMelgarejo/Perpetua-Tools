@@ -1,0 +1,39 @@
+{
+  "id": "42aff2ecabbd",
+  "key": "manual_42aff2",
+  "name": "manual_42aff2",
+  "claim": "Before bulk-disabling unused skills, compare the disabled names with every skill the instruction files route to in slash form: 10 of 73 turned-off skills (browse, design-review, qa, review, office-hours and others) were named by CLAUDE.md routing rules and were switched back on; also treat a text mention of orama or perpetua as a reason to keep a skill.",
+  "conditions": [
+    "skills disable skillOverrides claude.md routing slash compare doctor"
+  ],
+  "evidence_ids": [
+    "2026-11-26T04:59:44.898734+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T04:59:44.898734+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T04:59:44.898734+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T04:59:45.062652+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 doctor cleanup: lifetime counters showed zero use for skills that agents are told to invoke, because routing rules fire in other sessions and harnesses; the comparison against 15 instruction files found the 10 routed names.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T04:59:44.898734+00:00"
+      ],
+      "lessons_sha": "784421b9ca7e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T04:59:45.062626+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 doctor cleanup: lifetime counters showed zero use for skills that agents are told to invoke, because routing rules fire in other sessions and harnesses; the comparison against 15 instruction files found the 10 routed names.",
+  "supersedes": null
+}
