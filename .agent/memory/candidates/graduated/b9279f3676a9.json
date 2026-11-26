@@ -1,0 +1,46 @@
+{
+  "id": "b9279f3676a9",
+  "key": "manual_b9279f",
+  "name": "manual_b9279f",
+  "claim": "For W&B DeepSeek, summon Cline with launch_cline_wandb.py only under the shared spend gate: the launcher has no spend gate of its own, so an ungated launch is not authorized. Biafra's Cline use is designated to run under the shared spend gate once the launcher enforces both total output and request count, and it stays fail-closed today (live_cycle() refuses with launcher-output-bound-unsupported). A second switch is not a no-op when tokenSource is a custom label or updatedAt is not millisecond UTC with a trailing Z. ClinePass DeepSeek stays on its own wrapper and must not be sent through that launcher. On one identical-prompt probe, Cline answered four tasks and was faster on each, while Wanda matched the format on three and returned a second_largest function that stopped mid-line; that is one observation, and Wanda keeps the direct OpenAI client outside the spend gate with a soul card that forbids the Cline CLI for her route.",
+  "conditions": [
+    "biafra",
+    "cline",
+    "clinepass",
+    "deepseek",
+    "launcher",
+    "spend-gate",
+    "tokensource",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-26T16:38:44.033876+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T16:38:44.033876+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T16:38:44.033876+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T16:38:44.237996+00:00",
+      "action": "graduated",
+      "reviewer": "Claude",
+      "notes": "Accepted qualifying replacement of lesson_8d873e4e2f73. It keeps that lesson's launcher rule, the ClinePass DeepSeek boundary and the probe observation, and adds that Cline use runs under the shared spend gate (designated, fail-closed today) so the instruction is never recalled without its gate. The 2026-11-13 evidence stays in the retired row.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T16:38:44.033876+00:00"
+      ],
+      "lessons_sha": "3fda3f533464"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T16:38:44.237980+00:00",
+  "reviewer": "Claude",
+  "rationale": "Accepted qualifying replacement of lesson_8d873e4e2f73. It keeps that lesson's launcher rule, the ClinePass DeepSeek boundary and the probe observation, and adds that Cline use runs under the shared spend gate (designated, fail-closed today) so the instruction is never recalled without its gate. The 2026-11-13 evidence stays in the retired row.",
+  "supersedes": "lesson_8d873e4e2f73"
+}
