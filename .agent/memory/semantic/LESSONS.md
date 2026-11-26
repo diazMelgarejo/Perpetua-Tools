@@ -359,6 +359,7 @@
 - Moving the OpenClaw state folder aside strands launchd scripts that live inside it; after any clean-state cutover list launch agents whose program paths sit under the state folder and restore those non-secret wrapper scripts, or the discovery file never reappears.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_41029440fc85 -->
 - Keep generous free disk before OpenClaw plugin stages: a full disk made the codex plugin fail to load with no-space-left, the gateway restart slowly and warn about slow SQLite, and the seats lose their OAuth route; check free space first and free the agreed obsolete runtime.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c9650f1a94a9 -->
 - Verify a tool deny list with a live turn, not config alone: denying exec removed it for one OpenClaw seat, while the identical seat on the same harness still reported an exec tool that could not run commands; treat the Codex native surface as separate and test each seat.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_cc2672928be9 -->
+- Quote env file values that may contain a dollar sign: an unquoted value with dollar characters is expanded by the shell, so the variable silently becomes empty or mangled in every shell that sources the file; and reference one working key by alias from another file instead of keeping a second copy of a dead key.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_afc087c07247 -->
 
 ### 2026-10
 

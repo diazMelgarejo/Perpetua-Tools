@@ -1,0 +1,44 @@
+{
+  "id": "afc087c07247",
+  "key": "manual_afc087",
+  "name": "manual_afc087",
+  "claim": "Quote env file values that may contain a dollar sign: an unquoted value with dollar characters is expanded by the shell, so the variable silently becomes empty or mangled in every shell that sources the file; and reference one working key by alias from another file instead of keeping a second copy of a dead key.",
+  "conditions": [
+    "alias",
+    "dollar",
+    "dotenv",
+    "env",
+    "quoting",
+    "shell"
+  ],
+  "evidence_ids": [
+    "2026-11-26T00:58:59.219213+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T00:58:59.219213+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T00:58:59.219213+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T00:58:59.406403+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26 audit: the restored GLM52 key line is unquoted with dollar characters and was empty in fresh shells; two dead keys were replaced by references to the working Gemini and GitHub keys, verified identical by hash.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T00:58:59.219213+00:00"
+      ],
+      "lessons_sha": "c09a0b90af88"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T00:58:59.406390+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26 audit: the restored GLM52 key line is unquoted with dollar characters and was empty in fresh shells; two dead keys were replaced by references to the working Gemini and GitHub keys, verified identical by hash.",
+  "supersedes": null
+}
