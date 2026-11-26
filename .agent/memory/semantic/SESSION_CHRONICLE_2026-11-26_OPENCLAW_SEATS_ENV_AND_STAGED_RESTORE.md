@@ -51,6 +51,18 @@ restarting; roll back the cutover by stopping the service, renaming the failed s
 aside state and the saved service file. A rollback restores data, not a crash-looping gateway.
 Cleanup goes through the Trash, never a recursive force remove.
 
+## Outcome: consolidated pull requests
+
+- Perpetua-Tools draft #523 (this branch, base main) and orama-system draft #531 (base main) are the
+  one consolidated PR per repo for the session. AlphaClaw had nothing unpushed.
+- PT #522 was closed: merged with main its tree equals main, because the records arrived through #517.
+  The review's five findings got inline replies; three were fixed here as superseding lessons and two
+  were already superseded in main.
+- orama #531 also carries the six steipete/agent-scripts commits (re-applied on main) and a fix that
+  pins the installer's third-party clone to one reviewed upstream commit.
+- Parked, not published: older review lanes and the keep-never-merge research throwaway; the next
+  step is a per-lane review by tree-level diff, not by commit counts.
+
 ## Next order (pick up later, one at a time)
 
 1. Restore `agents.defaults.subagents` (orchestrator delegation; add `biafra`).

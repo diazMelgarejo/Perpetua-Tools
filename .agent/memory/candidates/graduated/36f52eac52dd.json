@@ -1,0 +1,39 @@
+{
+  "id": "36f52eac52dd",
+  "key": "manual_36f52e",
+  "name": "manual_36f52e",
+  "claim": "When a push is rejected because the branch advanced, fetch, read the new commits, and replay only your own unpushed commits on top of the new head, with no merge commit and no force push; and never post a PR comment that claims a push until the push is confirmed, correcting the comment if it ran early.",
+  "conditions": [
+    "push rejected non-fast-forward rebase own commits comment confirm"
+  ],
+  "evidence_ids": [
+    "2026-11-26T02:11:22.867172+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T02:11:22.867172+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T02:11:22.867172+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T02:11:23.024497+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-26: the operator pushed a formatting commit to the consolidated orama branch, the first push was rejected, a comment had already been posted, and a rebase of the six local commits plus a corrected comment fixed both.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T02:11:22.867172+00:00"
+      ],
+      "lessons_sha": "29e5c196ebe9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T02:11:23.024486+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-26: the operator pushed a formatting commit to the consolidated orama branch, the first push was rejected, a comment had already been posted, and a rebase of the six local commits plus a corrected comment fixed both.",
+  "supersedes": null
+}
