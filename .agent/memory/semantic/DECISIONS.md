@@ -1025,3 +1025,109 @@ open items are in `SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RE
 procedure and recovery steps in the orama first-run card `openclaw-staged-restore-and-recovery.md`.
 
 **Status:** confirmed by the operator; committed locally, not pushed.
+
+
+## 2026-11-26: Biafra Cline launcher bounds (G11) and lockstep contract
+
+**Decision:** Enforce fail-closed `max_requests` (positive integer) and `max_total_output` (positive integer tokens/bytes) bounds in `launch_cline_wandb.py` and pass them through `biafra_cycle.py`. `_launcher_boundary_problem()` lifts to `None` ONLY when both bounds are verified active. Wanda's path remains the direct OpenAI client and Weave, outside the spend gate, and her soul card strictly forbids the Cline CLI.
+
+**Rationale:** Fulfills doc 76 §15 and G11 designation requirements, transitioning the Biafra Cline route from designated to bounded-capable without violating Wanda's boundary or arming any live cycle.
+
+**Status:** active on branch `stack/523-biafra-bounds` (stacked on PR #523).
+
+
+## 2026-11-26: G11 lockstep verification correction, the PT memory contract is not runtime qualification
+
+**Decision:** The preceding launcher-bounds entry remains the intended contract, not an implementation-complete
+status. User-authorized takeover verification of Orama branch `stack/531-biafra-bounds` found that its
+uncommitted launcher changes validate supplied positive bounds and forward `--max-requests` and
+`--max-total-output` to Cline, but still accept missing bounds. `biafra_cycle.py` still returns
+`launcher-output-bound-unsupported`, and `launcher_argv()` passes neither bound. Biafra therefore remains
+designated and fail-closed, not bounded-capable. Wanda's direct OpenAI-client boundary and Cline prohibition
+remain unchanged, and `lesson_8d873e4e2f73` remains valid for the designated Biafra route.
+
+**Rationale:** The prior decision status and lesson rationale said the launcher enforces both bounds and
+unblocks the designation. Read-only inspection did not substantiate that claim: forwarding flags is not
+proof of enforcement, and the live-cycle boundary has not been lifted. PT memory must record the contract
+without presenting unmerged Orama work as integrated or qualifying a live route.
+
+**Status:** corrected additively through `.agent/tools/correct_lesson.py`; Orama enforcement, documentation
+and test lockstep, publication order, merge, and operator-gated activation remain unresolved. No Orama files
+were changed and no live cycle was armed.
+
+
+## 2026-11-26: G11 verification update, mandatory bounds are wired but enforcement remains unverified
+
+**Decision:** A later read-only Orama snapshot supersedes the preceding verification snapshot without
+rewriting it. The launcher now requires positive `--max-requests` and `--max-total-output` values;
+`launcher_argv()` always supplies defaults of one request and 4096 output tokens; and `live_cycle()` checks
+the boundary before reservation or launch and forwards the output cap to spend preflight. Nevertheless,
+`BOUND_CONTRACT` keeps both capabilities false because Cline 3.0.75 has no verified request-count or
+cumulative-output enforcement, so `launcher_boundary_problem()` still returns
+`launcher-output-bound-unsupported`. Biafra remains designated and fail-closed, not bounded-capable.
+
+**Rationale:** Mandatory input, cycle wiring, and forwarding are necessary but do not prove that either
+cap terminates work. Tests that simulate a supported client by setting both capability flags true are not
+qualification of the installed client. Doc 76 still describes the earlier optional/no-wiring state, so the
+documentation has not caught up with the code. Wanda's direct OpenAI-client boundary and Cline prohibition
+remain unchanged, and `lesson_8d873e4e2f73` remains valid for the designated Biafra route.
+
+**Status:** latest PT lesson correction appended through `.agent/tools/correct_lesson.py`; actual Orama
+client enforcement, documentation/test lockstep, publication order, merge, and operator-gated activation
+remain unresolved. No Orama files were changed and no live cycle was armed.
+
+---
+
+## 2026-11-26: G11 lesson restored to accepted so recall returns it
+
+**Decision:** `lesson_957217e78f07` (accepted, supersedes `lesson_9bcf2ac7d3ce`) states together: the
+Biafra seats are designated to use Cline under the shared spend gate once the launcher enforces both
+total output and request count; the route stays fail-closed today (`BOUND_CONTRACT` keeps both
+capabilities false, so `live_cycle()` refuses with `launcher-output-bound-unsupported`); Wanda's
+boundary is unchanged; `lesson_8d873e4e2f73` stays valid. The earlier rows are preserved.
+
+**Rationale:** `recall.py` uses only the latest row per id and skips rows that are not accepted. The
+provisional correction chain, starting with the first correction on 2026-11-23, hid
+`lesson_9bcf2ac7d3ce` from structured recall, and the 2026-11-26 rows dropped the shared spend-gate
+requirement from the rendered lesson layer. `correct_lesson.py` cannot append an accepted row, so the
+tooling path is an accepted superseding lesson through `learn.py --stage-only` and `graduate.py`.
+Verified with `recall.py --quiet`: the new lesson is returned first, the retired one is not.
+
+**Alternatives considered:** leave the chain provisional (invisible to recall); edit the existing rows
+(forbidden, memory is append-only).
+
+**Status:** done on this pull request. For any later correction of a lesson that must stay recallable,
+end the chain with an accepted superseding lesson.
+
+---
+
+## 2026-11-26: lesson_8d873e4e2f73 is retired by a qualified replacement, so recall cannot return it ungated
+
+**Decision:** `lesson_b9279f3676a9` (accepted, supersedes `lesson_8d873e4e2f73`) replaces the
+unqualified launcher lesson. It keeps that lesson's `tokenSource` and `updatedAt` rule, the ClinePass
+DeepSeek boundary and the identical-prompt probe observation (Cline answered four tasks and was
+faster; Wanda matched the format on three and cut one function off, as one observation). It adds that
+launching Cline with `launch_cline_wandb.py` is only authorized under the shared spend gate, that the
+Biafra route is designated and fail-closed today (`live_cycle()` refuses with
+`launcher-output-bound-unsupported`), and that Wanda keeps the direct OpenAI client outside the gate
+with a soul card that forbids the Cline CLI for her route.
+
+**Rationale:** `lesson_8d873e4e2f73` told readers to summon Cline with the launcher and had no
+spend-gate condition, and the launcher has no gate of its own (`biafra_cycle.py` is what wraps it with
+the guard). `recall.py` scores lessons separately, and three narrow queries (the `tokenSource` rule,
+the ClinePass boundary, a plain W&B DeepSeek Cline launch) returned it first and without
+`lesson_957217e78f07`. After the replacement, the same queries return the qualified lesson first and
+the old row renders struck through.
+
+**Relation to the 2026-11-23 ruling:** that ruling said `lesson_8d873e4e2f73` stays valid and is not
+superseded, meaning neither it nor Wanda's soul card is invalidated by the other. This entry keeps that
+intent: no guidance is lost and neither record is declared wrong. Only the instruction's missing
+condition is added, in a replacement row, because an unqualified instruction can be recalled alone.
+Earlier rows, including this lesson's, are preserved. Orama doc 76 and `lesson_957217e78f07` still
+name the old id; the guidance behind that id is carried unchanged by the replacement.
+
+**Alternatives considered:** a provisional correction (hides the lesson from recall, the failure found
+earlier the same day); editing the old row (forbidden, memory is append-only); leaving it as it was
+(recall can return the instruction without its gate).
+
+**Status:** done on this pull request.
