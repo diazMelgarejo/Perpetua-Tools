@@ -75,8 +75,16 @@ def _isolated_producer_id_file(tmp_path):
     # monkeypatch.undo() mid-test, which would otherwise drop the isolation.
     previous = os.environ.get("PT_PRODUCER_ID_FILE")
     os.environ["PT_PRODUCER_ID_FILE"] = str(tmp_path / "pt-producer-id")
+    prev_state = os.environ.get("PT_STATE_DIR")
+    state_dir = tmp_path / "pt_test_state"
+    state_dir.mkdir(parents=True, exist_ok=True)
+    os.environ["PT_STATE_DIR"] = str(state_dir)
     yield
     if previous is None:
         os.environ.pop("PT_PRODUCER_ID_FILE", None)
     else:
         os.environ["PT_PRODUCER_ID_FILE"] = previous
+    if prev_state is None:
+        os.environ.pop("PT_STATE_DIR", None)
+    else:
+        os.environ["PT_STATE_DIR"] = prev_state

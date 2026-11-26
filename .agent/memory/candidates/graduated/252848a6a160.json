@@ -1,0 +1,45 @@
+{
+  "id": "252848a6a160",
+  "key": "manual_252848",
+  "name": "manual_252848",
+  "claim": "A provisional correction removes a lesson from structured recall because recall.py takes only the latest row per lesson id and skips non-accepted rows. After correcting a lesson that must stay recallable, end the chain with an accepted superseding lesson (learn.py --stage-only, then graduate.py --supersedes), and confirm with recall.py --quiet that it is returned. Run recall with --quiet when checking, because a plain run appends a proactive-recall row to the episodic log.",
+  "conditions": [
+    "correction",
+    "graduate",
+    "lesson",
+    "memory",
+    "provisional",
+    "recall",
+    "supersedes"
+  ],
+  "evidence_ids": [
+    "2026-11-26T21:43:08.625445+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T21:43:08.625445+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T21:43:08.625445+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T21:43:13.077937+00:00",
+      "action": "graduated",
+      "reviewer": "Claude",
+      "notes": "Supersedes lesson_80f7b1d8d9a3. Reaffirms the append-only superseding graduation procedure and verifies recallability of the Phase 1B bounded-launcher lessons.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T21:43:08.625445+00:00"
+      ],
+      "lessons_sha": "e6544f85f44e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T21:43:13.077924+00:00",
+  "reviewer": "Claude",
+  "rationale": "Supersedes lesson_80f7b1d8d9a3. Reaffirms the append-only superseding graduation procedure and verifies recallability of the Phase 1B bounded-launcher lessons.",
+  "supersedes": "lesson_80f7b1d8d9a3"
+}
