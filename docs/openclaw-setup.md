@@ -200,6 +200,13 @@ version; fix it with
   metadata and a
   real launch, not by calling the file.
 
+### Staged restore, seats and backup recovery (2026-11-26)
+
+The fresh-install procedure, the staged restore order, the dated provider and seat rulings,
+credential handling and the backup and recovery process are one card in orama-system:
+`bin/orama-system/references/openclaw-staged-restore-and-recovery.md`. The dated record is
+`.agent/memory/semantic/SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RESTORE.md`.
+
 ### Restore in baby steps (after step 5)
 
 Check the gateway after each stage: 1 core config; 2 agents and workspace; 3 the W&B default; 4

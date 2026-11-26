@@ -1010,3 +1010,18 @@ Cline launcher, not an OpenClaw chain. No chain pairs Ollama with a Mac LM Studi
 **Status:** confirmed by the operator. Implemented on local branches, not pushed: PT PR 521's branch (commits
 `753139a0`, `ddcb46d5` and the memory commits) and the orama branch
 `2026-11-25-002-openclaw-runtime-steps` (`f8416ec8`) on the PR 530 tip. The staged restore is still to do.
+
+## 2026-11-26: OpenClaw seats, env source of truth and the staged-restore procedure
+
+**Decision:** Seats `biafra` (alias MetaResearcher, guardian and companion of `autoresearcher`) and
+`autoresearcher` default to OpenAI Terra at medium effort through the codex harness with a per-agent
+login, then the default chain (W&B, Google, Ollama, OpenRouter free). Astra and Sol are human-gated and
+never default or automatic. W&B stays in every agent chain. The seats deny exec, process, browser,
+canvas, nodes, cron and gateway; a Seatbelt sandbox is a staged draft. One env file is the source of
+truth for working keys; the gateway reads custom keys from its own global env file plus a restart.
+
+**Rationale:** Each rule came from a measured failure or a ruling; the sequence, the next order and the
+open items are in `SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RESTORE.md`, and the
+procedure and recovery steps in the orama first-run card `openclaw-staged-restore-and-recovery.md`.
+
+**Status:** confirmed by the operator; committed locally, not pushed.
