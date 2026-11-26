@@ -294,17 +294,27 @@ def fingerprint(data: dict[str, Any]) -> str:
     return hashlib.sha256(_canonical(data).encode("utf-8")).hexdigest()
 
 
-def vendored_copy(data: dict[str, Any], now: datetime | None = None) -> str:
-    """The text of a stamped copy for a consumer repository. Pure: it returns the text and writes nothing."""
+def _sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def vendored_copy(data: dict[str, Any], now: datetime | None = None, module_source: str | None = None) -> str:
+    """The text of a stamped copy for a consumer repository. Pure: it returns the text and writes nothing.
+
+    When ``module_source`` is given, the stamp also records the hash of this module's source, because a consumer that
+    cannot reach Perpetua-Tools runs the vendored module and must be able to tell it was not edited by hand."""
     now = now or datetime.now(timezone.utc)
     out = {k: v for k, v in data.items() if k != "_vendor"}
-    out["_vendor"] = {
+    stamp = {
         "source": "perpetua-tools config/openclaw-defaults.json",
         "source_sha256": fingerprint(data),
         "source_updated": data["updated"],
         "vendored_at": now.isoformat(),
         "note": "Generated copy. Never edit by hand; re-sync it after a human confirms the diff.",
     }
+    if module_source is not None:
+        stamp["module_sha256"] = _sha256_text(module_source)
+    out["_vendor"] = stamp
     return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
 
 
@@ -313,6 +323,7 @@ def verify_vendored(
     live_fingerprint: str | None = None,
     now: datetime | None = None,
     max_age_days: int = 30,
+    module_source: str | None = None,
 ) -> dict[str, str]:
     """Judge a vendored copy: ok, stale (live file moved on), old (cannot verify), tampered or invalid."""
     now = now or datetime.now(timezone.utc)
@@ -325,6 +336,12 @@ def verify_vendored(
         return {"status": "invalid", "message": "the vendored OpenClaw defaults have no readable stamp; do not use them"}
     if fingerprint(obj) != source:
         return {"status": "tampered", "message": "the vendored OpenClaw defaults were edited by hand (fingerprint mismatch); do not use them"}
+    if module_source is not None:
+        recorded = stamp.get("module_sha256")
+        if recorded is None:
+            return {"status": "invalid", "message": "the vendored stamp records no module hash, so the vendored module cannot be verified"}
+        if recorded != _sha256_text(module_source):
+            return {"status": "tampered", "message": "the vendored OpenClaw defaults module was edited by hand (hash mismatch); do not use it"}
     if live_fingerprint is not None and live_fingerprint != source:
         return {
             "status": "stale",

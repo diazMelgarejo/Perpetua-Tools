@@ -186,3 +186,40 @@ def test_the_cli_validates_renders_checks_and_fingerprints(tmp_path: Path, capsy
     bad = tmp_path / "bad.json"
     bad.write_text(json.dumps(patch), encoding="utf-8")
     assert od.main(["--check", str(bad)]) == 1
+
+
+def test_drift_ignores_any_field_openclaw_adds_in_either_shape(data: dict) -> None:
+    """OpenClaw normalizes entries on write (thinkingLevelMap, agentDir, workspace ...): extras are never drift."""
+    config = od.render_patch(data, shape="entries")
+    config["agents"]["entries"]["biafra"]["agentDir"] = "/x"
+    config["agents"]["entries"]["biafra"]["workspace"] = "/y"
+    config["agents"]["entries"]["biafra"]["model"]["thinkingLevelMap"] = {}
+    config["agents"]["defaults"]["bootstrapMaxChars"] = 5000
+    config["models"]["providers"]["wandb"]["models"][0]["thinkingLevelMap"] = {}
+    config["models"]["providers"]["wandb"]["extraProviderField"] = True
+    assert od.drift(data, config) == []
+    legacy = od.render_patch(data, shape="list")
+    for agent in legacy["agents"]["list"]:
+        agent["agentDir"] = "/x"
+        agent["model"]["thinkingLevelMap"] = {}
+    assert od.drift(data, legacy) == []
+
+
+def test_drift_still_reports_a_changed_or_missing_expected_field_next_to_extras(data: dict) -> None:
+    config = od.render_patch(data, shape="entries")
+    config["agents"]["entries"]["biafra"]["thinkingLevelMap"] = {}
+    config["agents"]["entries"]["biafra"]["model"]["primary"] = "openai/gpt-6.2-astra"
+    del config["agents"]["entries"]["autoresearcher"]["tools"]
+    paths = {d["path"] for d in od.drift(data, config)}
+    assert paths == {"agents.entries.biafra.model.primary", "agents.entries.autoresearcher.tools.deny"}
+
+
+def test_the_stamp_also_covers_the_vendored_module(data: dict) -> None:
+    source = "def f():\n    return 1\n"
+    text = od.vendored_copy(data, now=NOW, module_source=source)
+    assert json.loads(text)["_vendor"]["module_sha256"]
+    assert od.verify_vendored(text, live_fingerprint=od.fingerprint(data), now=NOW, module_source=source)["status"] == "ok"
+    edited = od.verify_vendored(text, live_fingerprint=od.fingerprint(data), now=NOW, module_source=source + "# hand edit\n")
+    assert edited["status"] == "tampered" and "module" in edited["message"]
+    bare = od.vendored_copy(data, now=NOW)  # stamped without a module hash
+    assert od.verify_vendored(bare, now=NOW, module_source=source)["status"] == "invalid"
