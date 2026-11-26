@@ -58,3 +58,35 @@ def test_the_fresh_gateway_step_is_never_part_of_a_plain_apply_or_plan(tmp_path:
 @pytest.mark.parametrize("flag", ["--bogus", "--node"])
 def test_bad_arguments_exit_2_with_usage(tmp_path: Path, flag: str) -> None:
     assert _run(tmp_path, flag).returncode == 2
+
+
+def test_fresh_gateway_defers_link_until_after_onboarding(tmp_path: Path) -> None:
+    done = _run(tmp_path, "--plan", "--fresh-gateway", "--accept-risk")
+    assert done.returncode == 0
+    out = done.stdout
+    # openclaw_runtime --apply appears only once, after onboarding
+    assert out.count("perpetua_tools.openclaw_runtime --apply") == 1
+    assert out.index("perpetua_tools.openclaw_runtime --apply") > out.index("openclaw onboard")
+
+
+def test_aside_collision_preflight_fails_before_bootout(tmp_path: Path) -> None:
+    import datetime
+    today = datetime.date.today().strftime("%Y%m%d")
+    aside = tmp_path / f".openclaw.pre-clean-{today}"
+    aside.mkdir(parents=True)
+    done = _run(tmp_path, "--apply", "--fresh-gateway", "--accept-risk")
+    assert done.returncode == 2
+    assert "already exists; move it aside first" in done.stderr
+
+
+def test_tarball_pin_without_explicit_openclaw(tmp_path: Path) -> None:
+    import json, tarfile, io
+    tar_path = tmp_path / "alphaclaw-test.tgz"
+    pkg_json = json.dumps({"name": "@diazmelgarejo/alphaclaw", "version": "0.9.40", "dependencies": {"openclaw": "2026.11.1"}}).encode()
+    with tarfile.open(tar_path, "w:gz") as tf:
+        ti = tarfile.TarInfo("package/package.json")
+        ti.size = len(pkg_json)
+        tf.addfile(ti, io.BytesIO(pkg_json))
+    done = _run(tmp_path, "--plan", "--alphaclaw-tarball", str(tar_path))
+    assert done.returncode == 0
+    assert "npm install -g openclaw@2026.11.1" in done.stdout

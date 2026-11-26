@@ -54,10 +54,16 @@ class Paths:
     alphaclaw: Path
 
     @classmethod
-    def under(cls, home: Path) -> "Paths":
+    def under(cls, home: Path, nvm_dir: Path | None = None) -> "Paths":
+        if nvm_dir is None:
+            env_nvm = os.environ.get("NVM_DIR")
+            if env_nvm and (home == Path.home() or not (home / ".nvm").exists()):
+                nvm_dir = Path(env_nvm)
+            else:
+                nvm_dir = home / ".nvm"
         return cls(
             home=home,
-            nvm=home / ".nvm" / "versions" / "node",
+            nvm=nvm_dir / "versions" / "node",
             link=home / ".local" / "share" / "openclaw-node",
             plist=home / "Library" / "LaunchAgents" / f"{LABEL}.plist",
             alphaclaw=home / ".alphaclaw" / "node_modules",
@@ -124,8 +130,16 @@ def select(installs: list[NodeInstall], pin: str | None) -> NodeInstall | None:
 
 
 def rewrite_arguments(args: list[str], link: Path) -> list[str]:
-    """Replace any ``.../.nvm/versions/node/vX.Y.Z`` prefix with the stable link; already-linked arguments are kept."""
-    return [f"{link}{m.group('rest')}" if (m := _VERSIONED.match(a)) else a for a in args]
+    """Replace any ``.../.nvm/versions/node/vX.Y.Z`` prefix or Homebrew node alias with the stable link; already-linked arguments are kept."""
+    rewritten: list[str] = []
+    for a in args:
+        if a in ("/opt/homebrew/bin/node", "/usr/local/bin/node"):
+            rewritten.append(f"{link}/bin/node")
+        elif (m := _VERSIONED.match(a)):
+            rewritten.append(f"{link}{m.group('rest')}")
+        else:
+            rewritten.append(a)
+    return rewritten
 
 
 def _service_arguments(plist: Path) -> list[str]:
@@ -205,7 +219,12 @@ def apply(
     """Make the link and the service file consistent, reload only on change, and confirm the gateway answers."""
     findings = {f.code for f in inspect(paths)}
     if not findings:
-        return []
+        if paths.plist.is_file():
+            port = _port(_service_arguments(paths.plist))
+            if probe(port):
+                return []
+        else:
+            return []
     if "plist-missing" in findings:
         raise RuntimeSyncError("the service file is missing; run: openclaw gateway install, then apply again")
     if "link-not-symlink" in findings:
@@ -257,8 +276,9 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--apply", action="store_true", help="repoint the link, rewrite the service file, reload once")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--home", type=Path, default=Path.home(), help="home directory (tests)")
+    parser.add_argument("--nvm-dir", type=Path, default=None, help="custom nvm root directory (defaults to NVM_DIR or <home>/.nvm)")
     options = parser.parse_args(argv)
-    paths = Paths.under(options.home)
+    paths = Paths.under(options.home, nvm_dir=options.nvm_dir)
     if options.apply:
         try:
             actions = apply(paths)

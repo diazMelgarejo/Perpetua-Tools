@@ -1117,6 +1117,7 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
             config = build_openclaw_config(pt_state)
         _ensure_agent_workspaces(config_dir)
         _ensure_autoresearch()
+        _check_runtime_link()
         return asdict(
             AlphaClawBootstrapResult(
                 ok=True,
@@ -1136,6 +1137,7 @@ async def bootstrap_alphaclaw(force: bool = False) -> dict[str, object]:
         config_dir, config_file, force=force
     )
     if _openclaw_payload is not None:
+        _check_runtime_link()
         return _openclaw_payload
     if not _is_alphaclaw_installed() and _is_openclaw_installed():
         print("[alphaclaw] \u2192 OpenClaw gateway unavailable \u2014 installing AlphaClaw (step 5)")

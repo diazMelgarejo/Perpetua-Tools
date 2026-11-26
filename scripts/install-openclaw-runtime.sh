@@ -27,6 +27,7 @@ set -euo pipefail
 MODE="check"
 NODE_VER="24.22.3"
 OPENCLAW_VER=""
+EXPLICIT_OPENCLAW=0
 MIGRATE_FROM=""
 TARBALL=""
 FRESH=0
@@ -46,7 +47,7 @@ while [ $# -gt 0 ]; do
     --plan) MODE="plan" ;;
     --apply) MODE="apply" ;;
     --node) need "$@"; NODE_VER="$2"; shift ;;
-    --openclaw) need "$@"; OPENCLAW_VER="$2"; shift ;;
+    --openclaw) need "$@"; OPENCLAW_VER="$2"; EXPLICIT_OPENCLAW=1; shift ;;
     --migrate-globals-from) need "$@"; MIGRATE_FROM="$2"; shift ;;
     --alphaclaw-tarball) need "$@"; TARBALL="$2"; shift ;;
     --fresh-gateway) FRESH=1 ;;
@@ -61,13 +62,30 @@ if [ "$FRESH" = "1" ] && [ "$ACCEPT" != "1" ]; then
   die "--fresh-gateway moves your OpenClaw state aside and onboards fresh; add --accept-risk to confirm"
 fi
 
+if [ "$FRESH" = "1" ] && [ "$MODE" = "apply" ]; then
+  aside="$HOME/.openclaw.pre-clean-$(date +%Y%m%d)"
+  [ -e "$aside" ] && die "$aside already exists; move it aside first"
+fi
+
 NODE_BIN="$NVM_HOME/versions/node/v$NODE_VER/bin"
 DRIFT=0
 
 pinned_openclaw() {
-  python3 - "$HOME" <<'PY' 2>/dev/null || true
-import json, sys
-home = sys.argv[1]
+  python3 - "$HOME" "$TARBALL" <<'PY' 2>/dev/null || true
+import json, sys, tarfile
+home, tarball = sys.argv[1], sys.argv[2]
+if tarball:
+    try:
+        with tarfile.open(tarball, "r:*") as tf:
+            member = tf.extractfile("package/package.json")
+            if member:
+                data = json.load(member)
+                pin = data.get("dependencies", {}).get("openclaw")
+                if pin:
+                    print(pin)
+                    sys.exit(0)
+    except Exception:
+        pass
 for name in ("@diazmelgarejo/alphaclaw", "@chrysb/alphaclaw"):
     try:
         data = json.load(open(f"{home}/.alphaclaw/node_modules/{name}/package.json"))
@@ -147,6 +165,14 @@ step_alphaclaw() {
   do_cmd cp "$TARBALL" "$HOME/.alphaclaw/vendor/"
   node_cmd npm install --prefix "$HOME/.alphaclaw" "$HOME/.alphaclaw/vendor/$(basename "$TARBALL")"
   node_cmd npm uninstall --prefix "$HOME/.alphaclaw" @chrysb/alphaclaw
+  if [ "$EXPLICIT_OPENCLAW" = "0" ]; then
+    local new_pin
+    new_pin="$(pinned_openclaw)"
+    if [ -n "$new_pin" ] && [ "$new_pin" != "$OPENCLAW_VER" ]; then
+      OPENCLAW_VER="$new_pin"
+      node_cmd npm install -g "openclaw@$OPENCLAW_VER"
+    fi
+  fi
 }
 
 step_link() {
@@ -163,9 +189,13 @@ step_gateway() {
   [ "$FRESH" = "1" ] || return 0
   heading "5 fresh gateway state (opt-in; the old state is renamed, never deleted)"
   local aside="$HOME/.openclaw.pre-clean-$(date +%Y%m%d)"
-  do_cmd launchctl bootout "gui/$(id -u)/ai.openclaw.gateway" || true
   [ -e "$aside" ] && [ "$MODE" = "apply" ] && die "$aside already exists; move it aside first"
-  do_cmd mv "$HOME/.openclaw" "$aside"
+  do_cmd launchctl bootout "gui/$(id -u)/ai.openclaw.gateway" || true
+  if [ -e "$HOME/.openclaw" ]; then
+    do_cmd mv "$HOME/.openclaw" "$aside"
+  elif [ "$MODE" = "plan" ]; then
+    printf '  $ mv %s %s (if present)\n' "$HOME/.openclaw" "$aside"
+  fi
   node_cmd openclaw onboard --non-interactive --accept-risk --flow quickstart --mode local \
     --gateway-bind loopback --gateway-port "$PORT" --gateway-auth token --auth-choice skip \
     --skip-channels --skip-skills --skip-search --skip-hooks --install-daemon
@@ -176,7 +206,9 @@ step_gateway() {
 step_node
 step_openclaw
 step_alphaclaw
-step_link
+if [ "$FRESH" != "1" ]; then
+  step_link
+fi
 step_gateway
 
 if [ "$MODE" = "check" ]; then

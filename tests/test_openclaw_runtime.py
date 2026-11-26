@@ -232,3 +232,42 @@ def test_cli_check_exits_nonzero_on_drift_and_zero_when_clean(tmp_path: Path, ca
     assert "plist-hardwired" in capsys.readouterr().out
     rt.apply(_paths(tmp_path), run=Fake().run, probe=Fake().probe)
     assert rt.main(["--check", "--home", str(tmp_path)]) == 0
+
+
+def test_custom_nvm_dir_is_discovered(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    custom_nvm = tmp_path / "custom_nvm"
+    prefix = custom_nvm / "versions" / "node" / "v24.22.3"
+    (prefix / "bin").mkdir(parents=True)
+    (prefix / "bin" / "node").write_text("#!/bin/sh\n", encoding="utf-8")
+    pkg = prefix / "lib" / "node_modules" / "openclaw"
+    (pkg / "dist").mkdir(parents=True)
+    (pkg / "package.json").write_text(json.dumps({"version": PIN}), encoding="utf-8")
+    _pin(tmp_path)
+    monkeypatch.setenv("NVM_DIR", str(custom_nvm))
+    paths = rt.Paths.under(tmp_path)
+    installs = rt.discover(paths.nvm)
+    assert len(installs) == 1 and installs[0].version == (24, 22, 3)
+
+
+def test_homebrew_node_alias_is_rewritten_to_link(tmp_path: Path) -> None:
+    link = tmp_path / ".local" / "share" / "openclaw-node"
+    args = ["/bin/sh", "/path/wrapper.sh", "/opt/homebrew/bin/node", "--max-old-space-size=8192", "gateway"]
+    rewritten = rt.rewrite_arguments(args, link)
+    assert rewritten == ["/bin/sh", "/path/wrapper.sh", f"{link}/bin/node", "--max-old-space-size=8192", "gateway"]
+
+
+def test_apply_reloads_when_service_is_unloaded_despite_consistent_files(tmp_path: Path) -> None:
+    prefix = _node(tmp_path, "24.22.3")
+    _plist(tmp_path, prefix)
+    _pin(tmp_path)
+    fake = Fake(answering=True)
+    paths = _paths(tmp_path)
+    # First apply makes files consistent and loads service
+    rt.apply(paths, run=fake.run, probe=fake.probe)
+    # Simulate service becoming unloaded later (e.g. earlier failed bootstrap or crashed service)
+    fake.loaded = False
+    assert not fake.probe(18789)
+    # Second apply sees no file drift, but recognizes unloaded gateway and triggers reload
+    actions = rt.apply(paths, run=fake.run, probe=fake.probe)
+    assert "reloaded the launch agent" in actions
+    assert fake.loaded is True
