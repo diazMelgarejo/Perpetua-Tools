@@ -47,7 +47,7 @@ openclaw channels login --channel whatsapp
 
 Scan the displayed QR code with WhatsApp → Linked Devices → Link a Device.
 
-The bot will connect as your personal WhatsApp account. Your number (`+14159419166`) is set as the
+The bot will connect as your personal WhatsApp account. Your number is set as the
 command owner.
 
 **Why "whatsapp notification failed" before**: the plugin was in the `plugins.allow` list but the
@@ -55,7 +55,7 @@ Baileys runtime hadn't loaded yet because the plugin wasn't in the allowlist. Fi
 added `whatsapp` to `plugins.allow`, added `channels.whatsapp` config, Baileys auto-installs on
 gateway start.
 
-**Format**: `whatsapp:+14159419166` (with `+`, E.164 format). The `+` IS required.
+**Format**: `whatsapp:<YOUR_NUMBER_E164>` (with `+`, E.164 format). The `+` IS required.
 
 ---
 
@@ -66,7 +66,7 @@ Controls who can run privileged commands (`/config`, `/diagnostics`, exec approv
 ```bash
 # Current value
 openclaw config get commands.ownerAllowFrom
-# → ["whatsapp:+14159419166"]
+# → ["whatsapp:<YOUR_NUMBER_E164>"]
 
 # To change (example — telegram user ID)
 openclaw config set commands.ownerAllowFrom '["telegram:123456789"]'

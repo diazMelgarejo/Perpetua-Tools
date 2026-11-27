@@ -847,3 +847,43 @@ def test_staged_rfc1918_literal_blocks_and_public_docs_address_does_not(tmp_path
     assert "192.0.2.1" not in joined
     assert "10.1.2.3" not in joined
     assert "fd12:3456::1:2" not in joined
+
+
+def test_scan_tracked_secrets_blocks_real_looking_phone_numbers(tmp_path):
+    """Numbers are assembled here so that this file never holds a literal one."""
+    repo_hygiene = load_repo_hygiene()
+    digits = "44" + "7700" + "900123"
+    blocked = {
+        "channel.json": '{"allowFrom": ["whatsapp:+' + digits + '"]}',
+        "bare_channel.md": "owner is tel:" + digits,
+        "plus.md": "Your number (+" + digits + ") is the owner.",
+        "spaced.md": "Call +" + " ".join(["1", "202", "867", "5309"]) + " today.",
+    }
+    allowed = {
+        "env.json": '{"allowFrom": ["${env:OPENCLAW_OWNER_ID}"]}',
+        "placeholder.md": "whatsapp:<YOUR_NUMBER_E164>",
+        "fiction.md": "whatsapp:+" + "1202" + "555" + "0143",
+        "math.py": "total = base+" + "1700000000" + "\nwhen = (a)+" + "1700000000",
+        "telegram.md": "telegram:123456789",
+    }
+    for name, text in {**blocked, **allowed}.items():
+        (tmp_path / name).write_text(text + "\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_tracked_secrets(tmp_path, sorted([*blocked, *allowed]))
+
+    assert sorted(error.split(": ")[1].split(":")[0] for error in errors) == sorted(blocked)
+    assert all("phone_number" in error and digits not in error for error in errors)
+
+
+def test_registered_private_phone_is_blocked_even_without_a_prefix(tmp_path, monkeypatch):
+    repo_hygiene = load_repo_hygiene()
+    digits = "44" + "7700" + "900456"
+    registry = tmp_path / "verboten.local"
+    registry.write_text(f"private_phone={digits}\n", encoding="utf-8")
+    monkeypatch.setenv("OPENCLAW_VERBOTEN_LITERALS", str(registry))
+    script = tmp_path / "verify.sh"
+    script.write_text(f"for sentinel in '{digits}'; do :; done\n", encoding="utf-8")
+
+    errors = repo_hygiene.scan_private_verboten_literals(tmp_path, ["verify.sh"])
+
+    assert errors == ["private verboten literal in tracked file: verify.sh"]
