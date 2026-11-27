@@ -269,6 +269,8 @@ async def try_atomic_claim(
     task_id: str,
     agent_id: str,
     claim_payload: Optional[dict] = None,
+    *,
+    claimed_at: Optional[float] = None,
 ) -> ClaimResult:
     """Atomically persist exclusive ownership and its append-only event.
 
@@ -276,13 +278,17 @@ async def try_atomic_claim(
     conflicts report a lost race. Lock contention is retried briefly and then
     reports contention without leaving a claim row or an event behind.
     """
+    claim_ts = claimed_at if claimed_at is not None else time.time()
     payload = claim_payload or {
         "kind": "task_claim",
         "task_id": task_id,
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": await asyncio.to_thread(current_worktree_label),
+        "claimed_at": claim_ts,
     }
+    if "claimed_at" not in payload:
+        payload["claimed_at"] = claim_ts
     for attempt in range(_LOCK_RETRIES):
         async with bus.connect() as db:
             try:
@@ -291,7 +297,7 @@ async def try_atomic_claim(
                 await db.execute(
                     "INSERT INTO task_claims (task_id, agent_id, claimed_at) "
                     "VALUES (?, ?, ?)",
-                    (task_id, agent_id, time.time()),
+                    (task_id, agent_id, claim_ts),
                 )
                 row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
                     db, "heartbeat", payload
@@ -475,7 +481,7 @@ async def release_claim_with_event(
     return ReleaseResult.CONTENTION
 
 
-async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | None:
+async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> float | bool:
     """Claim a dependency-ready task and publish the successful actor's presence."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
@@ -565,6 +571,7 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # the actual exclusion point -- only one caller gets True. The claim row
     # and its heartbeat event commit together (see try_atomic_claim) so a
     # crash between them can never leave one without the other.
+    claim_ts = time.time()
     payload = {
         "kind": "task_claim",
         "task_id": task_id,
@@ -572,8 +579,11 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
         "assigned_agent": agent_id,
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": await asyncio.to_thread(current_worktree_label),
+        "claimed_at": claim_ts,
     }
-    claim_result = await try_atomic_claim(bus, task_id, agent_id, payload)
+    claim_result = await try_atomic_claim(
+        bus, task_id, agent_id, payload, claimed_at=claim_ts
+    )
     if claim_result == ClaimResult.LOST_RACE:
         return _error(
             f"{task_id} could not be claimed; another agent won the race. "
@@ -589,7 +599,8 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # agent -- post presence explicitly rather than relying on the agent
     # to separately remember an out-of-band pulse call.
     await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
-    print(f"claimed: {task_id} by {agent_id}")
+    print(f"claimed: {task_id} by {agent_id} (claimed_at: {claim_ts})")
+    return claim_ts
 
 
 async def get_task_claim(

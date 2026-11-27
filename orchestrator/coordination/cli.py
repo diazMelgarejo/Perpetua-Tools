@@ -430,9 +430,21 @@ async def _amain(args: argparse.Namespace) -> int:
         elif args.subcmd == "claim":
             result = await _queue_claim(bus, args.task_id, args.agent_id)
         elif args.subcmd == "complete":
-            result = await _queue_complete(bus, args.task_id, args.agent_id, args.notes or "")
+            result = await _queue_complete(
+                bus,
+                args.task_id,
+                args.agent_id,
+                args.notes or "",
+                expected_claimed_at=getattr(args, "expected_claimed_at", None),
+            )
         elif args.subcmd == "fail":
-            result = await _queue_fail(bus, args.task_id, args.agent_id, args.notes or "")
+            result = await _queue_fail(
+                bus,
+                args.task_id,
+                args.agent_id,
+                args.notes or "",
+                expected_claimed_at=getattr(args, "expected_claimed_at", None),
+            )
         elif args.subcmd == "status":
             result = await _queue_status(bus, args.agent)
     elif args.cmd == "heartbeat":
@@ -578,11 +590,23 @@ def build_parser() -> argparse.ArgumentParser:
     p_queue_complete.add_argument("task_id")
     p_queue_complete.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_complete.add_argument("--notes", default="")
+    p_queue_complete.add_argument(
+        "--expected-claimed-at",
+        type=float,
+        default=None,
+        help="Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r)",
+    )
 
     p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
     p_queue_fail.add_argument("task_id")
     p_queue_fail.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_fail.add_argument("--notes", default="")
+    p_queue_fail.add_argument(
+        "--expected-claimed-at",
+        type=float,
+        default=None,
+        help="Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r)",
+    )
 
     p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")
     p_queue_status.add_argument("--agent", default=None)

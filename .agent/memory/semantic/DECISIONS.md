@@ -1143,3 +1143,36 @@ earlier the same day); editing the old row (forbidden, memory is append-only); l
 **Alternatives considered:** Wait for upstream Cline CLI boundary flags (rejected — indefinite blocker); loopback HTTP MITM proxy (rejected — complex TLS interception with questionable certificate trust and failure modes); client-side trust (rejected — violates fail-closed doctrine).
 
 **Status:** active on branch `2026-11-27-001-lane2-bound-contract-pt`.
+
+
+---
+
+## 2026-11-27: Phase 1B Lockstep alignment with orama-system PR #533 — loopback HTTP accounting proxy
+
+**Decision:** Update lockstep memory records to align with `diazMelgarejo/orama-system` PR #533
+commit `6572bfaf74a4c74332fe4c7b5ec30e2f14ef8bb9`: launcher boundary enforcement is implemented in
+`launch_cline_wandb.py` via a stdlib loopback HTTP accounting proxy intercepting OpenAI-compatible
+requests on the local loopback host (port 0). The proxy counts requests 1:1 at the wire boundary
+(resolving stdout/stderr regex undercounting, double-counting, chunk-splitting, and ordinary-text
+false termination) and parses real provider `usage.completion_tokens` (injecting
+`stream_options: {"include_usage": true}` on SSE streams). Breaching either bound or encountering
+missing usage terminates the child fail-closed with exit code 124. Wire-level enforcement and
+deterministic harness tests are verified and pushed in `orama-system` PR #533. Accepted superseding
+lesson `lesson_c35a277559cc` (superseding `lesson_f6de5491aae4`) preserves append-only memory
+integrity. In tandem, the L-1r queue race guard is wired through the worker CLI: `queue claim`
+returns and emits `claimed_at`, and `queue complete` / `queue fail` accept `--expected-claimed-at`
+to prevent stale workers from completing or failing reclaimed tasks under the same agent name.
+
+**Rationale:** Fulfills lockstep cross-repository synchronization doctrine. An unverified launcher
+claim in PT memory without passing wire-level enforcement in `orama-system` violated review
+standards (CodeRabbit finding `PRRT_kwDOPz7qg868lCAr`). Aligning PT memory with the exact
+`orama-system` PR #533 commit (`6572bfaf`) ensures that all claims are backed by committed,
+verified repository artifacts. Similarly, exposing `--expected-claimed-at` in
+`orchestrator/coordination/cli.py` seals the worker-facing L-1r race window (CodeRabbit finding
+`PRRT_kwDOPz7qg868lCAw`).
+
+**Alternatives considered:** Defer lockstep alignment until post-merge (rejected — leaves unbacked
+claim in PR branch); in-place editing of JSONL records (strictly rejected — violates append-only
+memory invariant).
+
+**Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.

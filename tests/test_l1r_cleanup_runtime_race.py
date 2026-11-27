@@ -18,12 +18,14 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import sys
 import time
 from pathlib import Path
 
 import pytest
 
+from orchestrator.coordination import cli as core_cli
 from orchestrator.coordination import task_queue
 from orchestrator.coordination.task_queue import (
     capture_stale_queue_claims,
@@ -416,3 +418,101 @@ asyncio.run(main())
         if proc.returncode is None:
             proc.kill()
             await proc.wait()
+
+
+@pytest.mark.asyncio
+async def test_cli_queue_claim_prints_claimed_at_and_stale_worker_refused_via_cli(
+    bus: GossipBus, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """CLI contract: queue claim prints (claimed_at: <ts>) and returns exit 0.
+    A stale worker passing its original claimed_at via --expected-claimed-at
+    is REFUSED with exit code 1 after same-agent-name reclaim.
+    The replacement worker passing the updated timestamp succeeds with exit 0.
+    """
+    monkeypatch.setattr(core_cli, "canonical_db_path", lambda: bus.db_path)
+    monkeypatch.setattr(core_cli, "make_gossip_bus", lambda _path: bus)
+
+    # 1. Enqueue task
+    await queue_add(bus, "cli l1r task", "Phase-1", "NORMAL", "", None)
+    snaps = await latest_task_snapshots(bus)
+    task_id = next(tid for tid, s in snaps.items() if s.get("task_name") == "cli l1r task")
+
+    # 2. Claim via CLI
+    parser = core_cli.build_parser()
+    claim_args = parser.parse_args(["queue", "claim", task_id, "worker-cli"])
+    claim_exit = await core_cli._amain(claim_args)
+    assert claim_exit == 0
+    captured = capsys.readouterr()
+    assert f"claimed: {task_id} by worker-cli" in captured.out
+    match = re.search(r"\(claimed_at: ([0-9.]+)\)", captured.out)
+    assert match is not None, f"claimed_at missing from CLI output: {captured.out}"
+    orig_claimed_at = float(match.group(1))
+
+    # 3. Simulate same-name reclaim at a later timestamp
+    new_claimed_at = orig_claimed_at + 1000.0
+    async with bus.connect() as db:
+        await db.execute(
+            "UPDATE task_claims SET claimed_at = ? WHERE task_id = ?",
+            (new_claimed_at, task_id),
+        )
+        await db.commit()
+
+    # 4. Stale worker attempts CLI complete with orig_claimed_at -> exit code 1 (refused)
+    stale_complete_args = parser.parse_args(
+        ["queue", "complete", task_id, "worker-cli", "--expected-claimed-at", str(orig_claimed_at)]
+    )
+    stale_exit = await core_cli._amain(stale_complete_args)
+    assert stale_exit == 1
+    err_output = capsys.readouterr().err
+    assert "claim changed before completion landed" in err_output
+
+    # Claim row remains preserved for new claimant
+    assert await _claim_row(bus, task_id) == ("worker-cli", new_claimed_at)
+
+    # 5. Stale worker attempts CLI fail with orig_claimed_at -> exit code 1 (refused)
+    stale_fail_args = parser.parse_args(
+        ["queue", "fail", task_id, "worker-cli", "--expected-claimed-at", str(orig_claimed_at)]
+    )
+    fail_exit = await core_cli._amain(stale_fail_args)
+    assert fail_exit == 1
+    err_fail_output = capsys.readouterr().err
+    assert "claim changed before the failure landed" in err_fail_output
+    assert await _claim_row(bus, task_id) == ("worker-cli", new_claimed_at)
+
+    # 6. Valid replacement worker attempts CLI complete with new_claimed_at -> exit code 0
+    valid_complete_args = parser.parse_args(
+        ["queue", "complete", task_id, "worker-cli", "--expected-claimed-at", str(new_claimed_at)]
+    )
+    valid_exit = await core_cli._amain(valid_complete_args)
+    assert valid_exit == 0
+    assert await _claim_row(bus, task_id) is None
+    snaps = await latest_task_snapshots(bus)
+    assert snaps[task_id]["status"] == QueuedTaskState.COMPLETED.value
+
+
+@pytest.mark.asyncio
+async def test_cli_queue_complete_legacy_omitted_flag_preserves_backward_compat(
+    bus: GossipBus, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Document and verify backward compatibility: when --expected-claimed-at
+    is omitted, CLI queue complete succeeds as long as assigned_agent matches."""
+    monkeypatch.setattr(core_cli, "canonical_db_path", lambda: bus.db_path)
+    monkeypatch.setattr(core_cli, "make_gossip_bus", lambda _path: bus)
+
+    await queue_add(bus, "cli legacy task", "Phase-1", "NORMAL", "", None)
+    snaps = await latest_task_snapshots(bus)
+    task_id = next(tid for tid, s in snaps.items() if s.get("task_name") == "cli legacy task")
+
+    parser = core_cli.build_parser()
+    claim_args = parser.parse_args(["queue", "claim", task_id, "worker-legacy"])
+    assert await core_cli._amain(claim_args) == 0
+    capsys.readouterr()
+
+    # Complete without --expected-claimed-at
+    complete_args = parser.parse_args(["queue", "complete", task_id, "worker-legacy"])
+    assert getattr(complete_args, "expected_claimed_at", None) is None
+    complete_exit = await core_cli._amain(complete_args)
+    assert complete_exit == 0
+    assert await _claim_row(bus, task_id) is None
+    snaps = await latest_task_snapshots(bus)
+    assert snaps[task_id]["status"] == QueuedTaskState.COMPLETED.value
