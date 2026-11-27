@@ -1,0 +1,71 @@
+{
+  "id": "82885a5a12da",
+  "key": "manual_82885a",
+  "name": "manual_82885a",
+  "claim": "Before running a test suite on a machine with live services, check for tests that call lifecycle routes unfaked, and run a fixed non-empty file list: a pattern that matches no files makes pytest collect the whole suite. Tests of stop or restart routes must fake the port lookup, the signal call and the process spawn.",
+  "conditions": [
+    "before",
+    "call",
+    "check",
+    "collect",
+    "fake",
+    "file",
+    "files",
+    "fixed",
+    "lifecycle",
+    "list",
+    "live",
+    "lookup",
+    "machine",
+    "makes",
+    "matches",
+    "non-empty",
+    "pattern",
+    "port",
+    "process",
+    "pytest",
+    "restart",
+    "routes",
+    "run",
+    "running",
+    "services",
+    "signal",
+    "spawn",
+    "stop",
+    "suite",
+    "test",
+    "tests",
+    "unfaked",
+    "whole"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:09.346013+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:09.346013+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:09.346013+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:09.472242+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "orama-system portal lifecycle tests called the real stop and restart routes, which signal whatever listens on the service ports, and most likely stopped a running portal. Fixed in 720b07e9, which was not on main when recorded.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:09.346013+00:00"
+      ],
+      "lessons_sha": "d4adeb3bc054"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:09.472234+00:00",
+  "reviewer": "claude-code",
+  "rationale": "orama-system portal lifecycle tests called the real stop and restart routes, which signal whatever listens on the service ports, and most likely stopped a running portal. Fixed in 720b07e9, which was not on main when recorded.",
+  "supersedes": null
+}

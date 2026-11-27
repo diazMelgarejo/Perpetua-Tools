@@ -1,0 +1,62 @@
+{
+  "id": "ea7b8e622d29",
+  "key": "manual_ea7b8e",
+  "name": "manual_ea7b8e",
+  "claim": "Before calling two lessons conflicting or adding an authorization requirement to a takeover, read the canonical author-actor takeover policy: a disclosed takeover that keeps the author on record and names the new actor is not impersonation, and no requirement exists beyond what that policy states.",
+  "conditions": [
+    "actor",
+    "adding",
+    "author",
+    "author-actor",
+    "authorization",
+    "before",
+    "beyond",
+    "calling",
+    "canonical",
+    "conflicting",
+    "disclosed",
+    "exists",
+    "impersonation",
+    "keeps",
+    "lessons",
+    "names",
+    "new",
+    "policy",
+    "read",
+    "record",
+    "requirement",
+    "states",
+    "takeover",
+    "two"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:09.712210+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:09.712210+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:09.712210+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:09.837866+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "The operator corrected an agent that did both. Policy: orama-system bin/orama-system/skills/gossip-bus/references/author-actor-takeover-policy.md.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:09.712210+00:00"
+      ],
+      "lessons_sha": "ced3e25fb98e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:09.837859+00:00",
+  "reviewer": "claude-code",
+  "rationale": "The operator corrected an agent that did both. Policy: orama-system bin/orama-system/skills/gossip-bus/references/author-actor-takeover-policy.md.",
+  "supersedes": null
+}

@@ -1,0 +1,74 @@
+{
+  "id": "070fb2c51093",
+  "key": "manual_070fb2",
+  "name": "manual_070fb2",
+  "claim": "A proxy that accounts spend from provider replies and cannot decode them must send Accept-Encoding: identity upstream in place of the client's value, and must treat a 2xx reply with any other Content-Encoding as unaccounted without parsing it. Do not rely on encoded bytes being unreadable: a stored-block gzip event stream still exposed its usage line and was accounted.",
+  "conditions": [
+    "accept-encoding",
+    "accounted",
+    "accounts",
+    "any",
+    "bytes",
+    "cannot",
+    "client",
+    "content-encoding",
+    "decode",
+    "encoded",
+    "event",
+    "exposed",
+    "gzip",
+    "identity",
+    "line",
+    "other",
+    "parsing",
+    "place",
+    "provider",
+    "proxy",
+    "rely",
+    "replies",
+    "reply",
+    "send",
+    "spend",
+    "still",
+    "stored-block",
+    "stream",
+    "them",
+    "treat",
+    "unaccounted",
+    "unreadable",
+    "upstream",
+    "usage",
+    "value",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:08.255038+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:08.255038+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:08.255038+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:08.381617+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "orama-system fe063064; tests cover JSON and SSE replies in the launcher lifecycle tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:08.255038+00:00"
+      ],
+      "lessons_sha": "3864d419ed1a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:08.381610+00:00",
+  "reviewer": "claude-code",
+  "rationale": "orama-system fe063064; tests cover JSON and SSE replies in the launcher lifecycle tests.",
+  "supersedes": null
+}

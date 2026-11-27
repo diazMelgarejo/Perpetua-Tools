@@ -1280,3 +1280,21 @@ the data file, disabled and in no chain.
 and phases are in the operator's off-repo plan file; nothing is implemented yet.
 
 **Status:** confirmed by the operator; implementation waits for the operator's go (Phase 0 is read-only).
+
+## 2026-11-27: The portal draft pull requests also carry the shared OpenClaw settings work
+
+**Decision:** The shared OpenClaw model settings work stays inside the portal draft pull requests, Perpetua-Tools
+#526 and orama-system #534, including its changes to orama's `start.sh` and setup scripts. The two drafts may have to
+merge together.
+
+**Recommendation not taken:** ideally the portal changes and the settings changes would be approved separately, with
+the settings work kept on its own branches, so that a problem in one part does not hold up the other. The human
+operator decided otherwise.
+
+**Consequence:** a problem in either part, once published, can hold up both. In Perpetua-Tools the settings work
+entered the draft by merge `d5a036f8` of `389668b0`. In orama-system it entered by merge `c5491eb1` of `350b5882`,
+followed by six settings commits made only on the draft (`d9a30188`, `302cb885`, `2801bdfa`, `650da860`, `d8bb2c6a`,
+`ecfb28f5`), so separating it later means moving those commits too.
+
+**Status:** confirmed by the operator. Local only when recorded: nothing from the settings work is pushed, and the
+operator has said not to push yet.

@@ -1,0 +1,79 @@
+{
+  "id": "6870fbfc4830",
+  "key": "manual_6870fb",
+  "name": "manual_6870fb",
+  "claim": "Verify a launcher against the real client and provider in one operator-approved bounded run: a throwaway home directory, a private hub port, explicit request and output-token limits, observers that print counts and reply headers but never bodies or keys, a scan of output and files for the key, and cleanup that stops only the helper identified by that private port, leaving other daemons alone.",
+  "conditions": [
+    "against",
+    "alone",
+    "bodies",
+    "bounded",
+    "cleanup",
+    "client",
+    "counts",
+    "daemons",
+    "directory",
+    "explicit",
+    "files",
+    "headers",
+    "helper",
+    "home",
+    "hub",
+    "identified",
+    "key",
+    "keys",
+    "launcher",
+    "leaving",
+    "limits",
+    "never",
+    "observers",
+    "one",
+    "only",
+    "operator-approved",
+    "other",
+    "output",
+    "output-token",
+    "port",
+    "print",
+    "private",
+    "provider",
+    "real",
+    "reply",
+    "request",
+    "run",
+    "scan",
+    "stops",
+    "throwaway",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:09.154755+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:09.154755+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:09.154755+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:09.284715+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "One run on orama-system fb28125e: one request, status 200, no Content-Encoding, usage accounted, exit 0. It covers a single simple turn only, not interruption mid-task.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:09.154755+00:00"
+      ],
+      "lessons_sha": "fbe2530b0520"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:09.284702+00:00",
+  "reviewer": "claude-code",
+  "rationale": "One run on orama-system fb28125e: one request, status 200, no Content-Encoding, usage accounted, exit 0. It covers a single simple turn only, not interruption mid-task.",
+  "supersedes": null
+}

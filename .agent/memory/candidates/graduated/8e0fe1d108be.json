@@ -1,0 +1,73 @@
+{
+  "id": "8e0fe1d108be",
+  "key": "manual_8e0fe1",
+  "name": "manual_8e0fe1",
+  "claim": "When splitting a script that callers load by file path into a sibling package, bind the package from the script's real path with an explicit module spec, without reading or changing sys.path; do not re-export names that moved and that tests patch, so a stale patch fails loudly; and test load by path, a run from another directory and a symlinked skill directory. Script and package must be copied or linked together.",
+  "conditions": [
+    "another",
+    "bind",
+    "callers",
+    "changing",
+    "copied",
+    "directory",
+    "explicit",
+    "fails",
+    "file",
+    "into",
+    "linked",
+    "load",
+    "loudly",
+    "module",
+    "moved",
+    "names",
+    "package",
+    "patch",
+    "path",
+    "re-export",
+    "reading",
+    "real",
+    "run",
+    "script",
+    "sibling",
+    "skill",
+    "spec",
+    "splitting",
+    "stale",
+    "symlinked",
+    "sys",
+    "test",
+    "tests",
+    "together",
+    "without"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:08.783537+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:08.783537+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:08.783537+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:08.911772+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "orama-system 87ed6a58 and af42fa83; covered by tests/test_launch_cline_wandb_modules.py.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:08.783537+00:00"
+      ],
+      "lessons_sha": "2fe9189ca03b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:08.911759+00:00",
+  "reviewer": "claude-code",
+  "rationale": "orama-system 87ed6a58 and af42fa83; covered by tests/test_launch_cline_wandb_modules.py.",
+  "supersedes": null
+}

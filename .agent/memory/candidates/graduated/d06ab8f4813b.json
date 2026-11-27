@@ -1,0 +1,64 @@
+{
+  "id": "d06ab8f4813b",
+  "key": "manual_d06ab8",
+  "name": "manual_d06ab8",
+  "claim": "Read an opt-in test before telling the operator what running it costs. An opt-in flag can guard a side effect other than spend: the real-Cline smoke test uses a fake upstream and a fake key and is opt-in because it starts a shared hub daemon.",
+  "conditions": [
+    "because",
+    "before",
+    "costs",
+    "daemon",
+    "effect",
+    "fake",
+    "flag",
+    "guard",
+    "hub",
+    "key",
+    "operator",
+    "opt-in",
+    "other",
+    "read",
+    "real-cline",
+    "running",
+    "shared",
+    "side",
+    "smoke",
+    "spend",
+    "starts",
+    "telling",
+    "test",
+    "than",
+    "upstream",
+    "uses"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:08.970289+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:08.970289+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:08.970289+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:09.099030+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "The agent told the operator this test made paid provider requests without checking; it does not. A paid check needs its own bounded run and approval.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:08.970289+00:00"
+      ],
+      "lessons_sha": "4ca88908138b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:09.099022+00:00",
+  "reviewer": "claude-code",
+  "rationale": "The agent told the operator this test made paid provider requests without checking; it does not. A paid check needs its own bounded run and approval.",
+  "supersedes": null
+}
