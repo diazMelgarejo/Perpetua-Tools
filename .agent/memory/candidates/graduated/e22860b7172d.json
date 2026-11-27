@@ -1,0 +1,42 @@
+{
+  "id": "e22860b7172d",
+  "key": "manual_e22860",
+  "name": "manual_e22860",
+  "claim": "When a Portal source is unavailable, do not substitute realistic healthy state; label explicit demo fixtures in the relevant panel and keep effect controls disabled.",
+  "conditions": [
+    "demo-data",
+    "offline",
+    "portal",
+    "provenance"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:48.034360+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:48.034360+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:48.034360+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:48.191650+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "At the earlier Orama static preview, mock health resembled production. A later captured demo correctly marked API unavailable and disabled preview and launch; sample readiness still looked live inside the panel. These were preview observations, not production qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:48.034360+00:00"
+      ],
+      "lessons_sha": "5f14330ab68e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:48.191639+00:00",
+  "reviewer": "learn.py",
+  "rationale": "At the earlier Orama static preview, mock health resembled production. A later captured demo correctly marked API unavailable and disabled preview and launch; sample readiness still looked live inside the panel. These were preview observations, not production qualification.",
+  "supersedes": null
+}

@@ -1,0 +1,42 @@
+{
+  "id": "764b64ce6b2a",
+  "key": "manual_764b64",
+  "name": "manual_764b64",
+  "claim": "Before integrating parallel agent work, reconcile claims across ledgers and use separate worktrees; hand off the exact base, patch or commit, new files, and validation evidence.",
+  "conditions": [
+    "gossip",
+    "integration",
+    "parallel-agents",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:49.187962+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:49.187962+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:49.187962+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:49.341544+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In the Portal round one board carried Claude's lanes and the other carried Agnes's complementary lanes. The verified frontend diff was moved to a dedicated worktree, including untracked files, without altering the shared branch. Row numbers are ledger-local; use topics or UUIDs to cross-reference.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:49.187962+00:00"
+      ],
+      "lessons_sha": "88f92a3bb994"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:49.341535+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In the Portal round one board carried Claude's lanes and the other carried Agnes's complementary lanes. The verified frontend diff was moved to a dedicated worktree, including untracked files, without altering the shared branch. Row numbers are ledger-local; use topics or UUIDs to cross-reference.",
+  "supersedes": null
+}

@@ -214,6 +214,45 @@ def test_a_failed_rewrite_keeps_the_previous_record_intact(state, monkeypatch) -
     assert len(_rows(pl.attestation_audit_path(PROVIDER))) == 1
 
 
+def test_audit_failure_rolls_back_written_record(state, monkeypatch) -> None:
+    """When audit append fails during write_attestation_record, the written file is rolled back."""
+    def boom_audit(*args, **kwargs):
+        raise OSError("audit log disk write failure")
+
+    monkeypatch.setattr(pl, "append_audit", boom_audit)
+    with pytest.raises(OSError, match="audit log disk write failure"):
+        _write()
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_audit_failure_on_rewrite_restores_previous_record(state, monkeypatch) -> None:
+    """When audit append fails during rewrite, the previous record bytes are restored."""
+    _write()
+    before = pl.attestation_path(PROVIDER).read_bytes()
+
+    def boom_audit(*args, **kwargs):
+        raise OSError("audit log disk write failure")
+
+    monkeypatch.setattr(pl, "append_audit", boom_audit)
+    with pytest.raises(OSError, match="audit log disk write failure"):
+        _write(now=NOW + timedelta(days=1))
+    assert pl.attestation_path(PROVIDER).read_bytes() == before
+
+
+def test_revoke_preserves_fail_closed_if_audit_fails(state, monkeypatch) -> None:
+    """If audit recording fails during revocation, authority remains revoked fail-closed."""
+    _write()
+    assert pl.attestation_path(PROVIDER).is_file()
+
+    def boom_audit(*args, **kwargs):
+        raise OSError("audit disk error")
+
+    monkeypatch.setattr(pl, "append_audit", boom_audit)
+    with pytest.raises(OSError, match="audit disk error"):
+        pl.revoke_attestation(PROVIDER, "operator", "emergency", NOW)
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
 def test_a_naive_now_is_read_as_utc(state) -> None:
     path = _write(now=datetime(2026, 11, 17, 12, 0))
     assert json.loads(path.read_text())["attested_at"] == "2026-11-17T12:00:00+00:00"

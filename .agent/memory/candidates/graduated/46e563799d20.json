@@ -1,0 +1,42 @@
+{
+  "id": "46e563799d20",
+  "key": "manual_46e563",
+  "name": "manual_46e563",
+  "claim": "In a frontend worktree, resolve missing dev types with a worktree-local frozen install using the CI package-manager major before changing the manifest or weakening type checks.",
+  "conditions": [
+    "frontend",
+    "pnpm",
+    "typecheck",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:47.303184+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:47.303184+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:47.303184+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:47.484447+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama #534 at a09c81eb already declared Node types. Its borrowed dependency tree lacked them, pnpm 11 did not match the build-script policy, and a clean pnpm 10.26.0 frozen install restored the pinned dependency without lockfile changes.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:47.303184+00:00"
+      ],
+      "lessons_sha": "c90d08bb613e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:47.484436+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama #534 at a09c81eb already declared Node types. Its borrowed dependency tree lacked them, pnpm 11 did not match the build-script policy, and a clean pnpm 10.26.0 frozen install restored the pinned dependency without lockfile changes.",
+  "supersedes": null
+}

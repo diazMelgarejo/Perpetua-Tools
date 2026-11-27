@@ -245,8 +245,24 @@ def write_attestation_record(provider: str, attested_by: str, facts: Mapping[str
     record: dict[str, Any] = {"provider": name, "attested_at": when.isoformat(), "attested_by": who}
     record.update(dict.fromkeys(required, True))
     path = attestation_path(name)
+    prev_bytes: bytes | None = None
+    try:
+        prev_bytes = path.read_bytes()
+    except FileNotFoundError:
+        prev_bytes = None
+
     _write_private_record(path, json.dumps(record, indent=2) + "\n")
-    _append_attestation_audit(name, policy.get("policy_id"), "attestation-written", who, "", when)
+    try:
+        _append_attestation_audit(name, policy.get("policy_id"), "attestation-written", who, "", when)
+    except BaseException:
+        if prev_bytes is None:
+            path.unlink(missing_ok=True)
+        else:
+            try:
+                _write_private_record(path, prev_bytes.decode("utf-8"))
+            except BaseException:
+                path.unlink(missing_ok=True)
+        raise
     return path
 
 
@@ -255,7 +271,8 @@ def revoke_attestation(provider: str, revoked_by: str, reason: str, now: datetim
 
     Revoking never loads the policy, so authority can always be withdrawn, even for a provider whose
     policy changed or was deleted. Removing a record that is not there is a clean no-op and is
-    audited as ``attestation-revoke-missing``. Returns True when a record was removed.
+    audited as ``attestation-revoke-missing``. Returns True when a record was removed. If audit
+    recording fails, revocation remains fail-closed (unlinked) and the error is re-raised.
     """
     name = _provider_id(provider)
     who = _attest_actor(revoked_by, "revoked_by")

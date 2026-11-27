@@ -1,0 +1,42 @@
+{
+  "id": "bae7465b4d58",
+  "key": "manual_bae746",
+  "name": "manual_bae746",
+  "claim": "Translate CLI actions into separate GUI preview, operator proof, apply, and durable receipt states; confirmation is not authorization and an absent receipt does not permit replay.",
+  "conditions": [
+    "idempotency",
+    "operator-proof",
+    "portal",
+    "receipt"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:48.490409+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:48.490409+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:48.490409+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:48.652485+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama #534 adds a reducer and relay types, not a wired verifier or activation. A button hold, cookie, or shared host identity does not prove the operator. Keep proof opaque, invalidate changed previews, and reconcile unknown attempts with read-only requests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:48.490409+00:00"
+      ],
+      "lessons_sha": "6ceba415de26"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:48.652472+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama #534 adds a reducer and relay types, not a wired verifier or activation. A button hold, cookie, or shared host identity does not prove the operator. Keep proof opaque, invalidate changed previews, and reconcile unknown attempts with read-only requests.",
+  "supersedes": null
+}
