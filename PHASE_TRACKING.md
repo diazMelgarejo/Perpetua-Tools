@@ -21,7 +21,10 @@ python3 scripts/agent_coordination.py queue complete <task_id> <agent_id> --expe
 `queue complete` and `queue fail` need exactly one of `--expected-claimed-at <claimed_at>` or
 `--unverified-legacy`. Pass the number from your own claim: a value read back later may belong to a
 newer claim under the same agent name, and `queue status` and `queue list` do not show it.
-`--unverified-legacy` skips that protection; use it only when the claim output is lost.
+`--unverified-legacy` skips that protection; use it when your own claim output is lost, or in a
+takeover that you disclose first. Completing another agent's task is a takeover, not impersonation:
+the original author stays on record and you name yourself as actor (on the board and in `--notes`),
+following orama-system's author-actor takeover policy.
 
 Older worktrees that share this queue database can still complete or fail a task without a fence. That
 is by design (grandfathered, operator decision 2026-11-27), so the protection covers writers on the
