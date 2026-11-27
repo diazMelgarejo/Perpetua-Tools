@@ -1143,3 +1143,127 @@ earlier the same day); editing the old row (forbidden, memory is append-only); l
 **Alternatives considered:** Wait for upstream Cline CLI boundary flags (rejected — indefinite blocker); loopback HTTP MITM proxy (rejected — complex TLS interception with questionable certificate trust and failure modes); client-side trust (rejected — violates fail-closed doctrine).
 
 **Status:** active on branch `2026-11-27-001-lane2-bound-contract-pt`.
+
+
+---
+
+## 2026-11-27: Phase 1B Lockstep alignment with orama-system PR #533 — loopback HTTP accounting proxy
+
+**Decision:** Update lockstep memory records to align with `diazMelgarejo/orama-system` PR #533
+commit `6572bfaf74a4c74332fe4c7b5ec30e2f14ef8bb9`: launcher boundary enforcement is implemented in
+`launch_cline_wandb.py` via a stdlib loopback HTTP accounting proxy intercepting OpenAI-compatible
+requests on the local loopback host (port 0). The proxy counts requests 1:1 at the wire boundary
+(resolving stdout/stderr regex undercounting, double-counting, chunk-splitting, and ordinary-text
+false termination) and parses real provider `usage.completion_tokens` (injecting
+`stream_options: {"include_usage": true}` on SSE streams). Breaching either bound or encountering
+missing usage terminates the child fail-closed with exit code 124. Wire-level enforcement and
+deterministic harness tests are verified and pushed in `orama-system` PR #533. Accepted superseding
+lesson `lesson_c35a277559cc` (superseding `lesson_f6de5491aae4`) preserves append-only memory
+integrity. In tandem, the L-1r queue race guard is wired through the worker CLI: `queue claim`
+returns and emits `claimed_at`, and `queue complete` / `queue fail` accept `--expected-claimed-at`
+to prevent stale workers from completing or failing reclaimed tasks under the same agent name.
+
+**Rationale:** Fulfills lockstep cross-repository synchronization doctrine. An unverified launcher
+claim in PT memory without passing wire-level enforcement in `orama-system` violated review
+standards (CodeRabbit finding `PRRT_kwDOPz7qg868lCAr`). Aligning PT memory with the exact
+`orama-system` PR #533 commit (`6572bfaf`) ensures that all claims are backed by committed,
+verified repository artifacts. Similarly, exposing `--expected-claimed-at` in
+`orchestrator/coordination/cli.py` seals the worker-facing L-1r race window (CodeRabbit finding
+`PRRT_kwDOPz7qg868lCAw`).
+
+**Alternatives considered:** Defer lockstep alignment until post-merge (rejected — leaves unbacked
+claim in PR branch); in-place editing of JSONL records (strictly rejected — violates append-only
+memory invariant).
+
+**Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
+
+
+---
+
+## 2026-11-27: Final Remediation Lockstep alignment with orama-system PR #533 commit 7ad6c6b9
+
+**Decision:** Update lockstep memory records to align with `diazMelgarejo/orama-system` PR #533
+commit `7ad6c6b9afdb36e88793eef3fbc5fbfc2df0da8b` (`7ad6c6b9`): launcher boundary enforcement in
+`launch_cline_wandb.py` provides:
+1. Pre-forward `POST /chat/completions` request-count gate (path parsed via `urllib.parse.urlsplit`
+without query string; non-allowlisted POST routes refused fail-closed with HTTP 403; post-breach
+retries rejected with HTTP 429 before forwarding).
+2. Serialized pre-forward upstream `max_tokens` / `max_completion_tokens` clamping against
+remaining `max_total_output` budget under `chat_gate`, plus post-response `usage.completion_tokens`
+accounting (SSE `stream_options.include_usage=True`).
+3. Fail-closed exit code `124` (with bounded 5.0s in-flight handler drain and `live_cycle()`
+`_settle_unknown` settlement) on bound breach, missing/invalid usage, or upstream 504/502
+transport failure.
+4. Preserved shared spend-gate requirement for Biafra Cline and Wanda's direct-client boundary verbatim.
+
+Clarification for line 1170 above regarding `orchestrator/coordination/cli.py`: `--expected-claimed-at`
+is supported as an optional argument on `queue complete` and `queue fail` to maintain backward
+compatibility with existing callers. Calls omitting `--expected-claimed-at` remain unprotected
+against same-agent-name reclaims; the CLI change seals the worker-facing race window for callers
+that supply their original claim timestamp.
+
+**Rationale:** Addresses CodeRabbit findings `PRRT_kwDOPz7qg868lCAr`, `PRRT_kwDOPz7qg868nC9h`, and
+`PRRT_kwDOPz7qg868lCAw`. Clamping forwarded output limits prevents upstream provider over-generation,
+while query-string stripping and route allowlisting prevent proxy bypass. Fail-closed exit 124 on
+upstream transport failure ensures unverified spend is charged via `_settle_unknown`.
+
+**Alternatives considered:** In-place mutation of graduated memory JSON (rejected — violates
+append-only invariant); making `--expected-claimed-at` mandatory on CLI (rejected — breaks
+backward compatibility with existing automation and test suites).
+
+**Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
+
+---
+
+## 2026-11-27: Enduring Final Lockstep Alignment with orama-system PR #533 commit fffed6a4
+
+**Decision:** Update lockstep memory records and coordination contracts to align with
+`diazMelgarejo/orama-system` PR #533 commit `fffed6a46825018f6a9f394b2c777d0bc3ed8aaf` (`fffed6a4`,
+incorporating core proxy fix `3caa44b7` and canonical exemplar reference cards):
+1. Launcher boundary enforcement in `launch_cline_wandb.py` provides synchronous socket admission
+   in `AccountingProxyServer.process_request()` before spawning worker threads, eliminating
+   accept-to-dispatch races against early child exits.
+2. Two-phase `stop_and_drain(timeout_s=5.0)` marks `_accepting = False`, calls `self.shutdown()` to
+   break the socket accept loop, and waits on `_inflight_cond` for in-flight requests to complete.
+3. Single fail-closed funnel via `_fail_closed()` and `_read_upstream_response()` ensures all
+   transport errors, socket timeouts, and `urllib.error.HTTPError.read()` body reading failures
+   terminate fail-closed with exit code `124` and unknown spend settlement (`_settle_unknown`).
+4. Factorization into single-responsibility helpers: `_admit_chat_request()`,
+   `_prepare_chat_payload()`, `_read_upstream_response()`, and `_account_chat_usage()`.
+5. Preserved `queue_claim` return type returning `claim_ts: float` on successful claim, updating
+   characterization tests (`test_coordination_manual_cleanup_characterization.py:77` and
+   `test_agent_handoff_cli.py:142`) to `assert isinstance(claimed_at, float)` to uphold monotonic
+   fencing semantics.
+6. Superseded stale `lesson_8100266e8176` (graduated as `lesson_61b35f0ca87d`), `lesson_67887871bd23`
+   (graduated as `lesson_aa38395eb32f`), and distilled cross-cycle architectural learnings
+   (graduated as `lesson_f7c090a572fc`) via `graduate.py --supersedes` while strictly preserving
+   `tokenSource: "manual"`, millisecond UTC `updatedAt`, ClinePass isolation, and Wanda direct-client
+   guidance.
+
+**Rationale:** Addresses CodeRabbit findings `PRRT_kwDORtdZEM68lEd4`, `PRRT_kwDOPz7qg868pGcw`,
+`PRRT_kwDOPz7qg868lCAr`, `PRRT_kwDOPz7qg868nC9h`, `PRRT_kwDORtdZEM68pFGx`, `PRRT_kwDORtdZEM68pFG1`,
+`PRRT_kwDORtdZEM68pFG5`, and nitpick `launch_cline_wandb.py:370`.
+
+**Alternatives considered:** Checked `if not self.server.is_accepting()` inside `_admit_chat_request`
+(rejected — causes premature 503 rejection of already-admitted requests draining during shutdown);
+returning `None` from `queue_claim` (rejected — drops monotonic fencing timestamp); in-place mutation
+of graduated candidate JSONs (rejected — violates append-only memory invariant).
+
+**Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
+
+## 2026-11-27 Claim fence identity and persistent high-water mark (supersedes the "monotonic claim_ts" wording of lines 1233-1236)
+
+- `queue_claim` returns `claimed_at`. It is the wall-clock time raised to `nextafter(high_water_mark)` for that
+  task via persistent `task_claim_hwm` table inside the claim's `BEGIN IMMEDIATE` transaction and is never deleted.
+  Stamps issued for one `task_id` are strictly increasing across release, same-name reclaim, and backward clock steps.
+  Evidence: `tests/test_l1r_claim_stamp.py::test_same_name_reclaim_in_one_clock_tick_gets_a_strictly_greater_stamp`,
+  `::test_a_clock_that_steps_backwards_never_reissues_a_stamp`.
+- The release fence compares `agent_id` and `claimed_at` by equality inside one `BEGIN IMMEDIATE` transaction.
+  Evidence: `tests/test_l1r_claim_stamp.py::test_a_stale_worker_holding_the_old_stamp_cannot_release_the_replacement_claim`.
+- Claims created before the high-water mark existed are covered once they are released, because release seeds
+  the mark from the row it deletes (`_SEED_CLAIM_HWM`).
+- `queue complete` and `queue fail` require `--expected-claimed-at` unless `--unverified-legacy` is passed. An
+  unverified completion records `fence: "unverified"` and is not protected against a same-name reclaim.
+  Evidence: `tests/test_l1r_cleanup_runtime_race.py::test_cli_queue_complete_and_fail_require_fence_flag`,
+  `tests/test_l1r_cleanup_runtime_race.py::test_cli_queue_complete_legacy_omitted_flag_preserves_backward_compat`.
+

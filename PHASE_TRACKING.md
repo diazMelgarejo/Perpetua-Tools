@@ -4,18 +4,31 @@ This document describes the phase tracking and distributed task queue surface of
 
 ## Quick Start
 
-The safe, atomic path for handing off work is the **queue**, not the legacy `register/claim/release` board (the legacy board is advisory and unprotected against races):
+The safe, atomic path for handing off work is the **queue**, not the legacy `register/claim/release`
+board (the legacy board is advisory and unprotected against races):
 
 ```bash
 # 1. Enqueue a task
 python3 scripts/agent_coordination.py queue add "implement-auth" "Phase-1.0" --priority high --notes "add passwordless login"
 
-# 2. Claim it atomically (only one agent wins)
+# 2. Claim it atomically (only one agent wins). Keep the claimed_at number it prints.
 python3 scripts/agent_coordination.py queue claim <task_id> <agent_id>
 
-# 3. Complete it
-python3 scripts/agent_coordination.py queue complete <task_id> --notes "merged in commit abc123"
+# 3. Complete it, fenced to your own claim
+python3 scripts/agent_coordination.py queue complete <task_id> <agent_id> --expected-claimed-at <claimed_at> --notes "merged in commit abc123"
 ```
+
+`queue complete` and `queue fail` need exactly one of `--expected-claimed-at <claimed_at>` or
+`--unverified-legacy`. Pass the number from your own claim: a value read back later may belong to a
+newer claim under the same agent name, and `queue status` and `queue list` do not show it.
+`--unverified-legacy` skips that protection; use it when your own claim output is lost, or in a
+takeover that you disclose first. Completing another agent's task is a takeover, not impersonation:
+the original author stays on record and you name yourself as actor (on the board and in `--notes`),
+following orama-system's author-actor takeover policy.
+
+Older worktrees that share this queue database can still complete or fail a task without a fence. That
+is by design (grandfathered, operator decision 2026-11-27), so the protection covers writers on the
+current code only.
 
 ## CLI Reference
 
@@ -23,7 +36,12 @@ python3 scripts/agent_coordination.py queue complete <task_id> --notes "merged i
 
 ### Top-level coordination (legacy advisory board)
 
-**`list` and `queue list` are two separate, disjoint surfaces — not two views of the same data.** `list` shows the legacy advisory-board `claim`/`release` entries only. `queue list` (below) shows atomic `queue add`/`queue claim` task entries only. A task enqueued with `queue add` will never appear in plain `list`, and a claim made with plain `claim` will never appear in `queue list`. If you enqueued or claimed something and can't find it, check you're using the matching surface, not the other one.
+**`list` and `queue list` are two separate, disjoint surfaces — not two views of the same data.**
+`list` shows the legacy advisory-board `claim`/`release` entries only. `queue list` (below) shows
+atomic `queue add`/`queue claim` task entries only. A task enqueued with `queue add` will never
+appear in plain `list`, and a claim made with plain `claim` will never appear in `queue list`. If
+you enqueued or claimed something and can't find it, check you're using the matching surface, not
+the other one.
 
 ```bash
 python3 scripts/agent_coordination.py register <agent_id> <agent_type> [model] [notes]
@@ -52,8 +70,8 @@ python3 scripts/agent_coordination.py phase unblock <phase_name> --reason "reaso
 python3 scripts/agent_coordination.py queue add <task_name> <phase> [--priority critical|high|normal|low] [--notes "..."] [--depends-on task_id,...]
 python3 scripts/agent_coordination.py queue list [--phase <phase>] [--priority <level>] [--agent <agent_id>]
 python3 scripts/agent_coordination.py queue claim <task_id> <agent_id>
-python3 scripts/agent_coordination.py queue complete <task_id> [--notes "..."]
-python3 scripts/agent_coordination.py queue fail <task_id> [--notes "..."]
+python3 scripts/agent_coordination.py queue complete <task_id> <agent_id> (--expected-claimed-at <claimed_at> | --unverified-legacy) [--notes "..."]
+python3 scripts/agent_coordination.py queue fail <task_id> <agent_id> (--expected-claimed-at <claimed_at> | --unverified-legacy) [--notes "..."]
 python3 scripts/agent_coordination.py queue status [--agent <agent_id>]
 ```
 
@@ -180,7 +198,7 @@ python3 scripts/agent_coordination.py workflow critical-path
 
 Example output:
 
-```
+```text
 === Critical Path Analysis ===
 Longest chain: Phase-1.0 → Phase-2 → Phase-3 → Phase-4
 Total duration: 31.5 hours
@@ -196,7 +214,11 @@ ETA (if started now): +31.5 hours
 
 ### Storage
 
-Phase transitions are stored under GossipBus event **type** `"heartbeat"` (the same event type used by queue and liveness events), distinguished by payload **kind** `"phase_event"` — event type and payload kind are two different fields, not the same thing (verified against `scripts/agent_coordination_core.py`'s `_phase_start`/`_phase_update`/etc., which all call `bus.emit("heartbeat", {"kind": "phase_event", ...})`):
+Phase transitions are stored under GossipBus event **type** `"heartbeat"` (the same event type used
+by queue and liveness events), distinguished by payload **kind** `"phase_event"` — event type and
+payload kind are two different fields, not the same thing (verified against
+`scripts/agent_coordination_core.py`'s `_phase_start`/`_phase_update`/etc., which all call
+`bus.emit("heartbeat", {"kind": "phase_event", ...})`):
 
 ```json
 {
@@ -223,7 +245,8 @@ Phase transitions are stored under GossipBus event **type** `"heartbeat"` (the s
 
 ### Deterministic Sorting
 
-Phases are sorted using a numeric component matcher. Each dot-separated component is parsed as an integer and compared as a tuple, so two-digit minor versions order correctly:
+Phases are sorted using a numeric component matcher. Each dot-separated component is parsed as an
+integer and compared as a tuple, so two-digit minor versions order correctly:
 
 - "Phase-1.0" → `(0, (1, 0), "Phase-1.0")`
 - "Phase-1.1" → `(0, (1, 1), "Phase-1.1")`
@@ -257,7 +280,8 @@ python3 -m pytest tests/test_agent_coordination_phases.py -v
 
 ## Integration with the Queue
 
-The queue and phase systems share the same GossipBus database. Use phases for coarse-grained workflow state and the queue for atomic task handoff:
+The queue and phase systems share the same GossipBus database. Use phases for coarse-grained
+workflow state and the queue for atomic task handoff:
 
 ```bash
 # Track phase workflow
@@ -266,7 +290,8 @@ python3 scripts/agent_coordination.py phase start Phase-1.0 --agent kimi-g1
 # Enqueue and claim specific tasks within the phase
 python3 scripts/agent_coordination.py queue add "PeerObservation" "Phase-1.0" --priority high
 python3 scripts/agent_coordination.py queue claim <task_id> kimi-g1
-python3 scripts/agent_coordination.py queue complete <task_id>
+python3 scripts/agent_coordination.py queue complete <task_id> kimi-g1 --expected-claimed-at <claimed_at>
+python3 scripts/agent_coordination.py queue fail <task_id> kimi-g1 --expected-claimed-at <claimed_at>  # or, if the work failed
 ```
 
 ## Future Extensions

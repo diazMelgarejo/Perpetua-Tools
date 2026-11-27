@@ -212,7 +212,7 @@ async def test_ten_cli_level_workers_report_one_success(
     task_id = next(iter(await latest_task_snapshots(bus)))
     outcomes = await asyncio.gather(*(queue_claim(bus, task_id, f"w-{i}") for i in range(WORKERS)))
     captured = capsys.readouterr()
-    assert outcomes.count(None) == 1
+    assert len([o for o in outcomes if isinstance(o, float)]) == 1
     assert outcomes.count(False) == WORKERS - 1
     assert captured.out.count("claimed:") == 1
     allowed = ("already claimed by", "another agent won the race", "remained busy")

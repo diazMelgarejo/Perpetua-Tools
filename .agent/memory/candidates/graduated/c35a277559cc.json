@@ -1,0 +1,45 @@
+{
+  "id": "c35a277559cc",
+  "key": "manual_c35a27",
+  "name": "manual_c35a27",
+  "claim": "The Biafra seats are designated to use Cline through launch_cline_wandb.py under the shared spend gate with verified wire-level boundary enforcement in orama-system PR #533 (commit 6572bfaf): a stdlib loopback HTTP accounting proxy intercepts requests to enforce exact request counts and model usage.completion_tokens (injecting stream_options: {\"include_usage\": true} for SSE streams) and terminates fail-closed with exit code 124. BOUND_CONTRACT is true for both capabilities in orama-system, allowing _launcher_boundary_problem() to return None for valid positive bounds, making the Biafra Cline route bounded-capable while missing or non-positive bounds refuse with invalid-launcher-bounds. Wanda keeps the direct OpenAI client outside the spend gate, is not authorized for unattended or paid use by that path, and her soul card forbids the Cline CLI. lesson_8d873e4e2f73 guidance remains valid.",
+  "conditions": [
+    "biafra",
+    "bounds",
+    "cline",
+    "launcher",
+    "spend-gate",
+    "wanda",
+    "wandb"
+  ],
+  "evidence_ids": [
+    "2026-11-27T00:59:32.191413+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T00:59:32.191413+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T00:59:32.191413+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T00:59:36.953149+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes lesson_f6de5491aae4. Corrects the launcher enforcement mechanism to the stdlib loopback HTTP accounting proxy implemented and verified in orama-system PR #533 (commit 6572bfaf74a4c74332fe4c7b5ec30e2f14ef8bb9), replacing stdout/stderr regex stream accounting with wire-level request counting and usage.completion_tokens parsing while preserving the shared spend-gate requirement and Wanda's boundary.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T00:59:32.191413+00:00"
+      ],
+      "lessons_sha": "efeaa88bc2ae"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T00:59:36.953135+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes lesson_f6de5491aae4. Corrects the launcher enforcement mechanism to the stdlib loopback HTTP accounting proxy implemented and verified in orama-system PR #533 (commit 6572bfaf74a4c74332fe4c7b5ec30e2f14ef8bb9), replacing stdout/stderr regex stream accounting with wire-level request counting and usage.completion_tokens parsing while preserving the shared spend-gate requirement and Wanda's boundary.",
+  "supersedes": "lesson_f6de5491aae4"
+}
