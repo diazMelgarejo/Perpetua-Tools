@@ -37,7 +37,17 @@ def state(tmp_path: Path, monkeypatch) -> Path:
 
 def _write(**over) -> Path:
     """Call the authority with sane defaults, overriding one argument per test."""
-    args: dict = {"provider": PROVIDER, "attested_by": "operator", "facts": dict(FACTS), "now": NOW}
+    args: dict = {
+        "provider": PROVIDER,
+        "attested_by": "operator",
+        "facts": dict(FACTS),
+        "now": NOW,
+        "presence_proof": {
+            "proof_type": "operator_attestation",
+            "raw_proof": "test_proof_blob",
+            "device_id": "operator-workstation",
+        },
+    }
     args.update(over)
     return pl.write_attestation_record(**args)
 
@@ -137,15 +147,16 @@ def test_the_cli_writes_through_the_one_authority(state, monkeypatch) -> None:
     seen: dict = {}
     real = pl.write_attestation_record
 
-    def spy(provider, attested_by, facts, now):
-        seen.update(provider=provider, attested_by=attested_by, facts=dict(facts), now=now)
-        return real(provider, attested_by, facts, now)
+    def spy(provider, attested_by, facts, now, presence_proof):
+        seen.update(provider=provider, attested_by=attested_by, facts=dict(facts), now=now, presence_proof=presence_proof)
+        return real(provider, attested_by, facts, now, presence_proof)
 
     monkeypatch.setattr(pl, "write_attestation_record", spy)
     _interactive(monkeypatch)
     assert pl.main(list(CLI_ARGS)) == 0
     assert seen["provider"] == PROVIDER and seen["attested_by"] == "operator"
     assert seen["facts"] == FACTS and isinstance(seen["now"], datetime)
+    assert seen["presence_proof"] == pl.ATTEST_PHRASE
     assert pl.attestation_path(PROVIDER).is_file()
 
 
@@ -245,3 +256,67 @@ def test_revoke_requires_a_revoker(state, who) -> None:
 def test_a_provider_that_is_not_a_short_identifier_is_refused(state, provider: str) -> None:
     with pytest.raises(ValueError, match="short identifier"):
         pl.revoke_attestation(provider, "operator", "x", NOW)
+
+
+# --- human presence gate enforcement -----------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad_proof", [None, "", {}, {"proof_type": None}])
+def test_write_attestation_without_human_presence_is_refused(state, bad_proof) -> None:
+    """Automated callers without valid presence proof are strictly refused."""
+    with pytest.raises(ValueError, match="human presence proof required|missing proof_type"):
+        _write(presence_proof=bad_proof)
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_interactive_phrase_refused_on_non_interactive_terminal(state, monkeypatch) -> None:
+    """Interactive confirmation phrase is refused when stdin/stdout is not a real TTY."""
+    monkeypatch.setattr(pl, "_is_interactive", lambda: False)
+    with pytest.raises(ValueError, match="interactive confirmation phrase requires an active interactive terminal"):
+        _write(presence_proof=pl.ATTEST_PHRASE)
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_interactive_phrase_mismatch_refused(state, monkeypatch) -> None:
+    """Typing anything other than the exact ATTEST_PHRASE is refused."""
+    monkeypatch.setattr(pl, "_is_interactive", lambda: True)
+    with pytest.raises(ValueError, match="typed confirmation phrase did not match"):
+        _write(presence_proof="wrong phrase typed by bot")
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+@pytest.mark.parametrize("prohibited", ["hold_to_confirm", "dialog_click", "client_checkbox"])
+def test_prohibited_proof_sources_strictly_refused(state, prohibited: str) -> None:
+    """Pseudo-proof origins are strictly prohibited from writing attestation."""
+    with pytest.raises(ValueError, match=f"{prohibited} is prohibited as authority proof"):
+        _write(presence_proof={"proof_type": prohibited, "raw_proof": "x", "device_id": "d"})
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_expired_authority_proof_is_refused(state) -> None:
+    """An authority proof with an expired timestamp is rejected fail-closed."""
+    past = (NOW - timedelta(minutes=5)).isoformat()
+    proof = {
+        "proof_type": "operator_attestation",
+        "raw_proof": "valid_token",
+        "device_id": "operator-mac",
+        "expires_at": past,
+    }
+    with pytest.raises(ValueError, match="authority proof has expired"):
+        _write(presence_proof=proof)
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+@pytest.mark.parametrize("proof_type", ["webauthn_touch_id", "webauthn_security_key", "operator_attestation"])
+def test_valid_authority_proof_types_succeed(state, proof_type: str) -> None:
+    """Verified Class 2 HITL authority proofs succeed."""
+    future = (NOW + timedelta(minutes=15)).isoformat()
+    proof = {
+        "proof_type": proof_type,
+        "raw_proof": "valid_credential_sig",
+        "device_id": "auth-device-01",
+        "expires_at": future,
+    }
+    path = _write(presence_proof=proof)
+    assert path.is_file()
+    assert pl.attestation_path(PROVIDER).is_file()

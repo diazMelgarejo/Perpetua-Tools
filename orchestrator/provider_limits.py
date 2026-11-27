@@ -156,16 +156,82 @@ def _append_attestation_audit(provider: str, policy_id: Any, outcome: str, actor
     append_audit(attestation_audit_path(provider), row)
 
 
+_PROHIBITED_PROOF_SOURCES = {"hold_to_confirm", "dialog_click", "client_checkbox"}
+_VALID_AUTHORITY_PROOF_TYPES = {"webauthn_touch_id", "webauthn_security_key", "operator_attestation"}
+
+
+def _verify_human_presence(presence_proof: Any, now: datetime) -> str:
+    """Validate human presence proof, returning the confirmed proof type label.
+
+    Strictly refuses automated attestation. Allowed proofs:
+    1. Interactive terminal typing: exact match of ATTEST_PHRASE on an interactive terminal (_is_interactive()).
+    2. AuthorityProof mapping: valid proof_type ('webauthn_touch_id', 'webauthn_security_key',
+       'operator_attestation'), non-empty raw_proof, non-empty device_id, and unexpired expires_at.
+
+    Prohibited sources ('hold_to_confirm', 'dialog_click', 'client_checkbox') and missing or
+    non-interactive proofs are strictly refused.
+    """
+    if presence_proof is None or presence_proof == "":
+        raise ValueError("refused: human presence proof required; automated attestation is refused")
+
+    if isinstance(presence_proof, str):
+        if not _is_interactive():
+            raise ValueError("refused: interactive confirmation phrase requires an active interactive terminal")
+        if presence_proof != ATTEST_PHRASE:
+            raise ValueError("refused: the typed confirmation phrase did not match")
+        return "interactive_terminal"
+
+    if isinstance(presence_proof, Mapping):
+        ptype = presence_proof.get("proof_type") or presence_proof.get("proofType")
+        if not ptype or not isinstance(ptype, str):
+            raise ValueError("refused: presence proof missing proof_type")
+        if ptype in _PROHIBITED_PROOF_SOURCES:
+            raise ValueError(f"refused: {ptype} is prohibited as authority proof")
+        if ptype in ("interactive_phrase", "interactive_terminal"):
+            if not _is_interactive():
+                raise ValueError("refused: interactive confirmation phrase requires an active interactive terminal")
+            phrase = presence_proof.get("phrase")
+            if phrase != ATTEST_PHRASE:
+                raise ValueError("refused: the typed confirmation phrase did not match")
+            return "interactive_terminal"
+        if ptype in _VALID_AUTHORITY_PROOF_TYPES:
+            raw = presence_proof.get("raw_proof") or presence_proof.get("rawProof")
+            dev = presence_proof.get("device_id") or presence_proof.get("deviceId")
+            if not (isinstance(raw, str) and raw.strip()):
+                raise ValueError("refused: authority proof requires non-empty raw_proof")
+            if not (isinstance(dev, str) and dev.strip()):
+                raise ValueError("refused: authority proof requires non-empty device_id")
+            exp = presence_proof.get("expires_at") or presence_proof.get("expiresAt")
+            if exp:
+                try:
+                    exp_dt = datetime.fromisoformat(str(exp))
+                    exp_dt = exp_dt.replace(tzinfo=timezone.utc) if exp_dt.tzinfo is None else exp_dt.astimezone(timezone.utc)
+                    if exp_dt < now.astimezone(timezone.utc):
+                        raise ValueError("refused: authority proof has expired")
+                except ValueError as exc:
+                    if "expired" in str(exc):
+                        raise
+                    raise ValueError("refused: invalid expires_at in authority proof") from exc
+            return ptype
+        raise ValueError(f"refused: unsupported presence proof type '{ptype}'")
+
+    raise ValueError("refused: invalid presence proof structure")
+
+
 def write_attestation_record(provider: str, attested_by: str, facts: Mapping[str, Any],
-                             now: datetime) -> Path:
+                             now: datetime, presence_proof: Mapping[str, Any] | str) -> Path:
     """Write the operator attestation for ``provider``, audit it, and return the record path.
 
-    The one authority behind both the interactive CLI and a portal relay. It refuses unless the
-    provider has a valid policy, the attestor is named, and every fact that policy requires is
-    exactly ``True``; an unknown fact is refused too, so a caller cannot attest more than the policy
-    asks. The record keeps the schema the CLI always wrote, is created 0600 through one rename (no
-    reader and no crash ever sees a partial file), and is followed by one audit row.
+    The one authority behind both the interactive CLI and a portal relay. It requires verified
+    proof of human presence (interactive terminal confirmation or valid AuthorityProof); automated
+    attestation without presence proof is strictly refused. Refuses unless the provider has a valid
+    policy, the attestor is named, and every fact that policy requires is exactly ``True``; an unknown
+    fact is refused too, so a caller cannot attest more than the policy asks. The record keeps the schema
+    the CLI always wrote, is created 0600 through one rename (no reader and no crash ever sees a partial
+    file), and is followed by one audit row.
     """
+    when = _as_aware(now)
+    proof_type = _verify_human_presence(presence_proof, when)
     policy = load_policy(provider)
     name = _provider_id(policy["provider"])
     who = _attest_actor(attested_by, "attested_by")
@@ -176,7 +242,6 @@ def write_attestation_record(provider: str, attested_by: str, facts: Mapping[str
     refused += [f"{field} is not a policy fact" for field in sorted(set(facts) - set(required))]
     if refused:
         raise ValueError("refused: " + "; ".join(refused))
-    when = _as_aware(now)
     record: dict[str, Any] = {"provider": name, "attested_at": when.isoformat(), "attested_by": who}
     record.update(dict.fromkeys(required, True))
     path = attestation_path(name)
@@ -418,7 +483,8 @@ def _attest(args: argparse.Namespace) -> int:
         return 2
     facts = {"plan_is_free": args.plan_free, "payg_inactive": args.payg_inactive,
              "allowance_remaining": args.allowance_remaining}
-    path = write_attestation_record(policy["provider"], args.by, facts, datetime.now(timezone.utc))
+    path = write_attestation_record(policy["provider"], args.by, facts, datetime.now(timezone.utc),
+                                   presence_proof=typed)
     print(f"attestation written: {path}")
     return 0
 
