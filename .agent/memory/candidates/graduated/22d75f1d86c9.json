@@ -1,0 +1,47 @@
+{
+  "id": "22d75f1d86c9",
+  "key": "manual_22d75f",
+  "name": "manual_22d75f",
+  "claim": "Keep a shared defaults file in JSON when every consumer is stdlib-only and a vendored copy must be a plain byte-stable copy: JSON has one canonical form for fingerprints and no implicit typing, at the cost of comments, so explanations live in description and note fields; protect the vendored copy with a self-checking stamp (source fingerprint, source date, copy date) and report stale, old and hand-edited copies at start-up, with the sync itself waiting for a human to confirm.",
+  "conditions": [
+    "confirmation",
+    "copy",
+    "fingerprint",
+    "json",
+    "stale",
+    "stamp",
+    "sync",
+    "vendored",
+    "yaml"
+  ],
+  "evidence_ids": [
+    "2026-11-26T21:53:15.663112+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-26T21:53:15.663112+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-26T21:53:15.663112+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-26T21:53:15.820027+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Operator decisions 2026-11-27 and the side agent's stale-copy warning: the OpenClaw defaults file is JSON, its vendored copy carries a verifiable stamp, and syncing needs human confirmation.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-26T21:53:15.663112+00:00"
+      ],
+      "lessons_sha": "f6a8a0820e98"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-26T21:53:15.820006+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Operator decisions 2026-11-27 and the side agent's stale-copy warning: the OpenClaw defaults file is JSON, its vendored copy carries a verifiable stamp, and syncing needs human confirmation.",
+  "supersedes": null
+}

@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "updated": "2026-11-27",
+  "description": "Single source of truth for the OpenClaw defaults. Names only: keys are referenced by environment variable name, never by value. Owner: Perpetua-Tools (AlphaClaw constellation). Consumers: orama-system scripts, through the live PT file or a stamped vendored copy.",
+  "baseline": {
+    "node": "24.22.3",
+    "openclaw": "2026.10.6",
+    "alphaclaw": "0.9.39-9",
+    "gateway": {"bind": "loopback", "auth": "token"},
+    "update": {"channel": "stable", "check_on_start": true, "auto": false}
+  },
+  "providers": {
+    "wandb": {
+      "api": "openai-completions",
+      "base_url": "https://api.inference.wandb.ai/v1",
+      "api_key_env": "WANDB_API_KEY",
+      "models": [
+        {
+          "id": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+          "name": "DeepSeek V4.1 Flash 1017 (W&B, default)",
+          "reasoning": true,
+          "input": ["text"],
+          "context_window": 131072,
+          "max_tokens": 32768,
+          "cost": {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0}
+        }
+      ]
+    },
+    "google": {
+      "api": "google-generative-ai",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "api_key_env": "GEMINI_API_KEY",
+      "models": [
+        {
+          "id": "gemini-3.8-flash",
+          "name": "Gemini 3.8 Flash",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "context_window": 1048576,
+          "max_tokens": 65536,
+          "cost": {"input": 0.75, "output": 3.75, "cache_read": 0, "cache_write": 0}
+        }
+      ]
+    },
+    "ollama": {
+      "api": "ollama",
+      "base_url": "http://localhost:11434",
+      "api_key_placeholder": "ollama-local",
+      "models": [
+        {
+          "id": "qwen3.5:9b-mlx",
+          "name": "Qwen 3.5 9B MLX (local default)",
+          "reasoning": false,
+          "input": ["text"],
+          "context_window": 32768,
+          "max_tokens": 8192,
+          "cost": {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0}
+        }
+      ]
+    },
+    "openrouter": {"builtin": true, "api_key_env": "OPENROUTER_API_KEY"},
+    "openai": {"builtin": true, "runtime": "codex", "login": "per-agent, never the gateway or main"}
+  },
+  "chain": {
+    "default": [
+      "wandb/deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "google/gemini-3.8-flash",
+      "ollama/qwen3.5:9b-mlx",
+      "openrouter/free"
+    ]
+  },
+  "thinking": {"default": "high"},
+  "model_aliases": {
+    "wandb/deepseek-ai/DeepSeek-V4.1-Flash-1017": {"alias": "wandb-deepseek"},
+    "google/gemini-3.8-flash": {"alias": "gemini-flash", "params": {"thinking": "medium"}},
+    "ollama/qwen3.5:9b-mlx": {"alias": "local"},
+    "openrouter/free": {"alias": "free-router"}
+  },
+  "plugins": {"codex": {"enabled": true}},
+  "seats": {
+    "biafra": {
+      "alias": "MetaResearcher",
+      "display_name": "Biafra (MetaResearcher)",
+      "description": "Biafra, also called MetaResearcher: guardian and companion of autoresearcher (outer seat metaresearch-outer). Holds every capability autoresearcher has, plus review of its trace and rewriting of its search rules. Human-gated; never spawned by default.",
+      "model": "openai/gpt-6.1-terra",
+      "thinking": "medium",
+      "tools_deny": ["exec", "process", "browser", "canvas", "nodes", "cron", "gateway"],
+      "subagents_allow": ["autoresearcher"],
+      "skills": ["agent-methodology", "orama-system", "oramasys-method", "firecrawl-deep-research"]
+    },
+    "autoresearcher": {
+      "alias": "AutoResearcher",
+      "description": "AutoResearcher: inner-loop seat (autoresearch-inner). Companion and ward of biafra (MetaResearcher). Human-gated model upgrades.",
+      "model": "openai/gpt-6.1-terra",
+      "thinking": "medium",
+      "tools_deny": ["exec", "process", "browser", "canvas", "nodes", "cron", "gateway"],
+      "subagents_allow": [],
+      "skills": ["agent-methodology", "orama-system", "oramasys-method", "firecrawl-deep-research"],
+      "heartbeat": {
+        "every": "7d",
+        "model": "ollama/qwen3.5:9b-mlx",
+        "target": "none",
+        "light_context": true,
+        "isolated_session": true,
+        "prompt": "Read trace/ledger.jsonl. Reply in one line: the last attempt id and whether the metric has stalled. Do not start any research cycle."
+      }
+    }
+  },
+  "human_gated_models": ["openai/gpt-6.2-astra", "openai/gpt-6.2-sol"],
+  "manual_only": {
+    "lmstudio-mac": {
+      "enabled": false,
+      "api": "openai-completions",
+      "base_url": "http://localhost:1234/v1",
+      "api_key_placeholder": "lm-studio",
+      "note": "Mac LM Studio is manual use only: in no chain, never beside a busy Ollama. Windows LM Studio comes from the discovery file only, never a hard-coded address."
+    }
+  },
+  "env": {
+    "shell_import": {"enabled": true, "timeout_ms": 15000, "scope": "well-known provider keys only"},
+    "global_env_file_vars": ["WANDB_API_KEY"],
+    "single_source": "the operator's main env file; other names alias it by reference"
+  }
+}
