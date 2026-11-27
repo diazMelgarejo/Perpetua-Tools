@@ -21,14 +21,49 @@ python3 scripts/agent_coordination.py queue complete <task_id> <agent_id> --expe
 `queue complete` and `queue fail` need exactly one of `--expected-claimed-at <claimed_at>` or
 `--unverified-legacy`. Pass the number from your own claim: a value read back later may belong to a
 newer claim under the same agent name, and `queue status` and `queue list` do not show it.
-`--unverified-legacy` skips that protection; use it when your own claim output is lost, or in a
-takeover that you disclose first. Completing another agent's task is a takeover, not impersonation:
-the original author stays on record and you name yourself as actor (on the board and in `--notes`),
-following orama-system's author-actor takeover policy.
+`--unverified-legacy` skips that protection; use it only when your own claim output is lost. Never use
+it to complete another agent's task: see [Taking over a claimed task](#taking-over-a-claimed-task).
 
 Older worktrees that share this queue database can still complete or fail a task without a fence. That
 is by design (grandfathered, operator decision 2026-11-27), so the protection covers writers on the
 current code only.
+
+## Taking over a claimed task
+
+Completing another agent's task is a takeover, not impersonation: the original author stays on
+record and you name yourself as actor, following orama-system's author-actor takeover policy. A
+takeover stays fenced to the one claim you checked. Never use `--unverified-legacy` for a takeover:
+it matches only the agent id, so it can also complete a newer claim made under the same name.
+
+1. Before you check any evidence, read the stalled claim once, from the repository root. The command
+   prints the claimant and its `claimed_at`:
+
+   ```bash
+   python3 -c 'import asyncio; from orchestrator.coordination.paths import canonical_db_path; from orchestrator.coordination.task_queue import get_task_claim; from orchestrator.gossip_bus import GossipBus; row = asyncio.run(get_task_claim(GossipBus(canonical_db_path()), "<task_id>")); print(*(row or ["no claim row"]))'
+   ```
+
+2. Check the claimant's status and the work itself. Confirm that this `claimed_at` (UTC epoch
+   seconds) is the claim you are describing, and not one made after the stall you verified.
+3. Publish as yourself the prior agent and its status, the immutable work reference, the evidence
+   you checked, that `claimed_at` and the operation you intend, with any authorization it requires.
+4. Complete with exactly the value from step 1, and repeat the actor and evidence in `--notes`:
+
+   ```bash
+   python3 scripts/agent_coordination.py queue complete <task_id> <original_claimant_agent_id> --expected-claimed-at <claimed_at> --notes "<actor_and_evidence>"
+   ```
+
+If there is no claim row, another agent holds the claim, the claim is newer than the stall you
+verified, or step 4 is refused, do not complete: leave the claim held, report the work as unverified
+and stop. Do not read the value again to retry, and do not drop the fence. Do not use `queue fail`
+for a takeover, because it records activity for the claimant.
+
+The fence compares the claim and releases it in one database transaction, so a replacement made
+after step 1 is refused. It cannot tell you whether the claim was already replaced before step 1
+(step 2 is your check), or whether the claimant has really stopped.
+
+`queue complete` records both the completion event and a presence pulse under the claimant's agent
+id, even when you run it. Say in your disclosure and `--notes` that you are the actor, and do not
+read that pulse as the claimant's own activity.
 
 ## CLI Reference
 
