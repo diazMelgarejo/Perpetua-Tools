@@ -8,6 +8,10 @@ re-verified live. Loading a policy never authorizes spend.
 
     python3 -m orchestrator.provider_limits verify wandb-inference
     python3 -m orchestrator.provider_limits status wandb-inference
+
+Both the interactive CLI and the portal relay write the attestation through
+``write_attestation_record``; ``revoke_attestation`` withdraws it and audits that. This module is
+the authority the portal relays to: it makes no network call and knows nothing about a browser.
 """
 from __future__ import annotations
 
@@ -18,6 +22,7 @@ import math
 import os
 import re
 import sys
+import tempfile
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -48,6 +53,11 @@ def state_dir() -> Path:
 def attestation_path(provider: str) -> Path:
     """Return the operator attestation file for the named provider."""
     return state_dir() / "provider-attestations" / f"{provider}.json"
+
+
+def attestation_audit_path(provider: str) -> Path:
+    """Return the append-only audit log of attestation and revocation events for the provider."""
+    return state_dir() / "provider-attestations" / f"{provider}-audit.jsonl"
 
 
 def spend_dir() -> Path:
@@ -90,6 +100,110 @@ def append_audit(path: Path, row: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(json.dumps(dict(row), sort_keys=True) + "\n")
+
+
+def _audit_token(value: Any) -> str:
+    """Reduce free text to the audit alphabet (letters, digits, _.-) so no prose is ever stored."""
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value)).strip(".-")[:64] or "unspecified"
+
+
+def _attest_actor(value: Any, field: str) -> str:
+    """The named person for an attestation event; a blank or non-text name is refused."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} is required")
+    return value.strip()
+
+
+def _as_aware(now: Any) -> datetime:
+    """Return an aware datetime; a naive one is read as UTC, exactly as attestation_status reads it."""
+    if not isinstance(now, datetime):
+        raise ValueError("now must be a datetime")
+    return now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+
+
+def _provider_id(provider: Any) -> str:
+    """A provider id names a file, so it must be a short identifier and never a path."""
+    if not isinstance(provider, str) or _AUDIT_ID.fullmatch(provider) is None:
+        raise ValueError("provider must be a short identifier (letters, digits, _.-; max 64)")
+    return provider
+
+
+def _write_private_record(path: Path, text: str) -> None:
+    """Write the record in one rename, created 0600: a reader sees the old file, the new one, or none."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def _append_attestation_audit(provider: str, policy_id: Any, outcome: str, actor: str,
+                              reason: Any, when: datetime) -> None:
+    """Append one size-only audit row for an attestation event: identifiers only, never prose."""
+    row: dict[str, Any] = {"ts": when.isoformat(), "provider": provider, "outcome": outcome,
+                           "label": _audit_token(actor), "estimated_usd": 0.0}
+    if policy_id:
+        row["policy_id"] = _audit_token(policy_id)
+    if reason:
+        row["basis"] = _audit_token(reason)
+    append_audit(attestation_audit_path(provider), row)
+
+
+def write_attestation_record(provider: str, attested_by: str, facts: Mapping[str, Any],
+                             now: datetime) -> Path:
+    """Write the operator attestation for ``provider``, audit it, and return the record path.
+
+    The one authority behind both the interactive CLI and a portal relay. It refuses unless the
+    provider has a valid policy, the attestor is named, and every fact that policy requires is
+    exactly ``True``; an unknown fact is refused too, so a caller cannot attest more than the policy
+    asks. The record keeps the schema the CLI always wrote, is created 0600 through one rename (no
+    reader and no crash ever sees a partial file), and is followed by one audit row.
+    """
+    policy = load_policy(provider)
+    name = _provider_id(policy["provider"])
+    who = _attest_actor(attested_by, "attested_by")
+    if not isinstance(facts, Mapping):
+        raise ValueError("facts must map the policy's attestation fields to True")
+    required = list(policy["operator_attestation"]["fields"])
+    refused = [f"{field} must be true" for field in required if facts.get(field) is not True]
+    refused += [f"{field} is not a policy fact" for field in sorted(set(facts) - set(required))]
+    if refused:
+        raise ValueError("refused: " + "; ".join(refused))
+    when = _as_aware(now)
+    record: dict[str, Any] = {"provider": name, "attested_at": when.isoformat(), "attested_by": who}
+    record.update(dict.fromkeys(required, True))
+    path = attestation_path(name)
+    _write_private_record(path, json.dumps(record, indent=2) + "\n")
+    _append_attestation_audit(name, policy.get("policy_id"), "attestation-written", who, "", when)
+    return path
+
+
+def revoke_attestation(provider: str, revoked_by: str, reason: str, now: datetime) -> bool:
+    """Remove ``provider``'s attestation, audit it, and leave attestation_status reporting missing.
+
+    Revoking never loads the policy, so authority can always be withdrawn, even for a provider whose
+    policy changed or was deleted. Removing a record that is not there is a clean no-op and is
+    audited as ``attestation-revoke-missing``. Returns True when a record was removed.
+    """
+    name = _provider_id(provider)
+    who = _attest_actor(revoked_by, "revoked_by")
+    when = _as_aware(now)
+    removed = False
+    try:
+        attestation_path(name).unlink()
+        removed = True
+    except FileNotFoundError:
+        pass
+    outcome = "attestation-revoked" if removed else "attestation-revoke-missing"
+    _append_attestation_audit(name, None, outcome, who, reason, when)
+    return removed
 
 
 def _finite_positive(value: Any) -> bool:
@@ -302,14 +416,9 @@ def _attest(args: argparse.Namespace) -> int:
     if typed != ATTEST_PHRASE:
         print("refused: the typed confirmation did not match", file=sys.stderr)
         return 2
-    record = {
-        "provider": policy["provider"], "attested_at": datetime.now(timezone.utc).isoformat(),
-        "attested_by": args.by.strip(), "plan_is_free": True, "payg_inactive": True, "allowance_remaining": True,
-    }
-    path = attestation_path(policy["provider"])
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
-    os.chmod(path, 0o600)
+    facts = {"plan_is_free": args.plan_free, "payg_inactive": args.payg_inactive,
+             "allowance_remaining": args.allowance_remaining}
+    path = write_attestation_record(policy["provider"], args.by, facts, datetime.now(timezone.utc))
     print(f"attestation written: {path}")
     return 0
 
