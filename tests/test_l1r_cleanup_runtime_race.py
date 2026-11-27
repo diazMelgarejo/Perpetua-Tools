@@ -508,11 +508,27 @@ async def test_cli_queue_complete_legacy_omitted_flag_preserves_backward_compat(
     assert await core_cli._amain(claim_args) == 0
     capsys.readouterr()
 
-    # Complete without --expected-claimed-at
-    complete_args = parser.parse_args(["queue", "complete", task_id, "worker-legacy"])
+    # Complete with explicit --unverified-legacy
+    complete_args = parser.parse_args(["queue", "complete", task_id, "worker-legacy", "--unverified-legacy"])
     assert getattr(complete_args, "expected_claimed_at", None) is None
     complete_exit = await core_cli._amain(complete_args)
     assert complete_exit == 0
     assert await _claim_row(bus, task_id) is None
     snaps = await latest_task_snapshots(bus)
     assert snaps[task_id]["status"] == QueuedTaskState.COMPLETED.value
+    events = await bus.tail(5)
+    last_complete = next(e for e in reversed(events) if e.get("payload", {}).get("kind") == "task_complete")
+    assert last_complete["payload"].get("fence") == "unverified"
+
+
+def test_cli_queue_complete_and_fail_require_fence_flag() -> None:
+    """CLI queue complete and fail require exactly one of --expected-claimed-at or --unverified-legacy."""
+    parser = core_cli.build_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(["queue", "complete", "t1", "worker-a"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["queue", "complete", "t1", "worker-a", "--expected-claimed-at", "100.0", "--unverified-legacy"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["queue", "fail", "t1", "worker-a"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["queue", "fail", "t1", "worker-a", "--expected-claimed-at", "100.0", "--unverified-legacy"])

@@ -590,28 +590,36 @@ def build_parser() -> argparse.ArgumentParser:
     p_queue_complete.add_argument("task_id")
     p_queue_complete.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_complete.add_argument("--notes", default="")
-    p_queue_complete.add_argument(
+    fence_complete = p_queue_complete.add_mutually_exclusive_group(required=True)
+    fence_complete.add_argument(
         "--expected-claimed-at",
         type=float,
         default=None,
-        help=(
-            "Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r). "
-            "Note: omitting this flag leaves same-agent-name reclaims unprotected against worker races."
-        ),
+        help="Expected claim timestamp; guards against same-agent-name reclaims (L-1r).",
+    )
+    fence_complete.add_argument(
+        "--unverified-legacy",
+        action="store_true",
+        default=False,
+        help="Explicitly opt out of claim fencing.",
     )
 
     p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
     p_queue_fail.add_argument("task_id")
     p_queue_fail.add_argument("agent_id", help="Must match the task's current claimant")
     p_queue_fail.add_argument("--notes", default="")
-    p_queue_fail.add_argument(
+    fence_fail = p_queue_fail.add_mutually_exclusive_group(required=True)
+    fence_fail.add_argument(
         "--expected-claimed-at",
         type=float,
         default=None,
-        help=(
-            "Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r). "
-            "Note: omitting this flag leaves same-agent-name reclaims unprotected against worker races."
-        ),
+        help="Expected claim timestamp; guards against same-agent-name reclaims (L-1r).",
+    )
+    fence_fail.add_argument(
+        "--unverified-legacy",
+        action="store_true",
+        default=False,
+        help="Explicitly opt out of claim fencing.",
     )
 
     p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")

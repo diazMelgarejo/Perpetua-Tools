@@ -1250,3 +1250,20 @@ returning `None` from `queue_claim` (rejected — drops monotonic fencing timest
 of graduated candidate JSONs (rejected — violates append-only memory invariant).
 
 **Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
+
+## 2026-11-27 Claim fence identity and persistent high-water mark (supersedes the "monotonic claim_ts" wording of lines 1233-1236)
+
+- `queue_claim` returns `claimed_at`. It is the wall-clock time raised to `nextafter(high_water_mark)` for that
+  task via persistent `task_claim_hwm` table inside the claim's `BEGIN IMMEDIATE` transaction and is never deleted.
+  Stamps issued for one `task_id` are strictly increasing across release, same-name reclaim, and backward clock steps.
+  Evidence: `tests/test_l1r_claim_stamp.py::test_same_name_reclaim_in_one_clock_tick_gets_a_strictly_greater_stamp`,
+  `::test_a_clock_that_steps_backwards_never_reissues_a_stamp`.
+- The release fence compares `agent_id` and `claimed_at` by equality inside one `BEGIN IMMEDIATE` transaction.
+  Evidence: `tests/test_l1r_claim_stamp.py::test_a_stale_worker_holding_the_old_stamp_cannot_release_the_replacement_claim`.
+- Claims created before the high-water mark existed are covered once they are released, because release seeds
+  the mark from the row it deletes (`_SEED_CLAIM_HWM`).
+- `queue complete` and `queue fail` require `--expected-claimed-at` unless `--unverified-legacy` is passed. An
+  unverified completion records `fence: "unverified"` and is not protected against a same-name reclaim.
+  Evidence: `tests/test_l1r_cleanup_runtime_race.py::test_cli_queue_complete_and_fail_require_fence_flag`,
+  `tests/test_l1r_cleanup_runtime_race.py::test_cli_queue_complete_legacy_omitted_flag_preserves_backward_compat`.
+
