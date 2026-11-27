@@ -74,7 +74,8 @@ async def _queued_task_claimed_by(bus: GossipBus, agent_id: str, name: str) -> s
     await queue_add(bus, name, "Phase-1", "NORMAL", "", None)
     snapshots = await latest_task_snapshots(bus)
     task_id = next(tid for tid, s in snapshots.items() if s.get("task_name") == name)
-    assert await queue_claim(bus, task_id, agent_id) is None
+    claimed_at = await queue_claim(bus, task_id, agent_id)
+    assert isinstance(claimed_at, float)
     return task_id
 
 

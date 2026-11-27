@@ -483,7 +483,7 @@ async def release_claim_with_event(
     return ReleaseResult.CONTENTION
 
 
-async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | None:
+async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> float | bool:
     """Claim a dependency-ready task and publish the successful actor's presence."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
@@ -602,7 +602,7 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # to separately remember an out-of-band pulse call.
     await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
     print(f"claimed: {task_id} by {agent_id} (claimed_at: {claim_ts})")
-    return None
+    return claim_ts
 
 
 async def get_task_claim(

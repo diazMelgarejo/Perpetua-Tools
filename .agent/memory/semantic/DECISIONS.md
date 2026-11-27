@@ -1212,3 +1212,41 @@ append-only invariant); making `--expected-claimed-at` mandatory on CLI (rejecte
 backward compatibility with existing automation and test suites).
 
 **Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
+
+---
+
+## 2026-11-27: Enduring Final Lockstep Alignment with orama-system PR #533 commit fffed6a4
+
+**Decision:** Update lockstep memory records and coordination contracts to align with
+`diazMelgarejo/orama-system` PR #533 commit `fffed6a46825018f6a9f394b2c777d0bc3ed8aaf` (`fffed6a4`,
+incorporating core proxy fix `3caa44b7` and canonical exemplar reference cards):
+1. Launcher boundary enforcement in `launch_cline_wandb.py` provides synchronous socket admission
+   in `AccountingProxyServer.process_request()` before spawning worker threads, eliminating
+   accept-to-dispatch races against early child exits.
+2. Two-phase `stop_and_drain(timeout_s=5.0)` marks `_accepting = False`, calls `self.shutdown()` to
+   break the socket accept loop, and waits on `_inflight_cond` for in-flight requests to complete.
+3. Single fail-closed funnel via `_fail_closed()` and `_read_upstream_response()` ensures all
+   transport errors, socket timeouts, and `urllib.error.HTTPError.read()` body reading failures
+   terminate fail-closed with exit code `124` and unknown spend settlement (`_settle_unknown`).
+4. Factorization into single-responsibility helpers: `_admit_chat_request()`,
+   `_prepare_chat_payload()`, `_read_upstream_response()`, and `_account_chat_usage()`.
+5. Preserved `queue_claim` return type returning `claim_ts: float` on successful claim, updating
+   characterization tests (`test_coordination_manual_cleanup_characterization.py:77` and
+   `test_agent_handoff_cli.py:142`) to `assert isinstance(claimed_at, float)` to uphold monotonic
+   fencing semantics.
+6. Superseded stale `lesson_8100266e8176` (graduated as `lesson_61b35f0ca87d`), `lesson_67887871bd23`
+   (graduated as `lesson_aa38395eb32f`), and distilled cross-cycle architectural learnings
+   (graduated as `lesson_f7c090a572fc`) via `graduate.py --supersedes` while strictly preserving
+   `tokenSource: "manual"`, millisecond UTC `updatedAt`, ClinePass isolation, and Wanda direct-client
+   guidance.
+
+**Rationale:** Addresses CodeRabbit findings `PRRT_kwDORtdZEM68lEd4`, `PRRT_kwDOPz7qg868pGcw`,
+`PRRT_kwDOPz7qg868lCAr`, `PRRT_kwDOPz7qg868nC9h`, `PRRT_kwDORtdZEM68pFGx`, `PRRT_kwDORtdZEM68pFG1`,
+`PRRT_kwDORtdZEM68pFG5`, and nitpick `launch_cline_wandb.py:370`.
+
+**Alternatives considered:** Checked `if not self.server.is_accepting()` inside `_admit_chat_request`
+(rejected — causes premature 503 rejection of already-admitted requests draining during shutdown);
+returning `None` from `queue_claim` (rejected — drops monotonic fencing timestamp); in-place mutation
+of graduated candidate JSONs (rejected — violates append-only memory invariant).
+
+**Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
