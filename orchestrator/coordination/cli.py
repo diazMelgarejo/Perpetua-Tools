@@ -54,8 +54,8 @@ Usage:
     python3 scripts/agent_coordination.py queue add <task_name> <phase> [--priority critical|high|normal|low] [--notes "..."] [--depends-on task_id,...]
     python3 scripts/agent_coordination.py queue list [--phase <phase>] [--priority <level>] [--agent <agent_id>]
     python3 scripts/agent_coordination.py queue claim <task_id> <agent_id>
-    python3 scripts/agent_coordination.py queue complete <task_id> [--notes "..."]
-    python3 scripts/agent_coordination.py queue fail <task_id> [--notes "..."]
+    python3 scripts/agent_coordination.py queue complete <task_id> <agent_id> (--expected-claimed-at <claimed_at> | --unverified-legacy) [--notes "..."]
+    python3 scripts/agent_coordination.py queue fail <task_id> <agent_id> (--expected-claimed-at <claimed_at> | --unverified-legacy) [--notes "..."]
     python3 scripts/agent_coordination.py queue status [--agent <agent_id>]
 
     # Phase tracking API
