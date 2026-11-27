@@ -51,12 +51,12 @@ async def test_identity_resolution_runs_off_event_loop(
         await task_queue.queue_claim(bus, task, "actor")
         assert len(calls) == 2  # claim identity AND the successful presence pulse
         if operation == "complete":
-            await task_queue.queue_complete(bus, task, "actor", "verified")
+            await task_queue.queue_complete(bus, task, "actor", "verified", unverified_legacy=True)
         elif operation == "fail":
-            await task_queue.queue_fail(bus, task, "actor", "retry")
+            await task_queue.queue_fail(bus, task, "actor", "retry", unverified_legacy=True)
         elif operation == "abandon":
             for _ in range(4):
-                await task_queue.queue_fail(bus, task, "actor", "exhaust")
+                await task_queue.queue_fail(bus, task, "actor", "exhaust", unverified_legacy=True)
                 state = (await task_queue.latest_task_snapshots(bus))[task]
                 if state["status"] == "queued":
                     await task_queue.queue_claim(bus, task, "actor")

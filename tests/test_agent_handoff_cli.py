@@ -139,7 +139,8 @@ async def test_valid_handoff_enqueues_and_records_non_liveness_admission(
     assert admitted["queue_task_id"] == queued["task_id"] == queue_task_id
 
     assert await cli._queue_claim(bus, queued["task_id"], "agent-2") is False
-    assert await cli._queue_claim(bus, queued["task_id"], "agent-1") is None
+    claimed_at = await cli._queue_claim(bus, queued["task_id"], "agent-1")
+    assert isinstance(claimed_at, float)
 
 
 @pytest.mark.asyncio

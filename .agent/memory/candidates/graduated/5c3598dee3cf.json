@@ -1,0 +1,66 @@
+{
+  "id": "5c3598dee3cf",
+  "key": "manual_5c3598",
+  "name": "manual_5c3598",
+  "claim": "When supervising child processes via HTTP loopback proxies under spend bounds, enforce five structural patterns: (1) Synchronous socket admission in process_request before spawning handler threads; (2) Three-phase lifecycle (RUNNING -> DRAINING -> CLOSED) where stop_and_drain marks CLOSED on timeout to fence chat_gate dispatch; (3) Single fail-closed funnel classifying outcomes as ACCOUNTED, REJECTED (DEFINITIVE_REJECTIONS), or UNACCOUNTED (debited in full and exiting 124); (4) Pre-forward provider-side budget clamping of max_tokens and max_completion_tokens; (5) Per-launch random session token authentication. On distributed task queues, preserve task_claims.claimed_at fencing tokens made strictly increasing via persistent task_claim_hwm table and nextafter(), requiring --expected-claimed-at or --unverified-legacy on worker CLI.",
+  "conditions": [
+    "accounting",
+    "admission",
+    "bounds",
+    "budget",
+    "chat_gate",
+    "claim",
+    "claimed_at",
+    "clamping",
+    "cli",
+    "closed",
+    "drain",
+    "fencing",
+    "funnel",
+    "high-water-mark",
+    "hwm",
+    "invariants",
+    "loopback",
+    "nextafter",
+    "phase",
+    "process_request",
+    "proxy",
+    "queue",
+    "session-token",
+    "spend",
+    "stop_and_drain",
+    "synchronous",
+    "task_claims",
+    "unaccounted"
+  ],
+  "evidence_ids": [
+    "2026-11-27T09:35:00.000000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T09:35:00.000000+00:00",
+  "status": "graduated",
+  "decisions": [
+    {
+      "ts": "2026-11-27T09:35:00.000000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T09:35:05.000000+00:00",
+      "action": "graduated",
+      "reviewer": "host-agent",
+      "notes": "Supersedes lesson_f7c090a572fc. Refines monotonic claim token claims to strictly increasing high-water-mark fencing stamps via task_claim_hwm and math.nextafter, worker CLI required fence flags, and codifies five loopback proxy lifecycle and accounting invariants.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T09:35:00.000000+00:00"
+      ],
+      "lessons_sha": "5fd5d7fa779e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T09:35:05.000000+00:00",
+  "reviewer": "host-agent",
+  "rationale": "Supersedes lesson_f7c090a572fc. Refines monotonic claim token claims to strictly increasing high-water-mark fencing stamps via task_claim_hwm and math.nextafter, worker CLI required fence flags, and codifies five loopback proxy lifecycle and accounting invariants.",
+  "supersedes": "lesson_f7c090a572fc"
+}

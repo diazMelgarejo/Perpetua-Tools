@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import aiosqlite
 import json
+import math
 import os
 import re
 import time
@@ -25,6 +26,21 @@ from orchestrator.coordination.types import (
     ReleaseResult,
     TaskPriority,
 )
+
+
+def _require_completion_fence(expected_claimed_at: float | None, unverified_legacy: bool) -> None:
+    """Refuse an unfenced completion or failure unless the caller opts out explicitly (L-1r).
+
+    The CLI already requires --expected-claimed-at or --unverified-legacy; the Python API must not
+    be the quiet path around that rule, or a direct caller could finish a same-agent reclaim
+    without a fence.
+    """
+    if expected_claimed_at is None and not unverified_legacy:
+        raise ValueError(
+            "expected_claimed_at is required; pass unverified_legacy=True to opt out of claim fencing"
+        )
+    if expected_claimed_at is not None and unverified_legacy:
+        raise ValueError("pass either expected_claimed_at or unverified_legacy=True, not both")
 
 
 def _error(message: str) -> bool:
@@ -231,9 +247,10 @@ _LOCK_RETRY_SECONDS = 0.05
 
 
 async def ensure_claims_table(bus: GossipBus) -> None:
-    """Create the existing manual queue-ownership table when needed."""
+    """Create the existing manual queue-ownership and HWM tables when needed."""
     async with bus.connect() as db:
         await db.execute(_CREATE_CLAIMS_TABLE)
+        await db.execute(_CREATE_CLAIM_HWM_TABLE)
         await db.commit()
 
 
@@ -264,42 +281,83 @@ def _presence_pulse_payload(agent_id: str) -> dict:
     }
 
 
-async def try_atomic_claim(
+_CREATE_CLAIM_HWM_TABLE = """
+CREATE TABLE IF NOT EXISTS task_claim_hwm (
+    task_id         TEXT PRIMARY KEY,
+    last_claimed_at REAL NOT NULL
+)
+"""
+_UPSERT_CLAIM_HWM = (
+    "INSERT INTO task_claim_hwm (task_id, last_claimed_at) VALUES (?, ?) "
+    "ON CONFLICT(task_id) DO UPDATE SET last_claimed_at = max(last_claimed_at, excluded.last_claimed_at)"
+)
+# Seeds the high-water mark from a claim row that is about to be deleted. This covers claims that were
+# created before the hwm table existed. The SELECT keeps its WHERE clause so SQLite parses ON CONFLICT.
+_SEED_CLAIM_HWM = (
+    "INSERT INTO task_claim_hwm (task_id, last_claimed_at) "
+    "SELECT task_id, claimed_at FROM task_claims WHERE task_id = ? "
+    "ON CONFLICT(task_id) DO UPDATE SET last_claimed_at = max(last_claimed_at, excluded.last_claimed_at)"
+)
+
+
+async def _next_claim_ts(db: Any, task_id: str, requested_ts: float) -> float:
+    """Return a claim stamp strictly greater than every stamp ever issued for ``task_id``.
+
+    The high-water mark row is never deleted, so it survives release and reclaim. It is read and written
+    inside the caller's BEGIN IMMEDIATE transaction, so concurrent claimants are serialized.
+    """
+    cursor = await db.execute(
+        "SELECT last_claimed_at FROM task_claim_hwm WHERE task_id = ?", (task_id,)
+    )
+    row = await cursor.fetchone()
+    if row is not None and requested_ts <= row[0]:
+        return math.nextafter(row[0], math.inf)
+    return requested_ts
+
+
+async def try_atomic_claim_stamped(
     bus: GossipBus,
     task_id: str,
     agent_id: str,
     claim_payload: Optional[dict] = None,
-) -> ClaimResult:
+    *,
+    claimed_at: Optional[float] = None,
+) -> tuple[ClaimResult, Optional[float]]:
     """Atomically persist exclusive ownership and its append-only event.
 
-    `BEGIN IMMEDIATE` serializes writers before either mutation. Integrity
-    conflicts report a lost race. Lock contention is retried briefly and then
-    reports contention without leaving a claim row or an event behind.
+    Returns ``(result, stamp)``. ``stamp`` is the claim's fencing token (None unless WON). It is the value
+    stored in ``task_claims.claimed_at`` and in the event payload, so the caller's token and the row agree.
     """
-    payload = claim_payload or {
-        "kind": "task_claim",
-        "task_id": task_id,
-        "assigned_agent": agent_id,
-        "status": QueuedTaskState.CLAIMED.value,
-        "worktree": await asyncio.to_thread(current_worktree_label),
-    }
+    requested_ts = claimed_at if claimed_at is not None else time.time()
+    if claim_payload is not None:
+        base_payload = dict(claim_payload)
+    else:
+        base_payload = {
+            "kind": "task_claim",
+            "task_id": task_id,
+            "assigned_agent": agent_id,
+            "status": QueuedTaskState.CLAIMED.value,
+            "worktree": await asyncio.to_thread(current_worktree_label),
+        }
     for attempt in range(_LOCK_RETRIES):
         async with bus.connect() as db:
             try:
                 await db.execute("BEGIN IMMEDIATE")
                 await db.execute(_CREATE_CLAIMS_TABLE)
+                await db.execute(_CREATE_CLAIM_HWM_TABLE)
+                claim_ts = await _next_claim_ts(db, task_id, requested_ts)
                 await db.execute(
-                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) "
-                    "VALUES (?, ?, ?)",
-                    (task_id, agent_id, time.time()),
+                    "INSERT INTO task_claims (task_id, agent_id, claimed_at) VALUES (?, ?, ?)",
+                    (task_id, agent_id, claim_ts),
                 )
+                await db.execute(_UPSERT_CLAIM_HWM, (task_id, claim_ts))
                 row_id, _event_uuid, safe_payload, inserted = await bus.insert_event(
-                    db, "heartbeat", payload
+                    db, "heartbeat", {**base_payload, "claimed_at": claim_ts}
                 )
                 await db.commit()
             except aiosqlite.IntegrityError:
                 await db.rollback()
-                return ClaimResult.LOST_RACE
+                return ClaimResult.LOST_RACE, None
             except aiosqlite.OperationalError as exc:
                 await db.rollback()
                 locked = "locked" in str(exc).lower() or "busy" in str(exc).lower()
@@ -307,15 +365,30 @@ async def try_atomic_claim(
                     await asyncio.sleep(_LOCK_RETRY_SECONDS * (attempt + 1))
                     continue
                 if locked:
-                    return ClaimResult.CONTENTION
+                    return ClaimResult.CONTENTION, None
                 raise GossipBusError(f"claim on {task_id!r} failed: {exc}") from exc
             except Exception as exc:
                 await db.rollback()
                 raise GossipBusError(f"claim on {task_id!r} failed: {exc}") from exc
         if inserted:
             bus.schedule_embedding(row_id, safe_payload)
-        return ClaimResult.WON
-    return ClaimResult.CONTENTION
+        return ClaimResult.WON, claim_ts
+    return ClaimResult.CONTENTION, None
+
+
+async def try_atomic_claim(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    claim_payload: Optional[dict] = None,
+    *,
+    claimed_at: Optional[float] = None,
+) -> ClaimResult:
+    """Compatibility wrapper: the claim result without the stamp."""
+    result, _stamp = await try_atomic_claim_stamped(
+        bus, task_id, agent_id, claim_payload, claimed_at=claimed_at
+    )
+    return result
 
 
 async def _agent_alive_in_txn(
@@ -418,6 +491,7 @@ async def release_claim_with_event(
             try:
                 await db.execute("BEGIN IMMEDIATE")
                 await db.execute(_CREATE_CLAIMS_TABLE)
+                await db.execute(_CREATE_CLAIM_HWM_TABLE)
                 if expected_agent_id is not None:
                     if (
                         expected_claimed_at is not None or liveness_floor_ts is not None
@@ -442,6 +516,7 @@ async def release_claim_with_event(
                         ):
                             await db.rollback()
                             return ReleaseResult.REFUSED
+                    await db.execute(_SEED_CLAIM_HWM, (task_id,))
                     cursor = await db.execute(
                         "DELETE FROM task_claims WHERE task_id = ? AND agent_id = ?",
                         (task_id, expected_agent_id),
@@ -450,6 +525,7 @@ async def release_claim_with_event(
                         await db.rollback()
                         return ReleaseResult.LOST_RACE
                 else:
+                    await db.execute(_SEED_CLAIM_HWM, (task_id,))
                     await db.execute(
                         "DELETE FROM task_claims WHERE task_id = ?", (task_id,)
                     )
@@ -475,7 +551,7 @@ async def release_claim_with_event(
     return ReleaseResult.CONTENTION
 
 
-async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | None:
+async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> float | bool:
     """Claim a dependency-ready task and publish the successful actor's presence."""
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
@@ -563,7 +639,7 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # Atomic gate: the snapshot checks above can both pass for two racing
     # claimants (read-then-write, no lock across the gap). This INSERT is
     # the actual exclusion point -- only one caller gets True. The claim row
-    # and its heartbeat event commit together (see try_atomic_claim) so a
+    # and its heartbeat event commit together (see try_atomic_claim_stamped) so a
     # crash between them can never leave one without the other.
     payload = {
         "kind": "task_claim",
@@ -573,7 +649,9 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
         "status": QueuedTaskState.CLAIMED.value,
         "worktree": await asyncio.to_thread(current_worktree_label),
     }
-    claim_result = await try_atomic_claim(bus, task_id, agent_id, payload)
+    claim_result, claim_ts = await try_atomic_claim_stamped(
+        bus, task_id, agent_id, payload, claimed_at=time.time()
+    )
     if claim_result == ClaimResult.LOST_RACE:
         return _error(
             f"{task_id} could not be claimed; another agent won the race. "
@@ -589,11 +667,38 @@ async def queue_claim(bus: GossipBus, task_id: str, agent_id: str) -> bool | Non
     # agent -- post presence explicitly rather than relying on the agent
     # to separately remember an out-of-band pulse call.
     await bus.emit("heartbeat", await asyncio.to_thread(_presence_pulse_payload, agent_id))
-    print(f"claimed: {task_id} by {agent_id}")
+    print(f"claimed: {task_id} by {agent_id} (claimed_at: {claim_ts})")
+    return claim_ts
 
 
-async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
-    """Complete a still-owned task without synthesizing another agent's presence."""
+async def get_task_claim(
+    bus: GossipBus, task_id: str
+) -> Optional[tuple[str, float]]:
+    """Return (agent_id, claimed_at) for an open claim in task_claims, or None."""
+    async with bus.connect() as db:
+        await db.execute(_CREATE_CLAIMS_TABLE)
+        cursor = await db.execute(
+            "SELECT agent_id, claimed_at FROM task_claims WHERE task_id = ?",
+            (task_id,),
+        )
+        return await cursor.fetchone()
+
+
+async def queue_complete(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    notes: str,
+    *,
+    expected_claimed_at: Optional[float] = None,
+    unverified_legacy: bool = False,
+) -> bool | None:
+    """Complete a still-owned task without synthesizing another agent's presence.
+
+    Exactly one of expected_claimed_at (the claim timestamp the caller captured) or
+    unverified_legacy=True is required; omitting both raises ValueError.
+    """
+    _require_completion_fence(expected_claimed_at, unverified_legacy)
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -619,6 +724,7 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
     # otherwise free the row with no event explaining why, or record the
     # event while the row stays held (blocking every future claim on this
     # task_id with a stale "already claimed" row forever).
+    # expected_claimed_at guards against same-agent-name reclaims (L-1r).
     result = await release_claim_with_event(
         bus,
         task_id,
@@ -629,8 +735,10 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
             "agent_id": agent_id,
             "status": QueuedTaskState.COMPLETED.value,
             "notes": notes,
+            "fence": "claimed_at" if expected_claimed_at is not None else "unverified",
         },
         expected_agent_id=agent_id,
+        expected_claimed_at=expected_claimed_at,
     )
     if result == ReleaseResult.LOST_RACE:
         return _error(
@@ -651,8 +759,20 @@ async def queue_complete(bus: GossipBus, task_id: str, agent_id: str, notes: str
     print(f"completed: {task_id}")
 
 
-async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) -> bool | None:
-    """Release or abandon a failed owned task and record its actor's activity."""
+async def queue_fail(
+    bus: GossipBus,
+    task_id: str,
+    agent_id: str,
+    notes: str,
+    *,
+    expected_claimed_at: Optional[float] = None,
+    unverified_legacy: bool = False,
+) -> bool | None:
+    """Release or abandon a failed owned task and record its actor's activity.
+
+    Exactly one of expected_claimed_at or unverified_legacy=True is required, as for queue_complete.
+    """
+    _require_completion_fence(expected_claimed_at, unverified_legacy)
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -679,6 +799,7 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
         # QUEUED and queue_claim's atomic gate would otherwise reject every
         # future claim attempt with a stale "already claimed" row forever.
         # Release + event committed together, same reasoning as queue_complete.
+        # expected_claimed_at guards against same-agent-name reclaims (L-1r).
         result = await release_claim_with_event(
             bus,
             task_id,
@@ -692,8 +813,10 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
                 "status": QueuedTaskState.QUEUED.value,
                 "assigned_agent": None,
                 "notes": f"Retry {retry_count}/{max_retries}: {notes}",
+                "fence": "claimed_at" if expected_claimed_at is not None else "unverified",
             },
             expected_agent_id=agent_id,
+            expected_claimed_at=expected_claimed_at,
         )
         if result == ReleaseResult.LOST_RACE:
             return _error(
@@ -725,8 +848,10 @@ async def queue_fail(bus: GossipBus, task_id: str, agent_id: str, notes: str) ->
             "status": "abandoned",
             "assigned_agent": None,
             "notes": f"Abandoned after {max_retries} retries: {notes}",
+            "fence": "claimed_at" if expected_claimed_at is not None else "unverified",
         },
         expected_agent_id=agent_id,
+        expected_claimed_at=expected_claimed_at,
     )
     if result == ReleaseResult.LOST_RACE:
         return _error(

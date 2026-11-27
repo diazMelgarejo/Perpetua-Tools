@@ -58,7 +58,7 @@ async def main():
     await queue_claim(bus, sys.argv[2], 'worker')
     print('READY', flush=True)
     await asyncio.to_thread(sys.stdin.readline)
-    await queue_complete(bus, sys.argv[2], 'worker', 'resumed')
+    await queue_complete(bus, sys.argv[2], 'worker', 'resumed', unverified_legacy=True)
     Path(sys.argv[3]).write_text('effect', encoding='utf-8')
 asyncio.run(main())
 """
