@@ -28,6 +28,21 @@ from orchestrator.coordination.types import (
 )
 
 
+def _require_completion_fence(expected_claimed_at: float | None, unverified_legacy: bool) -> None:
+    """Refuse an unfenced completion or failure unless the caller opts out explicitly (L-1r).
+
+    The CLI already requires --expected-claimed-at or --unverified-legacy; the Python API must not
+    be the quiet path around that rule, or a direct caller could finish a same-agent reclaim
+    without a fence.
+    """
+    if expected_claimed_at is None and not unverified_legacy:
+        raise ValueError(
+            "expected_claimed_at is required; pass unverified_legacy=True to opt out of claim fencing"
+        )
+    if expected_claimed_at is not None and unverified_legacy:
+        raise ValueError("pass either expected_claimed_at or unverified_legacy=True, not both")
+
+
 def _error(message: str) -> bool:
     """Report a failed manual queue operation without mutating ownership."""
     import sys
@@ -676,8 +691,14 @@ async def queue_complete(
     notes: str,
     *,
     expected_claimed_at: Optional[float] = None,
+    unverified_legacy: bool = False,
 ) -> bool | None:
-    """Complete a still-owned task without synthesizing another agent's presence."""
+    """Complete a still-owned task without synthesizing another agent's presence.
+
+    Exactly one of expected_claimed_at (the claim timestamp the caller captured) or
+    unverified_legacy=True is required; omitting both raises ValueError.
+    """
+    _require_completion_fence(expected_claimed_at, unverified_legacy)
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:
@@ -745,8 +766,13 @@ async def queue_fail(
     notes: str,
     *,
     expected_claimed_at: Optional[float] = None,
+    unverified_legacy: bool = False,
 ) -> bool | None:
-    """Release or abandon a failed owned task and record its actor's activity."""
+    """Release or abandon a failed owned task and record its actor's activity.
+
+    Exactly one of expected_claimed_at or unverified_legacy=True is required, as for queue_complete.
+    """
+    _require_completion_fence(expected_claimed_at, unverified_legacy)
     snapshots = await latest_task_snapshots(bus)
     task_state = snapshots.get(task_id)
     if not task_state:

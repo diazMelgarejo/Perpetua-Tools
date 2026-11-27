@@ -532,3 +532,31 @@ def test_cli_queue_complete_and_fail_require_fence_flag() -> None:
         parser.parse_args(["queue", "fail", "t1", "worker-a"])
     with pytest.raises(SystemExit):
         parser.parse_args(["queue", "fail", "t1", "worker-a", "--expected-claimed-at", "100.0", "--unverified-legacy"])
+
+
+@pytest.mark.parametrize("operation", [queue_complete, queue_fail])
+async def test_api_requires_a_fence_or_an_explicit_legacy_opt_out(bus: GossipBus, operation) -> None:
+    """The Python API enforces the same rule as the CLI: a token, or an explicit opt-out, never neither."""
+    fake_task = "task-never-touched"
+    with pytest.raises(ValueError, match="expected_claimed_at is required"):
+        await operation(bus, fake_task, "worker-a", "unfenced")
+    with pytest.raises(ValueError, match="not both"):
+        await operation(bus, fake_task, "worker-a", "both", expected_claimed_at=T_CLAIM_1, unverified_legacy=True)
+    # Refused before any read or write: no event was recorded for the task.
+    assert fake_task not in await latest_task_snapshots(bus)
+
+
+async def test_api_same_agent_reclaim_cannot_complete_through_a_default_call(bus: GossipBus, fake_clock: dict) -> None:
+    """A stale same-name worker calling the API with defaults is refused, so the reclaim stays intact."""
+    fake_clock["now"] = T_CLAIM_1
+    await queue_add(bus, "api default task", "Phase-1", "NORMAL", "", None)
+    snaps = await latest_task_snapshots(bus)
+    task_id = next(tid for tid, s in snaps.items() if s.get("task_name") == "api default task")
+    assert await try_atomic_claim(bus, task_id, "worker-1") is ClaimResult.WON
+    async with bus.connect() as db:
+        await db.execute("UPDATE task_claims SET claimed_at = ? WHERE task_id = ?", (T_CLAIM_2, task_id))
+        await db.commit()
+    with pytest.raises(ValueError):
+        await queue_complete(bus, task_id, "worker-1", "stale default call")
+    assert await _claim_row(bus, task_id) == ("worker-1", T_CLAIM_2)
+    assert await _task_event_count(bus, task_id, "task_complete") == 0

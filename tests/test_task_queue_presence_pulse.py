@@ -61,7 +61,7 @@ async def test_queue_claim_posts_presence_pulse(bus):
 async def test_queue_complete_posts_presence_pulse(bus):
     task_id = await _add_and_claim(bus, "agent-b")
     before = await _pulse_count(bus, "agent-b")
-    await queue_complete(bus, task_id, "agent-b", "done")
+    await queue_complete(bus, task_id, "agent-b", "done", unverified_legacy=True)
     after = await _pulse_count(bus, "agent-b")
     assert after == before + 1
 
@@ -69,7 +69,7 @@ async def test_queue_complete_posts_presence_pulse(bus):
 async def test_queue_fail_retry_path_posts_presence_pulse(bus):
     task_id = await _add_and_claim(bus, "agent-c")
     before = await _pulse_count(bus, "agent-c")
-    await queue_fail(bus, task_id, "agent-c", "transient error")
+    await queue_fail(bus, task_id, "agent-c", "transient error", unverified_legacy=True)
     after = await _pulse_count(bus, "agent-c")
     assert after == before + 1
 
@@ -79,10 +79,10 @@ async def test_queue_fail_abandon_path_posts_presence_pulse(bus):
     # Exhaust retries (max_retries defaults to 3) to reach the abandon path.
     for _ in range(3):
         await queue_claim(bus, task_id, "agent-d")
-        await queue_fail(bus, task_id, "agent-d", "retry")
+        await queue_fail(bus, task_id, "agent-d", "retry", unverified_legacy=True)
     before = await _pulse_count(bus, "agent-d")
     await queue_claim(bus, task_id, "agent-d")
-    await queue_fail(bus, task_id, "agent-d", "final failure")
+    await queue_fail(bus, task_id, "agent-d", "final failure", unverified_legacy=True)
     after = await _pulse_count(bus, "agent-d")
     # +2, not +1: the explicit queue_claim above also posts its own pulse,
     # in addition to the abandon-path pulse from queue_fail itself.

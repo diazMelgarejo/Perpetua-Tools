@@ -436,6 +436,7 @@ async def _amain(args: argparse.Namespace) -> int:
                 args.agent_id,
                 args.notes or "",
                 expected_claimed_at=getattr(args, "expected_claimed_at", None),
+                unverified_legacy=getattr(args, "unverified_legacy", False),
             )
         elif args.subcmd == "fail":
             result = await _queue_fail(
@@ -444,6 +445,7 @@ async def _amain(args: argparse.Namespace) -> int:
                 args.agent_id,
                 args.notes or "",
                 expected_claimed_at=getattr(args, "expected_claimed_at", None),
+                unverified_legacy=getattr(args, "unverified_legacy", False),
             )
         elif args.subcmd == "status":
             result = await _queue_status(bus, args.agent)
