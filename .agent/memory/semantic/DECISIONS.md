@@ -1176,3 +1176,39 @@ claim in PR branch); in-place editing of JSONL records (strictly rejected — vi
 memory invariant).
 
 **Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.
+
+
+---
+
+## 2026-11-27: Final Remediation Lockstep alignment with orama-system PR #533 commit 7ad6c6b9
+
+**Decision:** Update lockstep memory records to align with `diazMelgarejo/orama-system` PR #533
+commit `7ad6c6b9afdb36e88793eef3fbc5fbfc2df0da8b` (`7ad6c6b9`): launcher boundary enforcement in
+`launch_cline_wandb.py` provides:
+1. Pre-forward `POST /chat/completions` request-count gate (path parsed via `urllib.parse.urlsplit`
+without query string; non-allowlisted POST routes refused fail-closed with HTTP 403; post-breach
+retries rejected with HTTP 429 before forwarding).
+2. Serialized pre-forward upstream `max_tokens` / `max_completion_tokens` clamping against
+remaining `max_total_output` budget under `chat_gate`, plus post-response `usage.completion_tokens`
+accounting (SSE `stream_options.include_usage=True`).
+3. Fail-closed exit code `124` (with bounded 5.0s in-flight handler drain and `live_cycle()`
+`_settle_unknown` settlement) on bound breach, missing/invalid usage, or upstream 504/502
+transport failure.
+4. Preserved shared spend-gate requirement for Biafra Cline and Wanda's direct-client boundary verbatim.
+
+Clarification for line 1170 above regarding `orchestrator/coordination/cli.py`: `--expected-claimed-at`
+is supported as an optional argument on `queue complete` and `queue fail` to maintain backward
+compatibility with existing callers. Calls omitting `--expected-claimed-at` remain unprotected
+against same-agent-name reclaims; the CLI change seals the worker-facing race window for callers
+that supply their original claim timestamp.
+
+**Rationale:** Addresses CodeRabbit findings `PRRT_kwDOPz7qg868lCAr`, `PRRT_kwDOPz7qg868nC9h`, and
+`PRRT_kwDOPz7qg868lCAw`. Clamping forwarded output limits prevents upstream provider over-generation,
+while query-string stripping and route allowlisting prevent proxy bypass. Fail-closed exit 124 on
+upstream transport failure ensures unverified spend is charged via `_settle_unknown`.
+
+**Alternatives considered:** In-place mutation of graduated memory JSON (rejected — violates
+append-only invariant); making `--expected-claimed-at` mandatory on CLI (rejected — breaks
+backward compatibility with existing automation and test suites).
+
+**Status:** done on branch `2026-11-27-001-consolidated-pt-bounds-and-queue-l1r`.

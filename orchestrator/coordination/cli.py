@@ -594,7 +594,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--expected-claimed-at",
         type=float,
         default=None,
-        help="Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r)",
+        help=(
+            "Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r). "
+            "Note: omitting this flag leaves same-agent-name reclaims unprotected against worker races."
+        ),
     )
 
     p_queue_fail = queue_sub.add_parser("fail", help="Mark a queued task failed/retry")
@@ -605,7 +608,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--expected-claimed-at",
         type=float,
         default=None,
-        help="Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r)",
+        help=(
+            "Optional expected claim timestamp; guards against same-agent-name reclaims (L-1r). "
+            "Note: omitting this flag leaves same-agent-name reclaims unprotected against worker races."
+        ),
     )
 
     p_queue_status = queue_sub.add_parser("status", help="Show claimed queue work by agent")

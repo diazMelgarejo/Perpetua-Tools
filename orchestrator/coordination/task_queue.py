@@ -279,16 +279,18 @@ async def try_atomic_claim(
     reports contention without leaving a claim row or an event behind.
     """
     claim_ts = claimed_at if claimed_at is not None else time.time()
-    payload = claim_payload or {
-        "kind": "task_claim",
-        "task_id": task_id,
-        "assigned_agent": agent_id,
-        "status": QueuedTaskState.CLAIMED.value,
-        "worktree": await asyncio.to_thread(current_worktree_label),
-        "claimed_at": claim_ts,
-    }
-    if "claimed_at" not in payload:
-        payload["claimed_at"] = claim_ts
+    if claim_payload is not None:
+        payload = dict(claim_payload)
+    else:
+        payload = {
+            "kind": "task_claim",
+            "task_id": task_id,
+            "assigned_agent": agent_id,
+            "status": QueuedTaskState.CLAIMED.value,
+            "worktree": await asyncio.to_thread(current_worktree_label),
+            "claimed_at": claim_ts,
+        }
+    payload["claimed_at"] = claim_ts
     for attempt in range(_LOCK_RETRIES):
         async with bus.connect() as db:
             try:
