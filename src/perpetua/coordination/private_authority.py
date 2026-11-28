@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator, Mapping
 from contextlib import closing, contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -391,14 +391,12 @@ class Authority:
             self._record(db, task_id, "claim", generation, version, now)
             return ClaimHandle(task_id, claim_id, generation, version, incarnation, now)
 
-    def _transition(
-        self,
-        handle: ClaimHandle,
-        new_state: str,
-        action: str | None = None,
-        clear_claim: bool = True,
-    ) -> ClaimHandle | None:
-        """Apply a fenced transition for the exact current acquisition and version."""
+    def _transition(self, handle: ClaimHandle, state: str, action: str) -> int:
+        """Move the exact current acquisition to ``state`` and return the new version.
+
+        Every handle field fences the update, so a stale or altered handle changes nothing. A task that stays
+        ``claimed`` keeps its claim; any other state clears it.
+        """
         if (not isinstance(handle, ClaimHandle) or
                 not all(isinstance(value, str) and value.strip()
                         for value in (handle.task_id, handle.claim_id, handle.incarnation)) or
@@ -406,56 +404,37 @@ class Authority:
                 type(handle.version) is not int or handle.version < 1):
             raise InvalidRequest("invalid claim handle")
         claimed_at = _timestamp(handle.claimed_at, "claimed_at")
+        cleared = "" if state == "claimed" else ", claim_id=NULL, incarnation=NULL, claimed_at=NULL"
         with self._transaction() as db:
             now = _advance_clock(db)
-            if clear_claim:
-                result = db.execute(
-                    "UPDATE tasks SET state=?, version=version+1, claim_id=NULL, incarnation=NULL, claimed_at=NULL "
-                    "WHERE id=? AND state='claimed' AND claim_id=? AND generation=? AND version=? "
-                    "AND incarnation=? AND claimed_at=?",
-                    (new_state, handle.task_id, handle.claim_id, handle.generation, handle.version,
-                     handle.incarnation, claimed_at),
-                )
-            else:
-                result = db.execute(
-                    "UPDATE tasks SET state=?, version=version+1 "
-                    "WHERE id=? AND state='claimed' AND claim_id=? AND generation=? AND version=? "
-                    "AND incarnation=? AND claimed_at=?",
-                    (new_state, handle.task_id, handle.claim_id, handle.generation, handle.version,
-                     handle.incarnation, claimed_at),
-                )
+            result = db.execute(
+                f"UPDATE tasks SET state=?, version=version+1{cleared} "
+                "WHERE id=? AND state='claimed' AND claim_id=? AND generation=? AND version=? "
+                "AND incarnation=? AND claimed_at=?",
+                (state, handle.task_id, handle.claim_id, handle.generation, handle.version,
+                 handle.incarnation, claimed_at),
+            )
             if result.rowcount != 1:
                 raise Conflict("stale acquisition")
-            new_version = handle.version + 1
-            self._record(db, handle.task_id, action or new_state, handle.generation, new_version, now)
-            if not clear_claim:
-                return ClaimHandle(
-                    handle.task_id, handle.claim_id, handle.generation, new_version,
-                    handle.incarnation, handle.claimed_at,
-                )
-            return None
-
-    def _finish(self, handle: ClaimHandle, state: str) -> None:
-        """Apply a transition only for the exact current acquisition and version."""
-        self._transition(handle, state, action=state, clear_claim=True)
+            self._record(db, handle.task_id, action, handle.generation, handle.version + 1, now)
+        return handle.version + 1
 
     def renew(self, handle: ClaimHandle) -> ClaimHandle:
-        """Renew the acquisition lease, advancing version without changing generation."""
-        res = self._transition(handle, "claimed", action="renew", clear_claim=False)
-        assert res is not None
-        return res
+        """Renew the acquisition, advancing version only; the claim and its start time stay."""
+        version = self._transition(handle, "claimed", "renew")
+        return replace(handle, version=version)
 
-    def fail(self, handle: ClaimHandle, detail: str = "") -> None:
+    def fail(self, handle: ClaimHandle) -> None:
         """Fail the current acquisition; terminal state for this task."""
-        self._transition(handle, "failed", action="failed", clear_claim=True)
+        self._transition(handle, "failed", "failed")
 
     def release(self, handle: ClaimHandle) -> None:
         """Release the current acquisition back to the queued state."""
-        self._transition(handle, "queued", action="release", clear_claim=True)
+        self._transition(handle, "queued", "release")
 
     def complete(self, handle: ClaimHandle) -> None:
         """Complete only the current acquisition."""
-        self._transition(handle, "completed", action="completed", clear_claim=True)
+        self._transition(handle, "completed", "completed")
 
     def get(self, task_id: str) -> dict:
         """Read canonical task state without disclosing the incarnation."""

@@ -306,7 +306,7 @@ def test_fail_transitions_to_failed_and_fences_stale(memory_authority: Any, monk
     monkeypatch.setattr(private_authority, "_utc_now", lambda: 100.0)
     memory_authority.add("task-fail")
     h = memory_authority.claim("task-fail", "worker-fail")
-    memory_authority.fail(h, detail="worker crashed")
+    memory_authority.fail(h)
 
     assert memory_authority.get("task-fail")["state"] == "failed"
 
@@ -417,3 +417,118 @@ def test_authority_service_lifecycle_and_error_handling(memory_authority: Any, m
     assert status == 200
     assert get_resp["state"] == "completed"
 
+
+# --- the service admits a request only on an answer of exactly True ------------------------------
+
+SECRET = "internal-detail-that-must-not-travel"
+HANDLE = {"task_id": "t", "claim_id": "c", "generation": 1, "version": 1, "incarnation": "i", "claimed_at": 100.0}
+
+
+def _service(authority: Any, authenticate: Any) -> Any:
+    from perpetua.coordination.authority_service import AuthorityService
+
+    service = AuthorityService(authority, authenticate=authenticate)
+    service.start()
+    return service
+
+
+def _rows(authority: Any) -> tuple[int, int]:
+    with authority._transaction() as db:
+        return (db.execute("SELECT COUNT(*) FROM tasks").fetchone()[0],
+                db.execute("SELECT COUNT(*) FROM audit").fetchone()[0])
+
+
+@pytest.mark.parametrize("answer", [False, None, 0, 1, "", "yes", [True]])
+def test_service_writes_nothing_unless_the_verifier_answers_exactly_true(memory_authority: Any, answer: Any) -> None:
+    service = _service(memory_authority, lambda auth, scope: answer)
+
+    status, reply = service.handle_request("POST", "/authority/tasks", body={"task_id": "t"}, auth="someone")
+
+    assert status == 401 and reply["error"]["code"] == "unauthenticated"
+    assert _rows(memory_authority) == (0, 0)
+
+
+def test_service_refuses_a_verifier_that_cannot_be_told_the_scope(memory_authority: Any) -> None:
+    service = _service(memory_authority, lambda auth: True)
+
+    status, _ = service.handle_request("POST", "/authority/tasks", body={"task_id": "t"}, auth="reader")
+
+    assert status == 401 and _rows(memory_authority) == (0, 0)
+
+
+@pytest.mark.parametrize(
+    "error, status, code",
+    [
+        (RuntimeError(SECRET), 401, "unauthenticated"),
+        (private_authority.Unauthenticated(SECRET), 401, "unauthenticated"),
+        (private_authority.Forbidden(SECRET), 403, "forbidden"),
+        (private_authority.Unavailable(SECRET), 503, "unavailable"),
+        (private_authority.Conflict(SECRET), 401, "unauthenticated"),
+    ],
+)
+def test_service_never_repeats_what_a_verifier_raised(
+    memory_authority: Any, error: Exception, status: int, code: str
+) -> None:
+    def verifier(auth: Any, scope: str) -> bool:
+        raise error
+
+    got, reply = _service(memory_authority, verifier).handle_request("POST", "/authority/tasks", body={"task_id": "t"})
+
+    assert (got, reply["error"]["code"]) == (status, code) and SECRET not in str(reply)
+    assert _rows(memory_authority) == (0, 0)
+
+
+def test_service_asks_the_verifier_for_the_scope_the_route_needs(memory_authority: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(private_authority, "_utc_now", lambda: 100.0)
+    asked: list[tuple[Any, str]] = []
+    service = _service(memory_authority, lambda auth, scope: asked.append((auth, scope)) or True)
+
+    service.handle_request("POST", "/authority/tasks", body={"task_id": "t"}, auth="a")
+    service.handle_request("GET", "/authority/tasks/t", auth="a")
+    service.handle_request("DELETE", "/authority/tasks/t", auth="a")
+
+    assert asked == [("a", "authority:write"), ("a", "authority:read"), ("a", "authority:write")]
+
+
+@pytest.mark.parametrize("error", [TypeError(SECRET), KeyError(SECRET), ValueError(SECRET), OSError(SECRET)])
+def test_service_turns_an_internal_failure_into_a_generic_503(memory_authority: Any, error: Exception) -> None:
+    def boom(*args: Any, **kwargs: Any) -> None:
+        raise error
+
+    memory_authority.get = boom
+    status, reply = _service(memory_authority, lambda auth, scope: True).handle_request("GET", "/authority/tasks/t")
+
+    assert status == 503 and reply["error"]["code"] == "unavailable" and SECRET not in str(reply)
+
+
+def test_service_answers_503_to_a_request_it_cannot_even_read(memory_authority: Any) -> None:
+    status, reply = _service(memory_authority, lambda auth, scope: True).handle_request("GET", 123)
+
+    assert status == 503 and reply["error"]["code"] == "unavailable"
+
+
+@pytest.mark.parametrize(
+    "path, body",
+    [
+        ("/authority/tasks", {}),
+        ("/authority/tasks", {"task_id": 5}),
+        ("/authority/tasks", {"task_id": "t", "state": "completed"}),
+        ("/authority/tasks", ["t"]),
+        ("/authority/claim", {"task_id": "t"}),
+        ("/authority/renew", {**HANDLE, "claim_id": ["c"]}),
+        ("/authority/release", {key: value for key, value in HANDLE.items() if key != "version"}),
+        ("/authority/complete", {**HANDLE, "claimed_at": "yesterday"}),
+        ("/authority/fail", {**HANDLE, "detail": "free text"}),
+    ],
+)
+def test_service_refuses_missing_extra_and_mistyped_fields(memory_authority: Any, path: str, body: Any) -> None:
+    status, reply = _service(memory_authority, lambda auth, scope: True).handle_request("POST", path, body=body)
+
+    assert status == 400 and reply["error"]["code"] == "invalid_request"
+    assert _rows(memory_authority) == (0, 0)
+
+
+def test_failing_a_task_takes_no_free_text() -> None:
+    import inspect
+
+    assert list(inspect.signature(private_authority.Authority.fail).parameters) == ["self", "handle"]
