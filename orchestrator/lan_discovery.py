@@ -24,6 +24,7 @@ import json
 import asyncio
 import ipaddress
 import logging
+import time
 from pathlib import Path
 from typing import List, Dict, Optional
 from dataclasses import dataclass, asdict
@@ -340,6 +341,8 @@ def pick_windows_lmstudio_host(
 _OPENCLAW_DISCOVERY = Path.home() / ".openclaw" / "state" / "last_discovery.json"
 _DISCOVERY_MAX_AGE_S = 1800  # trust the watcher's snapshot for 30 min
 _last_synced_win_url: Optional[str] = None
+_PROBE_TTL_S = 60.0  # one subnet sweep takes about 20 s, and one routing decision asks many times
+_probe_cache: Optional[tuple[float, str]] = None  # (monotonic expiry, URL) of the last live sweep
 
 
 def _read_discovery_win_url(max_age_s: int = _DISCOVERY_MAX_AGE_S) -> Optional[str]:
@@ -474,9 +477,11 @@ def detect_active_tilting_ip() -> str:
          authoritative source of truth; also SYNCS the holder env vars (.env) so
          config/models.yml ${...}, WIN_IP, etc. track the current DHCP lease
       3. LM_STUDIO_WIN_ENDPOINTS env var — backward-compat fallback (can go stale)
-      4. Live subnet probe via NetworkAutoConfig
+      4. Live subnet probe via NetworkAutoConfig; its outcome, fallback included, is reused for
+         _PROBE_TTL_S seconds. Sources 1-3 are read on every call and always win over it.
       5. Hardcoded 127.0.2.1 (last-resort fallback)
     """
+    global _probe_cache
     # 1. Explicit manual override always wins.
     override = os.environ.get("LAN_GPU_IP_OVERRIDE", "")
     if override:
@@ -492,6 +497,16 @@ def detect_active_tilting_ip() -> str:
     val = os.environ.get("LM_STUDIO_WIN_ENDPOINTS", "")
     if val:
         return val if val.startswith("http") else f"http://{val}"
+    # 4 and 5. The slow path.
+    if _probe_cache is not None and time.monotonic() < _probe_cache[0]:
+        return _probe_cache[1]
+    url = _probe_subnet_for_win()
+    _probe_cache = (time.monotonic() + _PROBE_TTL_S, url)
+    return url
+
+
+def _probe_subnet_for_win() -> str:
+    """Sweep the local /24 for the Windows host within 25 seconds, else return the last-resort fallback."""
     try:
         from packages.net_utils.network_autoconfig import NetworkAutoConfig
         import threading
