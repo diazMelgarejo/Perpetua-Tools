@@ -857,7 +857,11 @@ def test_scan_tracked_secrets_blocks_real_looking_phone_numbers(tmp_path):
         "channel.json": '{"allowFrom": ["whatsapp:+' + digits + '"]}',
         "bare_channel.md": "owner is tel:" + digits,
         "plus.md": "Your number (+" + digits + ") is the owner.",
-        "spaced.md": "Call +" + " ".join(["1", "202", "867", "5309"]) + " today.",
+        "spaced.md": "Call +" + " ".join(["44", "770", "090", "0123"]) + " today.",
+        "grouped.md": "Call +" + " ".join(["44", "7700", "900123"]) + " today.",
+        "pairs.md": "tel +" + " ".join(["33", "1", "99", "00", "12", "34"]),
+        "trunk.md": "+" + "44 (0)" + " ".join(["7700", "900123"]),
+        "channel_spaced.md": "whatsapp:+" + "-".join(["44", "7700", "900123"]),
     }
     allowed = {
         "env.json": '{"allowFrom": ["${env:OPENCLAW_OWNER_ID}"]}',
@@ -865,6 +869,10 @@ def test_scan_tracked_secrets_blocks_real_looking_phone_numbers(tmp_path):
         "fiction.md": "whatsapp:+" + "1202" + "555" + "0143",
         "math.py": "total = base+" + "1700000000" + "\nwhen = (a)+" + "1700000000",
         "telegram.md": "telegram:123456789",
+        "fiction_spaced.md": "+" + " ".join(["1", "(202)", "555-0143"]),
+        "dated.diff": "+" + "2026-11-28 notes",
+        "sizes.md": "up +100 200 more, then +1 000 000 rows",
+        "overlong.md": "+" + " ".join(["12", "3456", "7890", "1234", "5678"]),
     }
     for name, text in {**blocked, **allowed}.items():
         (tmp_path / name).write_text(text + "\n", encoding="utf-8")

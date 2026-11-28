@@ -222,13 +222,17 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str], str], ...] = (
         "Private key block",
     ),
     (
-        # A channel-prefixed or +E.164 number, solid or spaced. The reserved fictional 555-01xx range
-        # passes. Bare digits are caught only by the private_phone entries of the local literal registry.
+        # A channel-prefixed or +E.164 number, solid or spaced in any grouping, 10 to 15 digits. The reserved
+        # fictional 555-01xx range passes. Bare digits are caught only by the private_phone entries of the local
+        # literal registry.
         "phone_number",
         re.compile(
             r"(?:\b(?:whatsapp|tel|sms|signal|imessage):\+?|(?<![\w)\]])\+)"
             r"(?!1[ .-]?\(?\d{3}\)?[ .-]?555[ .-]?01\d\d(?!\d))"
-            r"(?:\d{10,15}|\d{1,3}[ .-]\(?\d{3}\)?[ .-]\d{3}[ .-]\d{4})(?!\d)",
+            r"(?:\d{10,15}(?!\d)"
+            r"|(?=(?:\d[ .()-]{0,3}){9}\d)"  # spaced: at least ten digits
+            r"(?!(?:\d[ .()-]{0,3}){15}\d)"  # and at most fifteen
+            r"[1-9]\d{0,2}[ .-]\(?\d)",  # a country code, then the first separated group
             re.IGNORECASE,
         ),
         "phone number",
