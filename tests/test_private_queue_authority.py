@@ -368,3 +368,121 @@ def test_legacy_import_is_one_time_and_holds_active_claims(tmp_path: Path) -> No
     assert fresh.get("canonical") == before
     with sqlite3.connect(tmp_path / "fresh-private" / "queue.sqlite3") as db:
         assert db.execute("SELECT COUNT(*) FROM legacy_imports").fetchone()[0] == 0
+
+
+def test_renew_lease_advances_version_and_fences_stale(tmp_path: Path) -> None:
+    """Exercise renew advances version without advancing generation and fences stale handles."""
+    authority = Authority(tmp_path / "private")
+    authority.add("task")
+    h1 = authority.claim("task", "worker")
+    h2 = authority.renew(h1)
+    assert h2.version == h1.version + 1
+    assert h2.generation == h1.generation
+    assert h2.claim_id == h1.claim_id
+    assert h2.incarnation == h1.incarnation
+    with pytest.raises(Conflict):
+        authority.renew(h1)
+    with pytest.raises(Conflict):
+        authority.complete(h1)
+    authority.complete(h2)
+    assert authority.get("task")["state"] == "completed"
+
+
+def test_fail_acquisition_marks_failed_and_fences_stale(tmp_path: Path) -> None:
+    """Exercise fail moves acquisition to terminal failed state and fences stale calls."""
+    authority = Authority(tmp_path / "private")
+    authority.add("task")
+    h = authority.claim("task", "worker")
+    authority.fail(h)
+    assert authority.get("task")["state"] == "failed"
+    with pytest.raises(Conflict):
+        authority.claim("task", "worker2")
+    with pytest.raises(Conflict):
+        authority.fail(h)
+
+
+def test_authority_service_dispatch_and_unauthenticated_guard(tmp_path: Path) -> None:
+    """Exercise AuthorityService with strict authentication on POSIX."""
+    from perpetua.coordination.authority_service import AuthorityService
+
+    authority = Authority(tmp_path / "private")
+    service = AuthorityService(authority, authenticate=None)
+    service.start()
+    status, resp = service.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 401
+    assert resp["error"]["code"] == "unauthenticated"
+
+    service_auth = AuthorityService(authority, authenticate=lambda *a: True)
+    service_auth.start()
+    status, resp = service_auth.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 201
+    status, claim = service_auth.handle_request("POST", "/authority/claim", body={"task_id": "t1", "incarnation": "w1"})
+    assert status == 200
+    status, renew = service_auth.handle_request("POST", "/authority/renew", body=claim)
+    assert status == 200
+    assert renew["version"] == claim["version"] + 1
+    status, comp = service_auth.handle_request("POST", "/authority/complete", body=renew)
+    assert status == 200
+
+
+def test_every_operation_works_on_a_store_upgraded_from_version_1(tmp_path: Path) -> None:
+    """Old and new tasks accept claim, renew, release, complete and fail after the upgrade."""
+    path = tmp_path / "private"
+    _create_v1_store(path)
+    authority = Authority(path)
+    for name in ("done", "dropped", "returned"):
+        authority.add(name)
+
+    old = authority.renew(authority.claim("kept", "worker"))
+    authority.complete(old)
+    authority.complete(authority.claim("done", "worker"))
+    authority.fail(authority.claim("dropped", "worker"))
+    authority.release(authority.claim("returned", "worker"))
+
+    states = {name: authority.get(name)["state"] for name in ("kept", "done", "dropped", "returned")}
+    assert states == {"kept": "completed", "done": "completed", "dropped": "failed", "returned": "queued"}
+
+
+def test_finished_legacy_tasks_can_never_be_claimed(tmp_path: Path) -> None:
+    """A completed task stays completed; a failed or abandoned one is held. None runs again."""
+    legacy = tmp_path / "legacy.db"
+    with sqlite3.connect(legacy) as db:
+        db.execute("CREATE TABLE task_claims (task_id TEXT PRIMARY KEY, agent_id TEXT, claimed_at REAL)")
+    authority = Authority(tmp_path / "private")
+    authority.import_legacy(legacy, snapshots={
+        "done": {"status": "completed"}, "broken": {"status": "failed"}, "gone": {"status": "abandoned"},
+    })
+
+    states = {name: authority.get(name)["state"] for name in ("done", "broken", "gone")}
+    assert states == {"done": "completed", "broken": "legacy_unverified", "gone": "legacy_unverified"}
+    for name in states:
+        with pytest.raises(Conflict):
+            authority.claim(name, "worker")
+
+
+def test_every_clock_sample_is_taken_under_the_write_lock(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """While the clock is read, no other connection can start a write."""
+    authority = Authority(tmp_path / "private")
+    real_now = private_authority._utc_now
+    locked: list[bool] = []
+
+    def sample() -> float:
+        probe = sqlite3.connect(tmp_path / "private" / "queue.sqlite3", timeout=0)
+        try:
+            probe.execute("BEGIN IMMEDIATE")
+            probe.rollback()
+            locked.append(False)
+        except sqlite3.OperationalError:
+            locked.append(True)
+        finally:
+            probe.close()
+        return real_now()
+
+    monkeypatch.setattr(private_authority, "_utc_now", sample)
+    authority.add("task")
+    authority.release(authority.renew(authority.claim("task", "worker")))
+    authority.fail(authority.claim("task", "worker"))
+    authority.add("other")
+    authority.complete(authority.claim("other", "worker"))
+
+    assert locked == [True] * 9
