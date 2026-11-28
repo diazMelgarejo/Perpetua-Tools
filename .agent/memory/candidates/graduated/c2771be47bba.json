@@ -1,0 +1,46 @@
+{
+  "id": "c2771be47bba",
+  "key": "manual_c2771b",
+  "name": "manual_c2771b",
+  "claim": "Capture worktree branch pinned base and pre-existing status before spawning, then verify worker commits by ancestry and content while keeping unrelated changes separate.",
+  "conditions": [
+    "\"commit",
+    "\"pinned",
+    "\"pre-existing",
+    "\"worktree",
+    "ancestry\"",
+    "attribution\"",
+    "base\"",
+    "changes\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:45.057680+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:45.057680+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:45.057680+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:45.300537+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Lane 8 attribution required proving one commit directly on the pinned base and only four test files changed; clean initial status made the delta auditable.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:45.057680+00:00"
+      ],
+      "lessons_sha": "e94b85c30815"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:45.300537+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Lane 8 attribution required proving one commit directly on the pinned base and only four test files changed; clean initial status made the delta auditable.",
+  "supersedes": null
+}

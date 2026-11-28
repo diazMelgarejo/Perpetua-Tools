@@ -1,0 +1,42 @@
+{
+  "id": "956fc56bb514",
+  "key": "manual_956fc5",
+  "name": "manual_956fc5",
+  "claim": "Inspect a Python tool's entry point before assuming it supports --help; a script without argument parsing can treat that flag as a filesystem path.",
+  "conditions": [
+    "Python CLI",
+    "argument parsing",
+    "help flag",
+    "scratch artifact"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:29.167694+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:29.167694+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:29.167694+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:29.415357+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The memory renderer created a scratch --help directory when invoked with --help, requiring explicit cleanup of only the artifacts created by that mistake.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:29.167694+00:00"
+      ],
+      "lessons_sha": "9ff7712e5a80"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:29.415357+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The memory renderer created a scratch --help directory when invoked with --help, requiring explicit cleanup of only the artifacts created by that mistake.",
+  "supersedes": null
+}

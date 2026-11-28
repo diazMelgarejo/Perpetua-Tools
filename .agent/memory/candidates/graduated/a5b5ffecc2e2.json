@@ -1,0 +1,46 @@
+{
+  "id": "a5b5ffecc2e2",
+  "key": "manual_a5b5ff",
+  "name": "manual_a5b5ff",
+  "claim": "Publish substantive GossipBus notes with a paired pulse, complete author actor endorsement takeover provenance, identity_verified false for self-reported identity, and read-only UUID verification.",
+  "conditions": [
+    "\"GossipBus\"",
+    "\"UUID",
+    "\"agent",
+    "\"agent",
+    "\"provenance\"",
+    "note\"",
+    "pulse\"",
+    "verification\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:43.664220+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:43.664220+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:43.664220+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:43.905648+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Qoder claims and progress notes used GossipBus.emit and verified every returned UUID; direct SQLite writes would bypass the bus contract.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:43.664220+00:00"
+      ],
+      "lessons_sha": "ba704f2c91d2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:43.905648+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Qoder claims and progress notes used GossipBus.emit and verified every returned UUID; direct SQLite writes would bypass the bus contract.",
+  "supersedes": null
+}

@@ -1,0 +1,47 @@
+{
+  "id": "07de04310cb0",
+  "key": "manual_07de04",
+  "name": "manual_07de04",
+  "claim": "Test bearer secrecy with a dummy token and inspect both client and parent process command lines, while never printing real credentials or environment contents.",
+  "conditions": [
+    "\"bearer",
+    "\"dummy",
+    "\"process",
+    "\"secret",
+    "command",
+    "line\"",
+    "safety\"",
+    "secrecy\"",
+    "token\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:49.246112+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:49.246112+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:49.246112+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:49.500748+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Lane 7 proved the dummy bearer reached stdin authentication but appeared in neither curl nor parent PowerShell command lines.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:49.246112+00:00"
+      ],
+      "lessons_sha": "5b4a9103e3bb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:49.500748+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Lane 7 proved the dummy bearer reached stdin authentication but appeared in neither curl nor parent PowerShell command lines.",
+  "supersedes": null
+}

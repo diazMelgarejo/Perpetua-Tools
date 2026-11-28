@@ -1,0 +1,43 @@
+{
+  "id": "c8fb9488ae68",
+  "key": "manual_c8fb94",
+  "name": "manual_c8fb94",
+  "claim": "When subagent model tier is specified as Gemini 3.8 Flash Medium or similar, never pass inherit in invoke_subagent if the parent model differs; verify or map the model explicitly.",
+  "conditions": [
+    "flash_medium",
+    "inherit",
+    "invoke_subagent",
+    "model",
+    "subagent"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:08:57.340297+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:08:57.340297+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:08:57.340297+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:08:57.852546+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-11-28: Passing inherit caused subagents to run as Gemini 4 Hydrogen because the parent session was on Hydrogen, violating the user's strict requirement for Gemini 3.8 Flash medium.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:08:57.340297+00:00"
+      ],
+      "lessons_sha": "f4f08c5ef61d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:08:57.852535+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-11-28: Passing inherit caused subagents to run as Gemini 4 Hydrogen because the parent session was on Hydrogen, violating the user's strict requirement for Gemini 3.8 Flash medium.",
+  "supersedes": null
+}

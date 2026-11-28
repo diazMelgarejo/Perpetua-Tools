@@ -1,0 +1,45 @@
+{
+  "id": "80b57f36aed9",
+  "key": "manual_80b57f",
+  "name": "manual_80b57f",
+  "claim": "Select and record a native Windows virtual environment that contains the actual test dependencies before interpreting failures as product defects.",
+  "conditions": [
+    "\"FastAPI\"",
+    "\"Windows",
+    "\"environment",
+    "\"test",
+    "dependencies\"",
+    "evidence\"",
+    "venv\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:46.449518+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:46.449518+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:46.449518+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:46.688613+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A first Lane 8 replay used a venv without FastAPI and produced six import failures; the dependency-complete environment then passed 105 tests.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:46.449518+00:00"
+      ],
+      "lessons_sha": "5ef0a5b042ab"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:46.688613+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A first Lane 8 replay used a venv without FastAPI and produced six import failures; the dependency-complete environment then passed 105 tests.",
+  "supersedes": null
+}

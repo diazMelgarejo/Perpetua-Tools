@@ -1,0 +1,44 @@
+{
+  "id": "9cfe1cb11804",
+  "key": "manual_9cfe1c",
+  "name": "manual_9cfe1c",
+  "claim": "Inspect target branch migration state before drafting schema amendments: oramasys@4b344626 already claimed migration 2 for bounded_claim_replay_v2, requiring new reservations to allocate version 3 or higher.",
+  "conditions": [
+    "claim_store",
+    "migration",
+    "oramasys",
+    "replay_tokens",
+    "reservations",
+    "schema"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:42:32.525233+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:42:32.525233+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:42:32.525233+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:42:32.639283+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Windows Lane 9 findings recommended a migration 2 for claim store reservations, but target branch inspection revealed migration 2 was already merged for replay_tokens. Verifying target migration versions avoids collision.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:42:32.525233+00:00"
+      ],
+      "lessons_sha": "d493dae501e1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:42:32.639273+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Windows Lane 9 findings recommended a migration 2 for claim store reservations, but target branch inspection revealed migration 2 was already merged for replay_tokens. Verifying target migration versions avoids collision.",
+  "supersedes": null
+}

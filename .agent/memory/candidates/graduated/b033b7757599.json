@@ -1,0 +1,47 @@
+{
+  "id": "b033b7757599",
+  "key": "manual_b033b7",
+  "name": "manual_b033b7",
+  "claim": "Capture a direct LAN drop helper's complete JSON output once; ok received_at and matching bytes prove acceptance, while receiver-computed hash is required for byte identity.",
+  "conditions": [
+    "\"LAN",
+    "\"byte",
+    "\"duplicate",
+    "\"received_at\"",
+    "\"receiver",
+    "count\"",
+    "drop\"",
+    "hash\"",
+    "send\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:50.623168+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:50.623168+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:50.623168+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:50.866152+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Direct drops leave no outbox sidecar, and truncated output previously tempted a duplicate resend; acceptance and content identity are distinct claims.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:50.623168+00:00"
+      ],
+      "lessons_sha": "85dcc338bcca"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:50.866152+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Direct drops leave no outbox sidecar, and truncated output previously tempted a duplicate resend; acceptance and content identity are distinct claims.",
+  "supersedes": null
+}

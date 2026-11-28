@@ -1,0 +1,42 @@
+{
+  "id": "62a71b3b7caf",
+  "key": "manual_62a71b",
+  "name": "manual_62a71b",
+  "claim": "Keep underlying model and inference-provider identity confidential; persist only self-reported agent provenance and identity_verified false.",
+  "conditions": [
+    "agent provenance",
+    "identity verified",
+    "model provider",
+    "runtime confidentiality"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:32.627011+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:32.627011+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:32.627011+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:32.872113+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Coordination memory needs actor and authorization lineage, not the confidential runtime model or inference provider behind the agent.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:32.627011+00:00"
+      ],
+      "lessons_sha": "7e637b53bf70"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:32.872113+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Coordination memory needs actor and authorization lineage, not the confidential runtime model or inference provider behind the agent.",
+  "supersedes": null
+}

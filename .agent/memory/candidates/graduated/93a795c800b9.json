@@ -1,0 +1,45 @@
+{
+  "id": "93a795c800b9",
+  "key": "manual_93a795",
+  "name": "manual_93a795",
+  "claim": "Base64-encode binary archive bundles (.zip) before sending via lan_peer_assign drop: HTTP portal endpoints read request bodies as UTF-8 text and corrupt raw binary archives.",
+  "conditions": [
+    "base64",
+    "drop",
+    "lan_peer_assign",
+    "peer",
+    "portal",
+    "transport",
+    "zip"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:42:32.006656+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:42:32.006656+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:42:32.006656+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:42:32.122981+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Direct file drops of binary zip archives across HTTP portal drop endpoints failed with UTF-8 decoding errors. Base64 encoding with companion cover markdown and dual SHA-256 hashes ensures lossless transport across heterogeneous Mac and Windows fleets.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:42:32.006656+00:00"
+      ],
+      "lessons_sha": "c434adec2428"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:42:32.122972+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Direct file drops of binary zip archives across HTTP portal drop endpoints failed with UTF-8 decoding errors. Base64 encoding with companion cover markdown and dual SHA-256 hashes ensures lossless transport across heterogeneous Mac and Windows fleets.",
+  "supersedes": null
+}

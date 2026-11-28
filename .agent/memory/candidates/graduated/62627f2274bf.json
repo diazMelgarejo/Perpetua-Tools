@@ -1,0 +1,42 @@
+{
+  "id": "62627f2274bf",
+  "key": "manual_62627f",
+  "name": "manual_62627f",
+  "claim": "Treat a background completion notification as a claim; read the artifact and verify its pinned base, counts, and source evidence before marking the task complete.",
+  "conditions": [
+    "artifact verification",
+    "pinned base",
+    "subagent completion",
+    "task status"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:31.244794+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:31.244794+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:31.244794+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:31.500283+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Lane 2a agent reported a completed 311-line ledger, but main-agent verification was still required before updating task state or the consolidated report.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:31.244794+00:00"
+      ],
+      "lessons_sha": "ff3079e73b4b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:31.500283+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Lane 2a agent reported a completed 311-line ledger, but main-agent verification was still required before updating task state or the consolidated report.",
+  "supersedes": null
+}

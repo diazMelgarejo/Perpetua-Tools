@@ -1,0 +1,42 @@
+{
+  "id": "3583f37e2fcc",
+  "key": "manual_3583f3",
+  "name": "manual_3583f3",
+  "claim": "On Windows, treat memory-tool flock warnings as a real concurrency limitation because fcntl is unavailable; serialize memory writes and preserve append-only evidence.",
+  "conditions": [
+    "Windows memory",
+    "append only",
+    "concurrent write",
+    "fcntl"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:29:23.953912+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:29:23.953912+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:29:23.953912+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:29:24.203825+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The renderer warned that lessons.jsonl concurrent-write protection was disabled on this Windows host, so the session used sequential canonical tool invocations.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:29:23.953912+00:00"
+      ],
+      "lessons_sha": "3367f3b2d86e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:29:24.203825+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The renderer warned that lessons.jsonl concurrent-write protection was disabled on this Windows host, so the session used sequential canonical tool invocations.",
+  "supersedes": null
+}

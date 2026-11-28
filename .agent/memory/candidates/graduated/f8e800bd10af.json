@@ -1,0 +1,42 @@
+{
+  "id": "f8e800bd10af",
+  "key": "manual_f8e800",
+  "name": "manual_f8e800",
+  "claim": "When a pending subagent artifact arrives, rebuild the interim manifest and report before delivery so the bundle does not label completed work as pending.",
+  "conditions": [
+    "delivery bundle",
+    "interim manifest",
+    "pending artifact",
+    "report refresh"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:31.943904+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:31.943904+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:31.943904+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:32.186245+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Lane 2a ledger arrived after the first manifest was built, so the report and manifest required refresh before the LAN drop.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:31.943904+00:00"
+      ],
+      "lessons_sha": "d250b05d1da1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:32.186245+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Lane 2a ledger arrived after the first manifest was built, so the report and manifest required refresh before the LAN drop.",
+  "supersedes": null
+}

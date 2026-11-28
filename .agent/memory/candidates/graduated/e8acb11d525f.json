@@ -1,0 +1,44 @@
+{
+  "id": "e8acb11d525f",
+  "key": "manual_e8acb1",
+  "name": "manual_e8acb1",
+  "claim": "Windows subprocess tests should launch sys.executable and pass an explicit readiness file instead of hardcoding python3 or inferring readiness from process identity.",
+  "conditions": [
+    "\"Windows",
+    "\"deterministic",
+    "\"ready_path\"",
+    "\"sys.executable\"",
+    "subprocess\"",
+    "test\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:49.934554+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:49.934554+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:49.934554+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:50.192252+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Lane 8 replaced python3 with sys.executable and passed ready_path to workers, removing Windows launcher and readiness assumptions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:49.934554+00:00"
+      ],
+      "lessons_sha": "ce54d459b25b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:50.192252+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Lane 8 replaced python3 with sys.executable and passed ready_path to workers, removing Windows launcher and readiness assumptions.",
+  "supersedes": null
+}

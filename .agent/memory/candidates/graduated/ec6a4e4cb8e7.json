@@ -1,0 +1,46 @@
+{
+  "id": "ec6a4e4cb8e7",
+  "key": "manual_ec6a4e",
+  "name": "manual_ec6a4e",
+  "claim": "Under concurrent memory activity, inspect existing edits and use locked append or candidate tools; never overwrite unrelated work or hand-edit rendered LESSONS.md.",
+  "conditions": [
+    "\"append",
+    "\"candidate",
+    "\"memory",
+    "\"rendered",
+    "concurrency\"",
+    "lessons\"",
+    "only\"",
+    "tools\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:53.266857+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:53.266857+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:53.266857+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:53.517423+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Perpetua memory tree already had uncommitted episodic semantic and review-queue changes; canonical tools preserved them while adding this session.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:53.266857+00:00"
+      ],
+      "lessons_sha": "7e9b65164ff2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:53.517423+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Perpetua memory tree already had uncommitted episodic semantic and review-queue changes; canonical tools preserved them while adding this session.",
+  "supersedes": null
+}
