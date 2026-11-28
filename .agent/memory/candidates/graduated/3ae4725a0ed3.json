@@ -1,0 +1,44 @@
+{
+  "id": "3ae4725a0ed3",
+  "key": "manual_3ae472",
+  "name": "manual_3ae472",
+  "claim": "Explicitly bridge sibling repositories into PYTHONPATH for cross-repo test suites in detached worktrees: oramasys tests require dispatch_wire from phylax/src which is absent from standard system environments.",
+  "conditions": [
+    "dispatch_wire",
+    "interop",
+    "oramasys",
+    "phylax",
+    "pythonpath",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:42:32.692404+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:42:32.692404+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:42:32.692404+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:42:32.810801+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Running revocation harness tests in clean or detached worktrees failed on missing dispatch_wire until PYTHONPATH=src:<phylax_root>/src was provided.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:42:32.692404+00:00"
+      ],
+      "lessons_sha": "79b504b0cf7c"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:42:32.810790+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Running revocation harness tests in clean or detached worktrees failed on missing dispatch_wire until PYTHONPATH=src:<phylax_root>/src was provided.",
+  "supersedes": null
+}

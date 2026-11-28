@@ -1,0 +1,44 @@
+{
+  "id": "35670284d614",
+  "key": "manual_356702",
+  "name": "manual_356702",
+  "claim": "Batch verification receipts and test proofs locally and push exactly once at final convergence, keeping all active PRs in Draft state during multi-agent cross-host review cycles.",
+  "conditions": [
+    "batch_commits",
+    "ci",
+    "coderabbit",
+    "draft_pr",
+    "review_remediation",
+    "single_push"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:42:32.864554+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:42:32.864554+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:42:32.864554+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:42:32.973993+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Intermediate pushes trigger premature CI runs, wake up automated review bots (CodeRabbit, Greptile), and pollute PR comment threads while companion nodes are still iterating.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:42:32.864554+00:00"
+      ],
+      "lessons_sha": "a9f8ce9b76cb"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:42:32.973986+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Intermediate pushes trigger premature CI runs, wake up automated review bots (CodeRabbit, Greptile), and pollute PR comment threads while companion nodes are still iterating.",
+  "supersedes": null
+}

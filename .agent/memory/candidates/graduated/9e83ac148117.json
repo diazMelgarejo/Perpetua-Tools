@@ -1,0 +1,44 @@
+{
+  "id": "9e83ac148117",
+  "key": "manual_9e83ac",
+  "name": "manual_9e83ac",
+  "claim": "Pair every substantive GossipBus agent_note with an agent_pulse from the same agent ID: coordination monitors treat unpulsed agents as dormant or crashed, causing accidental task takeovers.",
+  "conditions": [
+    "agent_note",
+    "agent_pulse",
+    "coordination",
+    "gossipbus",
+    "heartbeat",
+    "liveness"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:42:32.355706+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:42:32.355706+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:42:32.355706+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:42:32.470245+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Agent coordination heartbeat monitors check pulse timestamps. Emitting an agent_note without a matching agent_pulse triggers liveness warnings and risks spurious task takeovers across distributed Mac and Windows hosts.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:42:32.355706+00:00"
+      ],
+      "lessons_sha": "2602812274df"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:42:32.470234+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Agent coordination heartbeat monitors check pulse timestamps. Emitting an agent_note without a matching agent_pulse triggers liveness warnings and risks spurious task takeovers across distributed Mac and Windows hosts.",
+  "supersedes": null
+}

@@ -1,0 +1,44 @@
+{
+  "id": "c2479ee93f5c",
+  "key": "manual_c2479e",
+  "name": "manual_c2479e",
+  "claim": "Never assume macOS /usr/bin/openssl behaves like OpenSSL 3.x: Apple LibreSSL 3.3.6 rejects -no-CAstore as unknown option and ignores SSL_CERT_DIR for verify, requiring explicit platform limitation reporting rather than handwaving.",
+  "conditions": [
+    "libressl",
+    "macos",
+    "nocastore",
+    "openssl",
+    "ssl_cert_dir",
+    "verify"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:42:32.187319+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:42:32.187319+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:42:32.187319+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:42:32.301535+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Pack test specifications that prescribe OpenSSL 3.x CLI flags fail against macOS system LibreSSL 3.3.6 (exit 1 on -no-CAstore, exit 2 on verify). Without touching protected system trust stores, the control must be reported honestly as UNVERIFIED.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:42:32.187319+00:00"
+      ],
+      "lessons_sha": "fd16ba2d32f6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:42:32.301524+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Pack test specifications that prescribe OpenSSL 3.x CLI flags fail against macOS system LibreSSL 3.3.6 (exit 1 on -no-CAstore, exit 2 on verify). Without touching protected system trust stores, the control must be reported honestly as UNVERIFIED.",
+  "supersedes": null
+}
