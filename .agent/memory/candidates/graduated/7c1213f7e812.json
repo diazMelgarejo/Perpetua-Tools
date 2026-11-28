@@ -1,0 +1,43 @@
+{
+  "id": "7c1213f7e812",
+  "key": "manual_7c1213",
+  "name": "manual_7c1213",
+  "claim": "Date certificate renewal reminders from the earliest expiry among every peer that must connect, not only the local host, and state each expiry in the reminder text.",
+  "conditions": [
+    "certificate",
+    "expiry",
+    "peer",
+    "renewal",
+    "tls"
+  ],
+  "evidence_ids": [
+    "2026-11-28T06:18:10.386645+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T06:18:10.386645+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T06:18:10.386645+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T06:18:10.570694+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-28: the Windows server certificate expires 2027-01-16, before the Mac one on 2027-01-21. Reminders moved to 2027-01-04 and 2027-01-11.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T06:18:10.386645+00:00"
+      ],
+      "lessons_sha": "f5f5b0113218"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T06:18:10.570678+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-28: the Windows server certificate expires 2027-01-16, before the Mac one on 2027-01-21. Reminders moved to 2027-01-04 and 2027-01-11.",
+  "supersedes": null
+}

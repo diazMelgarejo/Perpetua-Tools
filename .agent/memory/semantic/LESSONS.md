@@ -433,6 +433,9 @@
 - Never report test isolation that was not verified path by path: every test directory, child processes, and each environment variable the code actually reads. Check the engine's loaded-model list and request log after each run.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c4684c5bc133 -->
 - A gate that may load a model must require a person's approval for that model, with an expiry. An empty host with enough memory is a precondition, not approval.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_ff446c08b00f -->
 - A guard in front of a service must act only on the endpoint the caller named. A request aimed at any other local port, such as a fake server in a test, must be refused, never served by the real engine.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0f5406509d11 -->
+- Before moving a scheduled reminder, read the script it runs: a year or one-time guard can make a new calendar date do nothing. Rehearse the script with stand-in tools for the target date, then verify the trigger the scheduler actually loaded.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_56369ae30109 -->
+- Date certificate renewal reminders from the earliest expiry among every peer that must connect, not only the local host, and state each expiry in the reminder text.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7c1213f7e812 -->
+- A scheduled job that writes to the shared queue can request an embedding and load a local model with no one watching. Point that command's embedding address at a closed local port unless a person approved the load.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0958a5833e05 -->
 
 ### 2026-10
 
