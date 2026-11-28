@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -15,6 +16,7 @@ REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(REPO_ROOT))
 
 from orchestrator import provider_limits as pl  # noqa: E402
+from perpetua_tools import file_lock  # noqa: E402
 
 POLICY_PATH = REPO_ROOT / "config" / "provider-policies" / "wandb-inference.json"
 PROVIDER = "wandb-inference"
@@ -47,6 +49,7 @@ def _write(**over) -> Path:
             "raw_proof": "test_proof_blob",
             "device_id": "operator-workstation",
         },
+        "verify_proof": lambda **proof: True,  # stands for a trusted verifier that accepts this credential
     }
     args.update(over)
     return pl.write_attestation_record(**args)
@@ -359,3 +362,124 @@ def test_valid_authority_proof_types_succeed(state, proof_type: str) -> None:
     path = _write(presence_proof=proof)
     assert path.is_file()
     assert pl.attestation_path(PROVIDER).is_file()
+
+
+# --- an authority proof is only as good as the verifier that checks it ---------------------------
+
+AUTHORITY_TYPES = ["webauthn_touch_id", "webauthn_security_key", "operator_attestation"]
+
+
+def _claim(proof_type: str) -> dict:
+    return {"proof_type": proof_type, "raw_proof": "x", "device_id": "d"}
+
+
+@pytest.mark.parametrize("proof_type", AUTHORITY_TYPES)
+def test_without_a_trusted_verifier_every_authority_proof_is_refused(state, proof_type: str) -> None:
+    with pytest.raises(ValueError, match="no trusted verifier"):
+        _write(presence_proof=_claim(proof_type), verify_proof=None)
+    assert not pl.attestation_path(PROVIDER).exists()
+    assert not pl.attestation_audit_path(PROVIDER).exists()
+
+
+@pytest.mark.parametrize("answer", [False, None, 0, 1, "", "yes"])
+def test_only_an_answer_of_exactly_true_admits_a_proof(state, answer) -> None:
+    with pytest.raises(ValueError, match="not verified"):
+        _write(verify_proof=lambda **proof: answer)
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_a_verifier_that_fails_refuses_without_repeating_its_error(state) -> None:
+    def explode(**proof):
+        raise RuntimeError("internal detail with a credential")
+
+    with pytest.raises(ValueError, match="not verified") as raised:
+        _write(verify_proof=explode)
+
+    assert "internal detail" not in str(raised.value) and raised.value.__cause__ is None
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_the_verifier_is_told_what_the_proof_is_for(state) -> None:
+    seen: list[dict] = []
+    _write(verify_proof=lambda **proof: seen.append(proof) or True)
+
+    assert seen == [{"proof_type": "operator_attestation", "raw_proof": "test_proof_blob",
+                     "device_id": "operator-workstation", "provider": PROVIDER}]
+
+
+# --- a rollback never undoes what another change did --------------------------------------------
+
+
+def _fail_the_write_while(monkeypatch, other) -> threading.Thread:
+    """Make the next write's audit fail, after starting ``other`` inside the window before the rollback."""
+    real = pl._append_attestation_audit
+    thread = threading.Thread(target=other)
+    armed = [True]
+
+    def audit(provider, policy_id, outcome, *rest):
+        if outcome == "attestation-written" and armed and armed.pop():
+            thread.start()
+            thread.join(0.3)
+            raise OSError("audit log disk write failure")
+        return real(provider, policy_id, outcome, *rest)
+
+    monkeypatch.setattr(pl, "_append_attestation_audit", audit)
+    return thread
+
+
+def test_a_failed_write_does_not_reinstate_a_record_revoked_meanwhile(state, monkeypatch) -> None:
+    _write()
+    thread = _fail_the_write_while(monkeypatch, lambda: pl.revoke_attestation(PROVIDER, "operator", "now", NOW))
+
+    with pytest.raises(OSError):
+        _write(now=NOW + timedelta(days=1))
+    thread.join(5)
+
+    assert not pl.attestation_path(PROVIDER).exists()
+
+
+def test_a_failed_write_does_not_overwrite_a_later_successful_one(state, monkeypatch) -> None:
+    _write()
+    thread = _fail_the_write_while(monkeypatch, lambda: _write(attested_by="second", now=NOW + timedelta(days=2)))
+
+    with pytest.raises(OSError):
+        _write(now=NOW + timedelta(days=1))
+    thread.join(5)
+
+    assert _record()["attested_by"] == "second"
+
+
+def test_a_write_is_refused_and_a_revoke_still_removes_while_the_record_is_locked(state, monkeypatch) -> None:
+    _write()
+    monkeypatch.setattr(pl, "ATTESTATION_LOCK_SECONDS", 0)
+
+    with file_lock.locked(pl.attestation_lock_path(PROVIDER), 0):
+        with pytest.raises(ValueError, match="another attestation change"):
+            _write(now=NOW + timedelta(days=1))
+        with pytest.raises(RuntimeError, match="revoked"):
+            pl.revoke_attestation(PROVIDER, "operator", "emergency", NOW)
+
+    assert not pl.attestation_path(PROVIDER).exists()
+    assert _rows(pl.attestation_audit_path(PROVIDER))[-1]["outcome"] == "attestation-revoked"
+
+
+# --- names and policy files ---------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("who", ["_operator", "__ops__", "_"])
+def test_a_name_that_starts_with_an_underscore_can_attest_and_revoke(state, who: str) -> None:
+    _write(attested_by=who)
+
+    assert pl.revoke_attestation(PROVIDER, who, "_why", NOW) is True
+    assert all(row["label"][0].isalnum() for row in _rows(pl.attestation_audit_path(PROVIDER)))
+
+
+def test_the_cli_attests_for_a_policy_given_as_a_file(state, monkeypatch, tmp_path: Path) -> None:
+    document = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
+    document["provider"] = "house-provider"
+    custom = tmp_path / "house.json"
+    custom.write_text(json.dumps(document), encoding="utf-8")
+    _interactive(monkeypatch)
+
+    assert pl.main(["attest", str(custom), *CLI_ARGS[2:]]) == 0
+    assert pl.attestation_path("house-provider").is_file()
