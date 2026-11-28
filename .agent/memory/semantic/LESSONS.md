@@ -422,6 +422,12 @@
 - Treat a background completion notification as a claim; read the artifact and verify its pinned base, counts, and source evidence before marking the task complete.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_62627f2274bf -->
 - When a pending subagent artifact arrives, rebuild the interim manifest and report before delivery so the bundle does not label completed work as pending.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f8e800bd10af -->
 - Keep underlying model and inference-provider identity confidential; persist only self-reported agent provenance and identity_verified false.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_62a71b3b7caf -->
+- Base64-encode binary archive bundles (.zip) before sending via lan_peer_assign drop: HTTP portal endpoints read request bodies as UTF-8 text and corrupt raw binary archives.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_93a795c800b9 -->
+- Never assume macOS /usr/bin/openssl behaves like OpenSSL 3.x: Apple LibreSSL 3.3.6 rejects -no-CAstore as unknown option and ignores SSL_CERT_DIR for verify, requiring explicit platform limitation reporting rather than handwaving.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_c2479ee93f5c -->
+- Pair every substantive GossipBus agent_note with an agent_pulse from the same agent ID: coordination monitors treat unpulsed agents as dormant or crashed, causing accidental task takeovers.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9e83ac148117 -->
+- Inspect target branch migration state before drafting schema amendments: oramasys@4b344626 already claimed migration 2 for bounded_claim_replay_v2, requiring new reservations to allocate version 3 or higher.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_9cfe1cb11804 -->
+- Explicitly bridge sibling repositories into PYTHONPATH for cross-repo test suites in detached worktrees: oramasys tests require dispatch_wire from phylax/src which is absent from standard system environments.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_3ae4725a0ed3 -->
+- Batch verification receipts and test proofs locally and push exactly once at final convergence, keeping all active PRs in Draft state during multi-agent cross-host review cycles.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_35670284d614 -->
 
 ### 2026-10
 
