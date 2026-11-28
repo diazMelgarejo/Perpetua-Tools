@@ -1,0 +1,44 @@
+{
+  "id": "f0833fdec344",
+  "key": "manual_f0833f",
+  "name": "manual_f0833f",
+  "claim": "When a POSIX-only module is guarded on Windows and no WSL distribution exists, keep Mac or POSIX runtime qualification explicitly open.",
+  "conditions": [
+    "\"POSIX",
+    "\"WSL\"",
+    "\"Windows\"",
+    "\"platform",
+    "gate\"",
+    "qualification\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:47.149301+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:47.149301+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:47.149301+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:47.396726+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The private-authority core raises on non-POSIX hosts, and the Windows host had no WSL distribution; Windows tests could not establish POSIX qualification.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:47.149301+00:00"
+      ],
+      "lessons_sha": "c30b0207d569"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:47.396726+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The private-authority core raises on non-POSIX hosts, and the Windows host had no WSL distribution; Windows tests could not establish POSIX qualification.",
+  "supersedes": null
+}

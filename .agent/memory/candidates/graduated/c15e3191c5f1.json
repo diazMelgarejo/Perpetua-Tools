@@ -1,0 +1,47 @@
+{
+  "id": "c15e3191c5f1",
+  "key": "manual_c15e31",
+  "name": "manual_c15e31",
+  "claim": "Canary experiments must change one variable at a time, save diffs outside the disposable worktree with hashes, restore after each variant, and finish with a baseline rerun.",
+  "conditions": [
+    "\"baseline",
+    "\"canary\"",
+    "\"external",
+    "\"one",
+    "\"restore",
+    "diff\"",
+    "rerun\"",
+    "tree\"",
+    "variable\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:52.597743+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:52.597743+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:52.597743+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:52.836283+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Canary 2 compared baseline, one comparison removal, and one transaction-mode change while preserving the worktree and strict verdict rules.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:52.597743+00:00"
+      ],
+      "lessons_sha": "4ce6c7111be5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:52.836283+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Canary 2 compared baseline, one comparison removal, and one transaction-mode change while preserving the worktree and strict verdict rules.",
+  "supersedes": null
+}

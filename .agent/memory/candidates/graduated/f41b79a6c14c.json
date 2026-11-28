@@ -1,0 +1,47 @@
+{
+  "id": "f41b79a6c14c",
+  "key": "manual_f41b79",
+  "name": "manual_f41b79",
+  "claim": "A later explicit do-not-stop constraint overrides earlier process permission; isolate model tests with a closed endpoint and leave engines services and workers untouched.",
+  "conditions": [
+    "\"closed",
+    "\"do",
+    "\"engine",
+    "\"process",
+    "constraint\"",
+    "endpoint\"",
+    "isolation\"",
+    "not",
+    "stop\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:51.936734+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:51.936734+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:51.936734+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:52.175593+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The operator reversed earlier engine-stop permission, so no process was stopped and test shells used a closed local endpoint.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:51.936734+00:00"
+      ],
+      "lessons_sha": "d93c284ef708"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:52.175593+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The operator reversed earlier engine-stop permission, so no process was stopped and test shells used a closed local endpoint.",
+  "supersedes": null
+}

@@ -1,0 +1,45 @@
+{
+  "id": "a2d37354b407",
+  "key": "manual_a2d373",
+  "name": "manual_a2d373",
+  "claim": "PowerShell source quoting and ProcessStartInfo argument strings are separate layers; preserve single-quoted at-dash in PowerShell but use double-quoted at-dash in the low-level Windows argument string and verify authentication.",
+  "conditions": [
+    "\"PowerShell\"",
+    "\"ProcessStartInfo\"",
+    "\"Windows",
+    "\"stdin",
+    "argument",
+    "header\"",
+    "quoting\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:48.526049+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:48.526049+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:48.526049+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:48.802476+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Literal single quotes in ProcessStartInfo.Arguments prevented curl from interpreting the stdin header form; the corrected double-quoted form returned auth_matches_dummy true.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:48.526049+00:00"
+      ],
+      "lessons_sha": "db1f305dbd40"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:48.802476+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Literal single quotes in ProcessStartInfo.Arguments prevented curl from interpreting the stdin header form; the corrected double-quoted form returned auth_matches_dummy true.",
+  "supersedes": null
+}

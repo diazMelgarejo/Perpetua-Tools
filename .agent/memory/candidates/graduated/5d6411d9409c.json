@@ -1,0 +1,43 @@
+{
+  "id": "5d6411d9409c",
+  "key": "manual_5d6411",
+  "name": "manual_5d6411",
+  "claim": "After batch memory writes, parse every JSONL row, resolve latest-by-ID, verify evidence timestamps and graduated candidate files, and recompute hashes before publishing.",
+  "conditions": [
+    "JSONL",
+    "artifact hash",
+    "evidence integrity",
+    "latest by ID",
+    "memory validation"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:30.547386+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:30.547386+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:30.547386+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:30.803274+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The validation pass confirmed all new accepted lessons and candidate records with no dangling evidence IDs, then produced exact hashes for the GossipBus receipt.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:30.547386+00:00"
+      ],
+      "lessons_sha": "0047cf64f9c1"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:30.803274+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The validation pass confirmed all new accepted lessons and candidate records with no dangling evidence IDs, then produced exact hashes for the GossipBus receipt.",
+  "supersedes": null
+}

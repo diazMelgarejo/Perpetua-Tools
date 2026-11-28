@@ -1,0 +1,42 @@
+{
+  "id": "f6ff26594f18",
+  "key": "manual_f6ff26",
+  "name": "manual_f6ff26",
+  "claim": "Do not pack multiword command arguments into one shell scalar and expand it unquoted; pass arguments directly or use a real argument array.",
+  "conditions": [
+    "argument array",
+    "literal quotes",
+    "multiword argument",
+    "shell quoting"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:29.885584+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:29.885584+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:29.885584+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:30.128397+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "A shell function forwarded quoted condition phrases through an unquoted scalar, leaving literal quote characters in the staged memory conditions.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:29.885584+00:00"
+      ],
+      "lessons_sha": "92e02e42400b"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:30.128397+00:00",
+  "reviewer": "learn.py",
+  "rationale": "A shell function forwarded quoted condition phrases through an unquoted scalar, leaving literal quote characters in the staged memory conditions.",
+  "supersedes": null
+}

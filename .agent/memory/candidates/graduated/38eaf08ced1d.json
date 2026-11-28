@@ -1,0 +1,42 @@
+{
+  "id": "38eaf08ced1d",
+  "key": "manual_38eaf0",
+  "name": "manual_38eaf0",
+  "claim": "Prefer the supported lan_peer_send.py wrapper over a bare drop because it forwards an environment allowlist, masks sensitive output, and validates delivery evidence.",
+  "conditions": [
+    "delivery evidence",
+    "environment allowlist",
+    "lan_peer_send",
+    "masked output"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:28.500907+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:28.500907+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:28.500907+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:28.744877+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The helper reads trust settings only from its process environment and never opens credential files, reducing secret-exposure risk during peer delivery.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:28.500907+00:00"
+      ],
+      "lessons_sha": "6347be03ba20"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:28.744877+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The helper reads trust settings only from its process environment and never opens credential files, reducing secret-exposure risk during peer delivery.",
+  "supersedes": null
+}

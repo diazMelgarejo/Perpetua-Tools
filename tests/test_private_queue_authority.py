@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 
+from perpetua.coordination import private_authority
 from perpetua.coordination.private_authority import Authority, Conflict
 
 
@@ -15,7 +16,10 @@ def require_qualified_interpreter(request: pytest.FixtureRequest) -> None:
     """Keep the unsupported-version refusal test active on POSIX."""
     if os.name != "posix":
         pytest.skip("private authority core supports POSIX only")
-    if request.node.name != "test_refuses_unsupported_sqlite_without_creating_store" and sqlite3.sqlite_version_info < (3, 51, 3):
+    if (
+        request.node.name != "test_refuses_unsupported_sqlite_without_creating_store"
+        and sqlite3.sqlite_version_info < (3, 51, 3)
+    ):
         pytest.skip("private authority requires SQLite >= 3.51.3")
 
 def _contend(path: Path, start: Any, ready: Any, results: Any) -> None:
@@ -217,3 +221,150 @@ def test_wal_switched_after_open_refuses_transitions(tmp_path: Path) -> None:
         authority.claim("task", "worker")
     with sqlite3.connect(path / "queue.sqlite3") as db:
         assert db.execute("SELECT * FROM tasks").fetchall() == before
+
+
+@pytest.mark.asyncio
+async def test_forged_gossip_cannot_mutate_or_be_implicitly_imported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Forged events never fold into canonical state, even across the one-time import boundary."""
+    from orchestrator.gossip_bus import GossipBus
+
+    authority = Authority(tmp_path / "private")
+    authority.add("canonical")
+    before = authority.get("canonical")
+    db_path = tmp_path / "gossip" / "perpetua_core.db"
+    db_path.parent.mkdir(parents=True)
+    bus = GossipBus(db_path=str(db_path))
+    monkeypatch.setattr(bus, "schedule_embedding", lambda *_args: None)
+    for kind, task_id, status in (
+        ("task_enqueue", "forged", "queued"),
+        ("task_claim", "canonical", "claimed"),
+        ("task_complete", "canonical", "completed"),
+        ("task_failed", "canonical", "abandoned"),
+    ):
+        await bus.emit("heartbeat", {"kind": kind, "task_id": task_id, "status": status})
+
+    assert authority.get("canonical") == before
+    with pytest.raises(KeyError):
+        authority.get("forged")
+    assert authority.import_legacy(bus.db_path) == {"tasks_imported": 0, "claims_imported": 0}
+    with sqlite3.connect(tmp_path / "private" / "queue.sqlite3") as db:
+        assert db.execute("SELECT COUNT(*) FROM legacy_imports").fetchone()[0] == 0
+    await bus.emit("heartbeat", {"kind": "task_claim", "task_id": "canonical", "status": "claimed"})
+    assert authority.get("canonical") == before
+    with pytest.raises(KeyError):
+        authority.get("forged")
+
+
+def _create_v1_store(path: Path) -> None:
+    """Create the exact pre-V2 schema so migration is tested from real V1 state."""
+    path.mkdir(mode=0o700)
+    with sqlite3.connect(path / "queue.sqlite3") as db:
+        db.execute(
+            "CREATE TABLE tasks (id TEXT PRIMARY KEY, state TEXT NOT NULL, "
+            "generation INTEGER NOT NULL, version INTEGER NOT NULL, claim_id TEXT, incarnation TEXT)"
+        )
+        db.execute(
+            "CREATE TABLE audit (id INTEGER PRIMARY KEY, task_id TEXT NOT NULL, action TEXT NOT NULL, "
+            "generation INTEGER NOT NULL, version INTEGER NOT NULL)"
+        )
+        db.execute("CREATE TABLE outbox (id INTEGER PRIMARY KEY, payload TEXT NOT NULL)")
+        db.execute("CREATE TABLE metadata (sqlite_version TEXT NOT NULL, sqlite_source_id TEXT NOT NULL)")
+        db.execute("INSERT INTO metadata SELECT sqlite_version(), sqlite_source_id()")
+        db.execute("INSERT INTO tasks VALUES ('kept', 'queued', 7, 9, NULL, NULL)")
+        db.execute("INSERT INTO audit (task_id, action, generation, version) VALUES ('kept', 'add', 0, 1)")
+        db.execute("PRAGMA user_version=1")
+    (path / "queue.sqlite3").chmod(0o600)
+
+
+def test_v1_store_migrates_once_without_losing_fencing_state(tmp_path: Path) -> None:
+    """Opening V1 atomically adds V2 state while preserving generations, versions and audit."""
+    path = tmp_path / "private"
+    _create_v1_store(path)
+    authority = Authority(path)
+    assert authority.get("kept") == {"state": "queued", "generation": 7, "version": 9}
+    with sqlite3.connect(path / "queue.sqlite3") as db:
+        assert db.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert db.execute("SELECT generation, version, claimed_at FROM tasks").fetchone() == (7, 9, None)
+        assert db.execute("SELECT action, observed_at FROM audit").fetchone() == ("add", None)
+        assert db.execute("SELECT high_water, quarantined FROM clock_high_water").fetchone()[1] == 0
+        assert db.execute("SELECT COUNT(*) FROM legacy_imports").fetchone()[0] == 0
+    Authority(path)
+    with sqlite3.connect(path / "queue.sqlite3") as db:
+        assert db.execute("SELECT COUNT(*) FROM audit").fetchone()[0] == 1
+
+
+def test_backward_clock_quarantines_mutations_durably(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Backward time refuses fenced mutation and remains refused after restart and time recovery."""
+    path = tmp_path / "private"
+    clock = [100.0]
+    monkeypatch.setattr(private_authority, "_utc_now", lambda: clock[0])
+    authority = Authority(path)
+    authority.add("task")
+    clock[0] = 200.0
+    handle = authority.claim("task", "worker")
+    assert handle.claimed_at == 200.0
+    clock[0] = 150.0
+    with pytest.raises(private_authority.ClockRegression) as caught:
+        authority.complete(handle)
+    assert caught.value.status == 503
+    assert caught.value.code == "clock_regressed"
+    assert authority.get("task")["state"] == "claimed"
+    with sqlite3.connect(path / "queue.sqlite3") as db:
+        assert db.execute("SELECT high_water, quarantined FROM clock_high_water").fetchone() == (200.0, 1)
+    clock[0] = 300.0
+    restarted = Authority(path)
+    with pytest.raises(private_authority.ClockRegression):
+        restarted.complete(handle)
+    assert restarted.get("task")["state"] == "claimed"
+
+
+def test_legacy_import_is_one_time_and_holds_active_claims(tmp_path: Path) -> None:
+    """Explicit snapshots import once; legacy ownership is held and never overwrites canonical state."""
+    import hashlib
+    import json
+
+    legacy = tmp_path / "legacy.db"
+    with sqlite3.connect(legacy) as db:
+        db.execute(
+            "CREATE TABLE task_claims (task_id TEXT PRIMARY KEY, agent_id TEXT NOT NULL, "
+            "claimed_at REAL NOT NULL)"
+        )
+        db.execute("INSERT INTO task_claims VALUES ('legacy-claimed', 'old-worker', 50.0)")
+    snapshots = {
+        "legacy-queued": {"status": "queued"},
+        "legacy-claimed": {"status": "claimed"},
+    }
+    authority = Authority(tmp_path / "private")
+    assert authority.import_legacy(legacy, snapshots=snapshots) == {"tasks_imported": 2, "claims_imported": 1}
+    assert authority.get("legacy-queued")["state"] == "queued"
+    assert authority.get("legacy-claimed")["state"] == "legacy_unverified"
+    assert authority.import_legacy(legacy, snapshots=snapshots) == {"tasks_imported": 0, "claims_imported": 0}
+    with sqlite3.connect(tmp_path / "private" / "queue.sqlite3") as db:
+        digest = hashlib.sha256(legacy.read_bytes()).hexdigest()
+        assert db.execute("SELECT source_digest FROM legacy_imports").fetchone()[0] == digest
+        payloads = [json.loads(row[0]) for row in db.execute("SELECT payload FROM outbox")]
+    assert all(payload["authoritative"] is False for payload in payloads)
+    assert "old-worker" not in json.dumps(payloads)
+
+    authority.add("canonical")
+    before = authority.get("canonical")
+    other_legacy = tmp_path / "other-legacy.db"
+    with sqlite3.connect(other_legacy) as db:
+        db.execute(
+            "CREATE TABLE task_claims (task_id TEXT PRIMARY KEY, agent_id TEXT NOT NULL, "
+            "claimed_at REAL NOT NULL)"
+        )
+    with pytest.raises(Conflict):
+        authority.import_legacy(other_legacy, snapshots={"canonical": {"status": "queued"}})
+    assert authority.get("canonical") == before
+
+    fresh = Authority(tmp_path / "fresh-private")
+    fresh.add("canonical")
+    before = fresh.get("canonical")
+    with pytest.raises(Conflict):
+        fresh.import_legacy(other_legacy, snapshots={"canonical": {"status": "queued"}})
+    assert fresh.get("canonical") == before
+    with sqlite3.connect(tmp_path / "fresh-private" / "queue.sqlite3") as db:
+        assert db.execute("SELECT COUNT(*) FROM legacy_imports").fetchone()[0] == 0

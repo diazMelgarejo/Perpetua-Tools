@@ -1,0 +1,45 @@
+{
+  "id": "5f3349556e5b",
+  "key": "manual_5f3349",
+  "name": "manual_5f3349",
+  "claim": "Snapshot background subagent output outside its worktree with sizes and hashes, label it interim, and never fabricate completion before the agent notification arrives.",
+  "conditions": [
+    "\"completion",
+    "\"interim",
+    "\"pending",
+    "\"subagent\"",
+    "notification\"",
+    "output\"",
+    "snapshot\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:45.745266+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:45.745266+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:45.745266+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:46.003922+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Qoder Lane 1 had only a test-first interim patch while Lanes 2a and 2b final ledgers were still pending.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:45.745266+00:00"
+      ],
+      "lessons_sha": "8a249dd11b8a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:46.003922+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Qoder Lane 1 had only a test-first interim patch while Lanes 2a and 2b final ledgers were still pending.",
+  "supersedes": null
+}

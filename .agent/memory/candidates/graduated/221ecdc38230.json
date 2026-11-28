@@ -1,0 +1,47 @@
+{
+  "id": "221ecdc38230",
+  "key": "manual_221ecd",
+  "name": "manual_221ecd",
+  "claim": "When exact Mac queue task IDs are absent from every local replica, publish exact-ID GossipBus claims and a LAN notice instead of creating duplicate local queue rows.",
+  "conditions": [
+    "\"GossipBus",
+    "\"duplicate",
+    "\"exact",
+    "\"local",
+    "claim\"",
+    "ids\"",
+    "queue\"",
+    "replica\"",
+    "task"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:42.584223+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:42.584223+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:42.584223+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:43.136650+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Observed 2026-11-28: both local boards and the local queue replica lacked the Mac rows; duplicate queue creation would have fragmented ownership.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:42.584223+00:00"
+      ],
+      "lessons_sha": "ef12e1365cc8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:43.136650+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Observed 2026-11-28: both local boards and the local queue replica lacked the Mac rows; duplicate queue creation would have fragmented ownership.",
+  "supersedes": null
+}

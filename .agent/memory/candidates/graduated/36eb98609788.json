@@ -1,0 +1,47 @@
+{
+  "id": "36eb98609788",
+  "key": "manual_36eb98",
+  "name": "manual_36eb98",
+  "claim": "Treat GossipBus, the Job Claims Board, and the LAN peer inbox as separate channels; an event, queue claim, or accepted file proves only its own channel state.",
+  "conditions": [
+    "\"Job",
+    "\"LAN",
+    "\"coordination",
+    "\"delivery",
+    "Board\"",
+    "Claims",
+    "channels\"",
+    "evidence\"",
+    "inbox\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:44.360627+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:44.360627+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:44.360627+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:44.619786+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The session repeatedly required exact-ID claims, GossipBus publication, and independent LAN receipts; none substituted for the others.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:44.360627+00:00"
+      ],
+      "lessons_sha": "55d45d462157"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:44.619786+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The session repeatedly required exact-ID claims, GossipBus publication, and independent LAN receipts; none substituted for the others.",
+  "supersedes": null
+}

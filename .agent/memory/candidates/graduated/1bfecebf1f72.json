@@ -1,0 +1,45 @@
+{
+  "id": "1bfecebf1f72",
+  "key": "manual_1bfece",
+  "name": "manual_1bfece",
+  "claim": "For Schannel private-CA tests, distinguish trust acceptance from revocation checking; best-effort revocation may permit a known test CA but must not permit mismatched or missing trust.",
+  "conditions": [
+    "\"Schannel\"",
+    "\"best",
+    "\"curl\"",
+    "\"private",
+    "\"revocation\"",
+    "CA\"",
+    "effort\""
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:28:47.832535+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:28:47.832535+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:28:47.832535+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:28:48.071265+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Native curl 8.22.0 accepted the matching private CA with best-effort revocation, while default revocation returned exit 60 and mismatched or missing CA still failed.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:28:47.832535+00:00"
+      ],
+      "lessons_sha": "ab2d0382c4a7"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:28:48.071265+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Native curl 8.22.0 accepted the matching private CA with best-effort revocation, while default revocation returned exit 60 and mismatched or missing CA still failed.",
+  "supersedes": null
+}

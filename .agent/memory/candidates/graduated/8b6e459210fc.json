@@ -1,0 +1,42 @@
+{
+  "id": "8b6e459210fc",
+  "key": "manual_8b6e45",
+  "name": "manual_8b6e45",
+  "claim": "Before sending an interim bundle, list the authenticated remote inbox and filter by exact filename; local pending status is not remote delivery evidence.",
+  "conditions": [
+    "LAN preflight",
+    "duplicate drop",
+    "exact filename",
+    "remote inbox"
+  ],
+  "evidence_ids": [
+    "2026-11-28T08:30:27.834210+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T08:30:27.834210+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T08:30:27.834210+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T08:30:28.076816+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Mac inbox preflight returned no existing entries for the three interim bundle files, establishing that the planned drops were not duplicates.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T08:30:27.834210+00:00"
+      ],
+      "lessons_sha": "b12405c65508"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T08:30:28.076816+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Mac inbox preflight returned no existing entries for the three interim bundle files, establishing that the planned drops were not duplicates.",
+  "supersedes": null
+}
