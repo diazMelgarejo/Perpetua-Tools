@@ -436,6 +436,7 @@
 - Before moving a scheduled reminder, read the script it runs: a year or one-time guard can make a new calendar date do nothing. Rehearse the script with stand-in tools for the target date, then verify the trigger the scheduler actually loaded.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_56369ae30109 -->
 - Date certificate renewal reminders from the earliest expiry among every peer that must connect, not only the local host, and state each expiry in the reminder text.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_7c1213f7e812 -->
 - A scheduled job that writes to the shared queue can request an embedding and load a local model with no one watching. Point that command's embedding address at a closed local port unless a person approved the load.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_0958a5833e05 -->
+- The one-local-model gate is enforced only on macOS; on Windows it reports not enforced. Until a separate piece of work gives Windows the same protection, treat every Windows model load as manual: check what Ollama and LM Studio already hold before loading, and before running tests that can reach an engine.  <!-- status=accepted confidence=0.6 evidence=1 id=lesson_f4f9f38c1880 -->
 
 ### 2026-10
 
