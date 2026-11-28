@@ -31,7 +31,9 @@ REQUIRED_DENY = ("exec", "process", "browser", "canvas", "nodes", "cron", "gatew
 ENV_NAME = re.compile(r"^[A-Z][A-Z0-9_]*$")
 SECRET_VALUE = re.compile(r"sk-[A-Za-z0-9]{20,}|[0-9a-f]{40,}")
 SECRET_KEY = re.compile(r"api_?key|token|secret|password|credential", re.I)
-SAFE_KEYS = {"api_key_env", "api_key_placeholder", "apiKey"}
+KEY_FIELDS = ("apiKey", "api_key_env", "api_key_placeholder")  # each has its own rule in _key_field_problem
+LOCAL_PLACEHOLDERS = ("ollama-local", "lm-studio")  # what a local engine takes where it needs no credential
+ENV_REFERENCE = re.compile(r"^\$\{(?:env:)?[A-Z][A-Z0-9_]*\}$")
 REDACTED = "<redacted>"
 MISSING = "<missing>"
 
@@ -55,20 +57,103 @@ def chain_for(data: dict[str, Any], seat: str | None = None) -> list[str]:
 # ------------------------------------------------------------------------------------------- validation
 
 
-def _walk(obj: Any, path: str = ""):
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            yield from _walk(v, f"{path}.{k}" if path else k)
-    elif isinstance(obj, list):
-        for i, v in enumerate(obj):
-            yield from _walk(v, f"{path}[{i}]")
-    else:
-        yield path, obj
-
-
 def _is_local_model(model: str) -> bool:
     """True for a route that loads weights on the host: Ollama or Mac LM Studio, not an Ollama cloud model."""
     return model.startswith(("ollama/", "lmstudio-mac/")) and not model.endswith((":cloud", "-cloud"))
+
+
+def _key_field_problem(field: str, value: Any) -> str | None:
+    """A key field holds a name or a documented local placeholder, never a credential."""
+    is_name = isinstance(value, str) and bool(ENV_NAME.match(value))
+    if field == "api_key_env":
+        return None if is_name else "is not an env name (A-Z, digits, underscore)"
+    if field == "api_key_placeholder":
+        return None if value in LOCAL_PLACEHOLDERS else "is not a documented local placeholder"
+    if isinstance(value, str):
+        allowed = value in LOCAL_PLACEHOLDERS or bool(ENV_REFERENCE.match(value))
+    else:
+        allowed = (isinstance(value, dict) and set(value) == {"source", "provider", "id"} and value["source"] == "env"
+                   and isinstance(value["id"], str) and bool(ENV_NAME.match(value["id"])))
+    return None if allowed else "must be an env reference or a documented local placeholder, not a value"
+
+
+def _secret_problems(obj: Any, path: str = "") -> list[str]:
+    problems: list[str] = []
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            here = f"{path}.{key}" if path else str(key)
+            if key in KEY_FIELDS:
+                reason = _key_field_problem(key, value)
+                if reason:
+                    problems.append(f"{here} {reason}")
+            else:
+                problems.extend(_secret_problems(value, here))
+    elif isinstance(obj, list):
+        for index, value in enumerate(obj):
+            problems.extend(_secret_problems(value, f"{path}[{index}]"))
+    elif isinstance(obj, str):
+        leaf = path.rsplit(".", 1)[-1].split("[")[0]
+        if SECRET_VALUE.search(obj):
+            problems.append("secret-looking value at %s" % path)
+        elif SECRET_KEY.search(leaf) and leaf != "login" and obj:
+            problems.append("secret field %s must reference an env name, not hold a value" % path)
+    return problems
+
+
+# Everything the renderer and the checks below read: dotted path and the type it is read as. ``*`` is every entry.
+_STRUCTURE: tuple[tuple[str, Any], ...] = (
+    ("chain.default", list), ("human_gated_models", list), ("thinking.default", str), ("plugins", dict),
+    ("model_aliases", dict), ("model_aliases.*.alias", str), ("manual_only", dict), ("manual_only.*", dict),
+    ("baseline.update.channel", str), ("baseline.update.check_on_start", bool), ("baseline.update.auto", bool),
+    ("env.shell_import.enabled", bool), ("env.shell_import.timeout_ms", int),
+    ("providers", dict), ("providers.*", dict), ("seats", dict), ("seats.*.model", str),
+    ("seats.*.description", str), ("seats.*.thinking", str), ("seats.*.tools_deny", list), ("seats.*.skills", list),
+)
+_PROVIDER_FIELDS = (("api", str), ("base_url", str), ("models", list))
+_MODEL_FIELDS = (("id", str), ("name", str), ("reasoning", bool), ("input", list), ("context_window", int),
+                 ("max_tokens", int))
+_HEARTBEAT_FIELDS = (("every", str), ("model", str), ("target", str), ("light_context", bool),
+                     ("isolated_session", bool), ("prompt", str))
+
+
+def _values(obj: Any, parts: list[str], path: str = ""):
+    """Yield (path, value) for a dotted pattern; a missing or non-mapping step yields a value of None."""
+    if not parts:
+        yield path, obj
+        return
+    head, rest = parts[0], parts[1:]
+    if not isinstance(obj, dict):
+        yield path or head, None
+        return
+    for key in (list(obj) if head == "*" else [head]):
+        yield from _values(obj.get(key), rest, f"{path}.{key}" if path else str(key))
+
+
+def _fields_problems(entry: Any, fields: tuple, path: str) -> list[str]:
+    if not isinstance(entry, dict):
+        return ["%s must be a mapping" % path]
+    return ["%s.%s is missing or has the wrong type" % (path, name) for name, kind in fields
+            if not isinstance(entry.get(name), kind)]
+
+
+def _structure_problems(data: dict[str, Any]) -> list[str]:
+    problems = ["%s is missing or has the wrong type" % path
+                for pattern, kind in _STRUCTURE
+                for path, value in _values(data, pattern.split("."))
+                if not isinstance(value, kind)]
+    if problems:
+        return problems
+    for name, prov in data["providers"].items():
+        if prov.get("builtin"):
+            continue
+        problems.extend(_fields_problems(prov, _PROVIDER_FIELDS, f"providers.{name}"))
+        models = prov.get("models") if isinstance(prov.get("models"), list) else []
+        for index, model in enumerate(models):
+            problems.extend(_fields_problems(model, _MODEL_FIELDS, f"providers.{name}.models[{index}]"))
+    for name, seat in data["seats"].items():
+        if seat.get("heartbeat"):
+            problems.extend(_fields_problems(seat["heartbeat"], _HEARTBEAT_FIELDS, f"seats.{name}.heartbeat"))
+    return problems
 
 
 def validate(data: dict[str, Any]) -> list[str]:
@@ -82,21 +167,14 @@ def validate(data: dict[str, Any]) -> list[str]:
     if problems:
         return problems
 
+    # secrets: names only. Checked before the structure, so a credential is reported whatever else is wrong.
+    problems.extend(_secret_problems(data))
+    shape = _structure_problems(data)
+    if shape:
+        return problems + shape
+
     gated = set(data["human_gated_models"])
     seats = data["seats"]
-
-    # secrets: names only
-    for path, value in _walk(data):
-        leaf = path.rsplit(".", 1)[-1].split("[")[0]
-        if isinstance(value, str):
-            if SECRET_VALUE.search(value):
-                problems.append("secret-looking value at %s" % path)
-            elif SECRET_KEY.search(leaf) and leaf not in SAFE_KEYS and leaf != "login" and value:
-                problems.append("secret field %s must reference an env name, not hold a value" % path)
-    for name, prov in data["providers"].items():
-        env = prov.get("api_key_env")
-        if env is not None and not ENV_NAME.match(env):
-            problems.append("providers.%s.api_key_env is not an env name (A-Z, digits, underscore)" % name)
 
     # chains
     chains = {"default": chain_for(data)}
@@ -117,6 +195,9 @@ def validate(data: dict[str, Any]) -> list[str]:
     for name, seat in seats.items():
         if seat["model"] in gated:
             problems.append("human-gated model %s is the default of seat %s" % (seat["model"], name))
+        heartbeat_model = (seat.get("heartbeat") or {}).get("model")
+        if heartbeat_model in gated:
+            problems.append("human-gated model %s is the heartbeat of seat %s" % (heartbeat_model, name))
         missing = [t for t in REQUIRED_DENY if t not in seat.get("tools_deny", [])]
         if missing:
             problems.append("seat %s must deny %s" % (name, ", ".join(missing)))
@@ -260,10 +341,10 @@ def _lookup(config: Any, path: tuple[str, ...]) -> Any:
 
 
 def _shown(path: str, value: Any) -> Any:
-    leaf = path.rsplit(".", 1)[-1]
     if value == MISSING:
         return value
-    if SECRET_KEY.search(leaf) or (isinstance(value, str) and SECRET_VALUE.search(value)):
+    under_key = any(SECRET_KEY.search(segment) for segment in path.split("."))
+    if under_key or (isinstance(value, str) and SECRET_VALUE.search(value)):
         return REDACTED
     return value
 
@@ -330,6 +411,11 @@ def vendored_copy(data: dict[str, Any], now: datetime | None = None, module_sour
     return json.dumps(out, indent=2, ensure_ascii=False) + "\n"
 
 
+def _utc(moment: datetime) -> datetime:
+    """A time without an offset is read as UTC, which is what the stamp writes."""
+    return moment if moment.tzinfo is not None else moment.replace(tzinfo=timezone.utc)
+
+
 def verify_vendored(
     text: str,
     live_fingerprint: str | None = None,
@@ -338,12 +424,12 @@ def verify_vendored(
     module_source: str | None = None,
 ) -> dict[str, str]:
     """Judge a vendored copy: ok, stale (live file moved on), old (cannot verify), tampered or invalid."""
-    now = now or datetime.now(timezone.utc)
+    now = _utc(now or datetime.now(timezone.utc))
     try:
         obj = json.loads(text)
         stamp = obj["_vendor"]
         source = stamp["source_sha256"]
-        vendored_at = datetime.fromisoformat(stamp["vendored_at"])
+        vendored_at = _utc(datetime.fromisoformat(stamp["vendored_at"]))
     except (ValueError, KeyError, TypeError):
         return {"status": "invalid", "message": "the vendored OpenClaw defaults have no readable stamp; do not use them"}
     if fingerprint(obj) != source:

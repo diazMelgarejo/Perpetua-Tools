@@ -281,3 +281,84 @@ def test_a_cloud_model_served_through_ollama_does_not_count_as_local(data: dict)
     data["chain"]["default"].insert(3, "ollama/glm-5.3-flash:cloud")
 
     assert not any("one local model" in problem for problem in od.validate(data))
+
+
+# Assembled so that no tracked line looks like a credential.
+GOOGLE_STYLE_KEY = "AIza" + "Sy" + "Q" * 33
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda d: d["providers"]["google"].__setitem__("apiKey", GOOGLE_STYLE_KEY),
+        lambda d: d["providers"]["google"].__setitem__("apiKey", {"source": "env", "provider": "default",
+                                                                 "id": GOOGLE_STYLE_KEY}),
+        lambda d: d["providers"]["google"].__setitem__("apiKey", {"source": "file", "id": "GEMINI_API_KEY"}),
+        lambda d: d["providers"]["ollama"].__setitem__("api_key_placeholder", GOOGLE_STYLE_KEY),
+        lambda d: d["manual_only"]["lmstudio-mac"].__setitem__("api_key_placeholder", "hunter2-real"),
+    ],
+)
+def test_a_literal_credential_in_any_key_field_is_a_problem(data: dict, mutate) -> None:
+    mutate(data)
+
+    assert any("apiKey" in problem or "api_key" in problem for problem in od.validate(data))
+
+
+@pytest.mark.parametrize(
+    "reference",
+    ["${GEMINI_API_KEY}", "${env:GEMINI_API_KEY}", "ollama-local",
+     {"source": "env", "provider": "default", "id": "GEMINI_API_KEY"}],
+)
+def test_references_and_local_placeholders_stay_allowed(data: dict, reference) -> None:
+    data["providers"]["google"]["apiKey"] = reference
+
+    assert od.validate(data) == []
+
+
+def test_a_human_gated_model_may_not_be_a_heartbeat(data: dict) -> None:
+    data["seats"]["autoresearcher"]["heartbeat"]["model"] = "gemini-main/gemini-pro-latest"
+    assert "gemini-main/gemini-pro-latest" in data["human_gated_models"]
+
+    assert any("human-gated" in p and "heartbeat" in p for p in od.validate(data))
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        ("model_aliases",), ("baseline",), ("thinking",), ("plugins",), ("env",), ("chain", "default"),
+        ("thinking", "default"), ("baseline", "update", "auto"), ("env", "shell_import", "timeout_ms"),
+        ("seats", "biafra", "model"), ("seats", "biafra", "tools_deny"), ("seats", "autoresearcher", "heartbeat", "target"),
+        ("providers", "wandb", "base_url"), ("providers", "wandb", "models", 0, "context_window"),
+        ("model_aliases", "*", "alias"),
+    ],
+)
+def test_validation_names_anything_the_renderer_needs_before_it_renders(data: dict, path: tuple) -> None:
+    node = data
+    for part in path[:-1]:
+        node = node[next(iter(node)) if part == "*" else part]
+    del node[path[-1]]
+
+    assert od.validate(data), path
+
+
+@pytest.mark.parametrize("section", ["providers", "seats", "model_aliases", "baseline"])
+def test_a_section_of_the_wrong_type_is_a_problem_not_a_crash(data: dict, section: str) -> None:
+    data[section] = ["not", "a", "mapping"]
+
+    assert od.validate(data)
+
+
+def test_a_credential_under_a_key_field_is_never_printed_by_drift(data: dict) -> None:
+    config = od.render_patch(data)
+    config["models"]["providers"]["google"]["apiKey"]["id"] = GOOGLE_STYLE_KEY
+
+    found = od.drift(data, config)
+
+    assert [item["actual"] for item in found] == [od.REDACTED] and GOOGLE_STYLE_KEY not in repr(found)
+
+
+def test_a_vendor_stamp_without_an_offset_is_read_as_utc(data: dict) -> None:
+    text = od.vendored_copy(data, now=datetime(2026, 11, 27))
+
+    assert od.verify_vendored(text)["status"] in ("ok", "old")
+    assert od.verify_vendored(od.vendored_copy(data), now=datetime(2027, 6, 1))["status"] == "old"
