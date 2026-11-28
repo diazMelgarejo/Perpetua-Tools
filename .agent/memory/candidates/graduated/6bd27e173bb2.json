@@ -1,0 +1,74 @@
+{
+  "id": "6bd27e173bb2",
+  "key": "manual_6bd27e",
+  "name": "manual_6bd27e",
+  "claim": "Never track a personal phone number in any repository: reference it through an environment variable or a placeholder. Block it twice, with a commit-time pattern for channel-prefixed and E.164 numbers and with a private_phone entry in the off-repo literal registry for bare digits, and search all tracked files, since the same value can sit in configuration, documentation and scripts.",
+  "conditions": [
+    "all",
+    "any",
+    "bare",
+    "block",
+    "channel-prefixed",
+    "commit-time",
+    "configuration",
+    "digits",
+    "documentation",
+    "entry",
+    "environment",
+    "files",
+    "literal",
+    "never",
+    "number",
+    "numbers",
+    "off-repo",
+    "pattern",
+    "personal",
+    "phone",
+    "placeholder",
+    "private_phone",
+    "reference",
+    "registry",
+    "repository",
+    "same",
+    "scripts",
+    "search",
+    "since",
+    "sit",
+    "through",
+    "track",
+    "tracked",
+    "twice",
+    "value",
+    "variable"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:42.916972+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:42.916972+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:42.916972+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:43.088506+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "A real number sat in public repositories, first through a setup document and later through a script and a configuration file whose restore commit was labelled sanitized. Secret patterns covered keys and tokens only. Earlier history still holds it.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:42.916972+00:00"
+      ],
+      "lessons_sha": "e19090955641"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:43.088491+00:00",
+  "reviewer": "claude-code",
+  "rationale": "A real number sat in public repositories, first through a setup document and later through a script and a configuration file whose restore commit was labelled sanitized. Secret patterns covered keys and tokens only. Earlier history still holds it.",
+  "supersedes": null
+}

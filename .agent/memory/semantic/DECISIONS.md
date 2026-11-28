@@ -1298,3 +1298,26 @@ followed by six settings commits made only on the draft (`d9a30188`, `302cb885`,
 
 **Status:** confirmed by the operator. Local only when recorded: nothing from the settings work is pushed, and the
 operator has said not to push yet.
+
+## 2026-11-28: Operator rulings on local models, privacy and the OpenClaw defaults
+
+**Decisions:**
+
+- Run strictly one local LLM or inference model at a time on the Mac. Until the cause of the 2026-11-27 UTC freeze is
+  known, load no model and run no startup script that warms one; diagnose from reports and logs.
+- A personal phone number is never committed to any repository. It is removed from the drafts; earlier history is not
+  rewritten.
+- The defaults carry the pinned `gemini-main` and `gemini-fallback` providers, with
+  `gemini-main/gemini-pro-latest` and `openrouter/google/gemini-4-argon` human-gated.
+- The `mac-researcher` seat runs on local Ollama, and Ollama unloads an idle model after five minutes.
+- The Windows RTX 5080 `nvfp4` wording stays unchanged until the Gemma diffusion default question is settled; no such
+  decision was found in this memory.
+
+**Incident:** a test load of the local Mac model was launched at 2026-11-27 22:57 UTC; the machine stopped responding,
+a watchdog panic followed and it rebooted within about three minutes. The crash report names no process, so the link
+rests on timing and memory figures.
+
+**Open:** startup and bootstrap scripts still warm the model, and gateway fallback and heartbeat routes can load it;
+whether to remove the warm-up is not yet decided.
+
+**Status:** local only when recorded; the operator has said not to push yet.

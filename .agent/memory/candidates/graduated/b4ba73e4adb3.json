@@ -1,0 +1,57 @@
+{
+  "id": "b4ba73e4adb3",
+  "key": "manual_b4ba73",
+  "name": "manual_b4ba73",
+  "claim": "When removing personal data from a configuration, keep the control it fed: replace the value with an environment reference, document the variable, and test that the control stays present and names no literal identity.",
+  "conditions": [
+    "configuration",
+    "control",
+    "data",
+    "document",
+    "environment",
+    "fed",
+    "identity",
+    "keep",
+    "literal",
+    "names",
+    "personal",
+    "present",
+    "reference",
+    "removing",
+    "replace",
+    "stays",
+    "test",
+    "value",
+    "variable"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:43.168371+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:43.168371+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:43.168371+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:43.343906+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "Deleting a command-owner entry to remove a number also removed the owner allow list; an automated security review caught it before any push.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:43.168371+00:00"
+      ],
+      "lessons_sha": "ea4493b36d3d"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:43.343892+00:00",
+  "reviewer": "claude-code",
+  "rationale": "Deleting a command-owner entry to remove a number also removed the owner allow list; an automated security review caught it before any push.",
+  "supersedes": null
+}

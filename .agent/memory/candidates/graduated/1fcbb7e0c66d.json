@@ -1,0 +1,63 @@
+{
+  "id": "1fcbb7e0c66d",
+  "key": "manual_1fcbb7",
+  "name": "manual_1fcbb7",
+  "claim": "When discovery or routing is slow, check first that the discovery watcher job is enabled and loaded and how old its snapshot is: a stale snapshot is rejected after thirty minutes and silently sends every reader to the slow fallback. Enabling a disabled job is the operator's decision.",
+  "conditions": [
+    "after",
+    "check",
+    "decision",
+    "disabled",
+    "discovery",
+    "enabled",
+    "enabling",
+    "every",
+    "fallback",
+    "first",
+    "job",
+    "loaded",
+    "minutes",
+    "old",
+    "operator",
+    "reader",
+    "rejected",
+    "routing",
+    "sends",
+    "silently",
+    "slow",
+    "snapshot",
+    "stale",
+    "thirty",
+    "watcher"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:44.404447+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:44.404447+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:44.404447+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:44.571390+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "The watcher job was found disabled with a snapshot about a day old.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:44.404447+00:00"
+      ],
+      "lessons_sha": "2f0cb1d235ee"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:44.571378+00:00",
+  "reviewer": "claude-code",
+  "rationale": "The watcher job was found disabled with a snapshot about a day old.",
+  "supersedes": null
+}

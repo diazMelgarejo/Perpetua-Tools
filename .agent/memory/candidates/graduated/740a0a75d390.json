@@ -1,0 +1,70 @@
+{
+  "id": "740a0a75d390",
+  "key": "manual_740a0a",
+  "name": "manual_740a0a",
+  "claim": "Never load a local model on the shared Mac to test something without all three: the model's size compared with the memory actually free, every earlier test or background run of your own confirmed finished, and the operator's explicit go for that load. A free-memory percentage that cannot hold the model is a stop, not a caveat.",
+  "conditions": [
+    "actually",
+    "all",
+    "background",
+    "cannot",
+    "caveat",
+    "compared",
+    "confirmed",
+    "earlier",
+    "every",
+    "explicit",
+    "finished",
+    "free",
+    "free-memory",
+    "hold",
+    "load",
+    "local",
+    "mac",
+    "memory",
+    "model",
+    "never",
+    "operator",
+    "own",
+    "percentage",
+    "run",
+    "shared",
+    "size",
+    "something",
+    "stop",
+    "test",
+    "three",
+    "without",
+    "your"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:42.131125+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:42.131125+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:42.131125+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:42.317291+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "An agent loaded an 8.9 GB model on a 16 GB machine soon after reading about 42 percent free, without confirming its earlier test run had ended. The machine stopped responding, a watchdog panic followed and it rebooted within about three minutes. The crash report names no process, so the cause rests on timing and memory figures and is not proven.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:42.131125+00:00"
+      ],
+      "lessons_sha": "4c7eebee33de"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:42.317280+00:00",
+  "reviewer": "claude-code",
+  "rationale": "An agent loaded an 8.9 GB model on a 16 GB machine soon after reading about 42 percent free, without confirming its earlier test run had ended. The machine stopped responding, a watchdog panic followed and it rebooted within about three minutes. The crash report names no process, so the cause rests on timing and memory figures and is not proven.",
+  "supersedes": null
+}

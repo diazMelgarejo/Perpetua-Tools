@@ -1,0 +1,64 @@
+{
+  "id": "b43b695745fc",
+  "key": "manual_b43b69",
+  "name": "manual_b43b69",
+  "claim": "The scout-block ignore-file hook resolves its allow list from the shell's current directory, so a worktree kept outside the workspace tree has none until one is added there. When it blocks, report the block and ask for a narrow allow-list entry.",
+  "conditions": [
+    "added",
+    "allow",
+    "allow-list",
+    "ask",
+    "block",
+    "blocks",
+    "current",
+    "directory",
+    "entry",
+    "hook",
+    "ignore-file",
+    "kept",
+    "list",
+    "narrow",
+    "none",
+    "one",
+    "outside",
+    "report",
+    "resolves",
+    "scout-block",
+    "shell",
+    "there",
+    "tree",
+    "until",
+    "workspace",
+    "worktree"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:43.898940+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:43.898940+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:43.898940+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:44.075378+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "Draft worktrees had no allow list; the operator approved narrow entries for scratch logs and server logs.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:43.898940+00:00"
+      ],
+      "lessons_sha": "b0bd8db067b3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:44.075365+00:00",
+  "reviewer": "claude-code",
+  "rationale": "Draft worktrees had no allow list; the operator approved narrow entries for scratch logs and server logs.",
+  "supersedes": null
+}
