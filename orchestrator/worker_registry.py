@@ -149,11 +149,12 @@ async def _ollama_mac_worker(spec: Any) -> dict:
 
     Model instantiation rules:
       - POST /api/chat endpoint, never ``ollama run``.
-      - 1 active model per Mac at a time (VRAM guard is caller's responsibility).
+      - 1 active model per host at a time, enforced by perpetua_tools.local_model_gate.
       - Default endpoint: http://localhost:11434/api/chat
     """
     import httpx
 
+    from perpetua_tools import local_model_gate
     from utils.dispatch_models import resolve_dispatch_model
 
     endpoint = "http://localhost:11434/api/chat"
@@ -172,10 +173,11 @@ async def _ollama_mac_worker(spec: Any) -> dict:
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
     }
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(endpoint, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    async with local_model_gate.local_slot_async("ollama", model, endpoint):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(endpoint, json=payload)
+            resp.raise_for_status()
+            data = resp.json()
 
     return {
         "backend": "ollama-mac",
@@ -197,6 +199,7 @@ async def _lmstudio_mac_worker(spec: Any) -> dict:
     """
     import httpx
 
+    from perpetua_tools import local_model_gate
     from utils.dispatch_models import resolve_dispatch_model
 
     endpoint = "http://localhost:1234/v1/chat/completions"
@@ -216,10 +219,11 @@ async def _lmstudio_mac_worker(spec: Any) -> dict:
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(endpoint, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    async with local_model_gate.local_slot_async("lm-studio", model, endpoint):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(endpoint, json=payload)
+            resp.raise_for_status()
+            data = resp.json()
 
     return {
         "backend": "lmstudio-mac",

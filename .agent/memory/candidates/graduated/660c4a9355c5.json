@@ -1,0 +1,42 @@
+{
+  "id": "660c4a9355c5",
+  "key": "manual_660c4a",
+  "name": "manual_660c4a",
+  "claim": "Verify a preview against its served build metadata, and recheck the exact loopback listener and HTTP response from a separate invocation after restarting it.",
+  "conditions": [
+    "build-provenance",
+    "loopback",
+    "preview",
+    "process-lifetime"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:47.802742+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:47.802742+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:47.802742+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:47.957566+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama #534 preview originally served an older artifact. The command-scoped replacement initially returned the intended SHA then exited with its runner; the user-scoped loopback job remained reachable in a separate check. Build first and keep the old listener if the build fails.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:47.802742+00:00"
+      ],
+      "lessons_sha": "c48f11073ee2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:47.957550+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama #534 preview originally served an older artifact. The command-scoped replacement initially returned the intended SHA then exited with its runner; the user-scoped loopback job remained reachable in a separate check. Build first and keep the old listener if the build fails.",
+  "supersedes": null
+}

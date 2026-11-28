@@ -1,0 +1,50 @@
+{
+  "id": "ff446c08b00f",
+  "key": "manual_ff446c",
+  "name": "manual_ff446c",
+  "claim": "A gate that may load a model must require a person's approval for that model, with an expiry. An empty host with enough memory is a precondition, not approval.",
+  "conditions": [
+    "approval",
+    "empty",
+    "enough",
+    "expiry",
+    "gate",
+    "host",
+    "load",
+    "memory",
+    "model",
+    "person",
+    "precondition",
+    "require"
+  ],
+  "evidence_ids": [
+    "2026-11-28T04:28:34.977893+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T04:28:34.977893+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T04:28:34.977893+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T04:28:35.142101+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "The first version of the one-model gate loaded automatically when the host was empty, and approved the 12:18:50 load itself. The operator called an unapproved load very wrong.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T04:28:34.977893+00:00"
+      ],
+      "lessons_sha": "14f19dde3eea"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T04:28:35.142092+00:00",
+  "reviewer": "claude-code",
+  "rationale": "The first version of the one-model gate loaded automatically when the host was empty, and approved the 12:18:50 load itself. The operator called an unapproved load very wrong.",
+  "supersedes": null
+}

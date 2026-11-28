@@ -34,6 +34,7 @@ from orchestrator.control_plane_auth import (
     redact_runtime_payload,
 )
 from orchestrator.control_plane_asgi import ControlPlaneAuthMiddleware
+from perpetua_tools import local_model_gate
 
 from orchestrator import autoresearch_bridge
 from orchestrator import __version__ as _ORCHESTRATOR_VERSION
@@ -492,7 +493,8 @@ async def _probe_glm_cloud_candidate(model: Any) -> tuple[bool, str]:
         "options": {"num_predict": 1},
     }
     async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(f"{base_url}/api/generate", json=payload)
+        async with local_model_gate.local_slot_async("ollama", model.name, base_url):
+            resp = await client.post(f"{base_url}/api/generate", json=payload)
         if resp.status_code == 429:
             return False, "rate-limited"
         if resp.status_code >= 400:

@@ -8,20 +8,27 @@ re-verified live. Loading a policy never authorizes spend.
 
     python3 -m orchestrator.provider_limits verify wandb-inference
     python3 -m orchestrator.provider_limits status wandb-inference
+
+Both the interactive CLI and the portal relay write the attestation through
+``write_attestation_record``; ``revoke_attestation`` withdraws it and audits that. This module is
+the authority the portal relays to: it makes no network call and knows nothing about a browser.
 """
 from __future__ import annotations
 
 import argparse
 import html
+import importlib.util
 import json
 import math
 import os
 import re
 import sys
+import tempfile
 import urllib.request
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Iterator, Mapping
 
 POLICY_DIR = Path(__file__).resolve().parents[1] / "config" / "provider-policies"
 _MAX_PAGE_BYTES = 2_000_000
@@ -33,6 +40,11 @@ _RATE = re.compile(r"\b429\b|too many requests|rate.?limit|concurrency limit", r
 
 
 ATTEST_PHRASE = "I read the provider Billing page myself"
+ATTESTATION_LOCK_SECONDS = 30
+# A trusted check of an authority proof, called with proof_type, raw_proof, device_id and provider. Only an answer
+# of exactly True admits the proof. This repository ships none, so such proofs are refused unless a caller that
+# holds a real verifier passes it in.
+ProofVerifier = Callable[..., bool]
 _AUDIT_FORBIDDEN = {"prompt", "answer", "api_key", "key", "token", "text", "stdout", "stderr", "body"}
 
 
@@ -48,6 +60,46 @@ def state_dir() -> Path:
 def attestation_path(provider: str) -> Path:
     """Return the operator attestation file for the named provider."""
     return state_dir() / "provider-attestations" / f"{provider}.json"
+
+
+def attestation_audit_path(provider: str) -> Path:
+    """Return the append-only audit log of attestation and revocation events for the provider."""
+    return state_dir() / "provider-attestations" / f"{provider}-audit.jsonl"
+
+
+def attestation_lock_path(provider: str) -> Path:
+    """Return the lock that serialises changes to the provider's attestation."""
+    return state_dir() / "provider-attestation-locks" / f"{provider}.lock"
+
+
+def _file_lock_module() -> Any:
+    """The shared lock helper. A source checkout that was never installed keeps it under src/."""
+    try:
+        from perpetua_tools import file_lock
+    except ImportError:
+        source = Path(__file__).resolve().parents[1] / "src" / "perpetua_tools" / "file_lock.py"
+        spec = importlib.util.spec_from_file_location("pt_file_lock", source)
+        if spec is None or spec.loader is None:
+            raise
+        file_lock = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(file_lock)
+    return file_lock
+
+
+@contextmanager
+def _attestation_lock(provider: str) -> Iterator[bool]:
+    """Hold the provider's lock for the block; yields False, holding nothing, if it stayed busy."""
+    locks = _file_lock_module()
+    held = locks.locked(attestation_lock_path(provider), ATTESTATION_LOCK_SECONDS)
+    try:
+        held.__enter__()
+    except locks.LockTimeout:
+        yield False
+        return
+    try:
+        yield True
+    finally:
+        held.__exit__(None, None, None)
 
 
 def spend_dir() -> Path:
@@ -90,6 +142,229 @@ def append_audit(path: Path, row: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "a", encoding="utf-8") as handle:
         handle.write(json.dumps(dict(row), sort_keys=True) + "\n")
+
+
+def _audit_token(value: Any) -> str:
+    """Reduce free text to the audit alphabet (letters, digits, _.-) so no prose is ever stored."""
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value)).strip("._-")[:64] or "unspecified"
+
+
+def _attest_actor(value: Any, field: str) -> str:
+    """The named person for an attestation event; a blank or non-text name is refused."""
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{field} is required")
+    return value.strip()
+
+
+def _as_aware(now: Any) -> datetime:
+    """Return an aware datetime; a naive one is read as UTC, exactly as attestation_status reads it."""
+    if not isinstance(now, datetime):
+        raise ValueError("now must be a datetime")
+    return now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+
+
+def _provider_id(provider: Any) -> str:
+    """A provider id names a file, so it must be a short identifier and never a path."""
+    if not isinstance(provider, str) or _AUDIT_ID.fullmatch(provider) is None:
+        raise ValueError("provider must be a short identifier (letters, digits, _.-; max 64)")
+    return provider
+
+
+def _write_private_record(path: Path, text: str) -> None:
+    """Write the record in one rename, created 0600: a reader sees the old file, the new one, or none."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(tmp, 0o600)
+        os.replace(tmp, path)
+    except BaseException:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def _append_attestation_audit(provider: str, policy_id: Any, outcome: str, actor: str,
+                              reason: Any, when: datetime) -> None:
+    """Append one size-only audit row for an attestation event: identifiers only, never prose."""
+    row: dict[str, Any] = {"ts": when.isoformat(), "provider": provider, "outcome": outcome,
+                           "label": _audit_token(actor), "estimated_usd": 0.0}
+    if policy_id:
+        row["policy_id"] = _audit_token(policy_id)
+    if reason:
+        row["basis"] = _audit_token(reason)
+    append_audit(attestation_audit_path(provider), row)
+
+
+_PROHIBITED_PROOF_SOURCES = {"hold_to_confirm", "dialog_click", "client_checkbox"}
+_VALID_AUTHORITY_PROOF_TYPES = {"webauthn_touch_id", "webauthn_security_key", "operator_attestation"}
+
+
+def _authenticate_proof(verifier: ProofVerifier | None, **proof: str) -> None:
+    """Refuse unless a trusted verifier answers exactly True. Its error text is never repeated."""
+    if verifier is None:
+        raise ValueError(f"refused: no trusted verifier is available for {proof['proof_type']} proofs")
+    try:
+        verified = verifier(**proof)
+    except Exception:
+        verified = False
+    if verified is not True:
+        raise ValueError("refused: the authority proof was not verified")
+
+
+def _verify_human_presence(presence_proof: Any, now: datetime, provider: str = "",
+                           verifier: ProofVerifier | None = None) -> str:
+    """Validate human presence proof, returning the confirmed proof type label.
+
+    Strictly refuses automated attestation. Allowed proofs:
+    1. Interactive terminal typing: exact match of ATTEST_PHRASE on an interactive terminal (_is_interactive()).
+    2. AuthorityProof mapping: valid proof_type ('webauthn_touch_id', 'webauthn_security_key',
+       'operator_attestation'), non-empty raw_proof and device_id, unexpired expires_at, and a trusted
+       ``verifier`` that accepts raw_proof for that device and provider. Without a verifier it is refused.
+
+    Prohibited sources ('hold_to_confirm', 'dialog_click', 'client_checkbox') and missing or
+    non-interactive proofs are strictly refused.
+    """
+    if presence_proof is None or presence_proof == "":
+        raise ValueError("refused: human presence proof required; automated attestation is refused")
+
+    if isinstance(presence_proof, str):
+        if not _is_interactive():
+            raise ValueError("refused: interactive confirmation phrase requires an active interactive terminal")
+        if presence_proof != ATTEST_PHRASE:
+            raise ValueError("refused: the typed confirmation phrase did not match")
+        return "interactive_terminal"
+
+    if isinstance(presence_proof, Mapping):
+        ptype = presence_proof.get("proof_type") or presence_proof.get("proofType")
+        if not ptype or not isinstance(ptype, str):
+            raise ValueError("refused: presence proof missing proof_type")
+        if ptype in _PROHIBITED_PROOF_SOURCES:
+            raise ValueError(f"refused: {ptype} is prohibited as authority proof")
+        if ptype in ("interactive_phrase", "interactive_terminal"):
+            if not _is_interactive():
+                raise ValueError("refused: interactive confirmation phrase requires an active interactive terminal")
+            phrase = presence_proof.get("phrase")
+            if phrase != ATTEST_PHRASE:
+                raise ValueError("refused: the typed confirmation phrase did not match")
+            return "interactive_terminal"
+        if ptype in _VALID_AUTHORITY_PROOF_TYPES:
+            raw = presence_proof.get("raw_proof") or presence_proof.get("rawProof")
+            dev = presence_proof.get("device_id") or presence_proof.get("deviceId")
+            if not (isinstance(raw, str) and raw.strip()):
+                raise ValueError("refused: authority proof requires non-empty raw_proof")
+            if not (isinstance(dev, str) and dev.strip()):
+                raise ValueError("refused: authority proof requires non-empty device_id")
+            exp = presence_proof.get("expires_at") or presence_proof.get("expiresAt")
+            if exp:
+                try:
+                    exp_dt = datetime.fromisoformat(str(exp))
+                    exp_dt = exp_dt.replace(tzinfo=timezone.utc) if exp_dt.tzinfo is None else exp_dt.astimezone(timezone.utc)
+                    if exp_dt < now.astimezone(timezone.utc):
+                        raise ValueError("refused: authority proof has expired")
+                except ValueError as exc:
+                    if "expired" in str(exc):
+                        raise
+                    raise ValueError("refused: invalid expires_at in authority proof") from exc
+            _authenticate_proof(verifier, proof_type=ptype, raw_proof=raw, device_id=dev, provider=provider)
+            return ptype
+        raise ValueError(f"refused: unsupported presence proof type '{ptype}'")
+
+    raise ValueError("refused: invalid presence proof structure")
+
+
+def write_attestation_record(provider: str, attested_by: str, facts: Mapping[str, Any],
+                             now: datetime, presence_proof: Mapping[str, Any] | str, *,
+                             verify_proof: ProofVerifier | None = None) -> Path:
+    """Write the operator attestation for ``provider``, audit it, and return the record path.
+
+    The one authority behind both the interactive CLI and a portal relay. It requires verified
+    proof of human presence (interactive terminal confirmation, or an AuthorityProof that ``verify_proof``
+    accepts); automated attestation without presence proof is strictly refused. Refuses unless the provider has a valid
+    policy, the attestor is named, and every fact that policy requires is exactly ``True``; an unknown
+    fact is refused too, so a caller cannot attest more than the policy asks. The record keeps the schema
+    the CLI always wrote, is created 0600 through one rename (no reader and no crash ever sees a partial
+    file), and is followed by one audit row.
+    """
+    when = _as_aware(now)
+    policy = load_policy(provider)
+    name = _provider_id(policy["provider"])
+    _verify_human_presence(presence_proof, when, provider=name, verifier=verify_proof)
+    who = _attest_actor(attested_by, "attested_by")
+    if not isinstance(facts, Mapping):
+        raise ValueError("facts must map the policy's attestation fields to True")
+    required = list(policy["operator_attestation"]["fields"])
+    refused = [f"{field} must be true" for field in required if facts.get(field) is not True]
+    refused += [f"{field} is not a policy fact" for field in sorted(set(facts) - set(required))]
+    if refused:
+        raise ValueError("refused: " + "; ".join(refused))
+    record: dict[str, Any] = {"provider": name, "attested_at": when.isoformat(), "attested_by": who}
+    record.update(dict.fromkeys(required, True))
+    with _attestation_lock(name) as held:
+        if not held:
+            raise ValueError("refused: another attestation change is in progress; nothing changed")
+        return _install_record(name, policy, record, who, when)
+
+
+def _install_record(name: str, policy: Mapping[str, Any], record: Mapping[str, Any], who: str,
+                    when: datetime) -> Path:
+    """Write the record and its audit row, restoring the previous record if the audit fails.
+
+    The caller holds the provider's lock, so nothing can revoke or replace the record between the read of the
+    previous bytes and the rollback.
+    """
+    path = attestation_path(name)
+    prev_bytes: bytes | None = None
+    try:
+        prev_bytes = path.read_bytes()
+    except FileNotFoundError:
+        prev_bytes = None
+
+    _write_private_record(path, json.dumps(record, indent=2) + "\n")
+    try:
+        _append_attestation_audit(name, policy.get("policy_id"), "attestation-written", who, "", when)
+    except BaseException:
+        if prev_bytes is None:
+            path.unlink(missing_ok=True)
+        else:
+            try:
+                _write_private_record(path, prev_bytes.decode("utf-8"))
+            except BaseException:
+                path.unlink(missing_ok=True)
+        raise
+    return path
+
+
+def revoke_attestation(provider: str, revoked_by: str, reason: str, now: datetime) -> bool:
+    """Remove ``provider``'s attestation, audit it, and leave attestation_status reporting missing.
+
+    Revoking never loads the policy, so authority can always be withdrawn, even for a provider whose
+    policy changed or was deleted. Removing a record that is not there is a clean no-op and is
+    audited as ``attestation-revoke-missing``. Returns True when a record was removed. If audit
+    recording fails, revocation remains fail-closed (unlinked) and the error is re-raised.
+    """
+    name = _provider_id(provider)
+    who = _attest_actor(revoked_by, "revoked_by")
+    when = _as_aware(now)
+
+    def remove() -> bool:
+        try:
+            attestation_path(name).unlink()
+            removed = True
+        except FileNotFoundError:
+            removed = False
+        outcome = "attestation-revoked" if removed else "attestation-revoke-missing"
+        _append_attestation_audit(name, None, outcome, who, reason, when)
+        return removed
+
+    with _attestation_lock(name) as held:
+        removed = remove()  # withdrawing authority is never blocked, lock or no lock
+    if not held:
+        raise RuntimeError("revoked while another change held the record; check its status and revoke again "
+                           "if it is back")
+    return removed
 
 
 def _finite_positive(value: Any) -> bool:
@@ -285,7 +560,7 @@ def _is_interactive() -> bool:
 
 def _attest(args: argparse.Namespace) -> int:
     """Require an interactive confirmation before writing an operator attestation."""
-    policy = load_policy(args.provider)
+    load_policy(args.provider)  # refuse a bad policy before asking anyone anything
     problems = []
     for flag in ("plan_free", "payg_inactive", "allowance_remaining"):
         if not getattr(args, flag):
@@ -302,14 +577,11 @@ def _attest(args: argparse.Namespace) -> int:
     if typed != ATTEST_PHRASE:
         print("refused: the typed confirmation did not match", file=sys.stderr)
         return 2
-    record = {
-        "provider": policy["provider"], "attested_at": datetime.now(timezone.utc).isoformat(),
-        "attested_by": args.by.strip(), "plan_is_free": True, "payg_inactive": True, "allowance_remaining": True,
-    }
-    path = attestation_path(policy["provider"])
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
-    os.chmod(path, 0o600)
+    facts = {"plan_is_free": args.plan_free, "payg_inactive": args.payg_inactive,
+             "allowance_remaining": args.allowance_remaining}
+    # the argument as given: a provider id, or the path of the policy file that was just loaded
+    path = write_attestation_record(args.provider, args.by, facts, datetime.now(timezone.utc),
+                                   presence_proof=typed)
     print(f"attestation written: {path}")
     return 0
 

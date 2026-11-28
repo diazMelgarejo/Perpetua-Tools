@@ -3,6 +3,7 @@
 import re
 from pathlib import Path
 
+import pytest
 import yaml
 
 from orchestrator.gate import load_frugality_tier_by_name
@@ -16,6 +17,12 @@ from orchestrator.policy_stacks import (
     load_stacks,
     select_next_candidate,
 )
+
+
+@pytest.fixture(autouse=True)
+def _no_live_probes(monkeypatch):
+    """These are offline tests: never sweep the subnet or probe a model endpoint."""
+    monkeypatch.setenv("PT_DISABLE_LIVE_MODEL_PROBES", "1")
 
 
 def test_stacks_do_not_copy_the_candidate_list():

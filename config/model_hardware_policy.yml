@@ -6,6 +6,9 @@
 #   them anywhere else = OOM, missing CUDA kernel, or "double barrel" GPU damage
 #   (when Mac LM Studio mirror proxies the model AND Win dispatches it concurrently).
 #
+# ONE BARREL (2026-11-28) extends double barrel: a host holds one local model at a time, whatever the
+# engine; loads need a person's approval. See src/perpetua_tools/local-model-gate.json and orama-system doc 17.
+#
 # mac_only:     models that physically run ONLY on Mac/Linux Ollama (Apple Silicon
 #   MLX quantizations, Ollama-native ids with no GGUF/CUDA equivalent on Win).
 #

@@ -1,0 +1,52 @@
+{
+  "id": "72bfdca82dd4",
+  "key": "manual_72bfdc",
+  "name": "manual_72bfdc",
+  "claim": "A ruling about a model applies to the exact model id it names. Before extending it to a similarly named model, quote both ids and ask.",
+  "conditions": [
+    "about",
+    "applies",
+    "ask",
+    "before",
+    "both",
+    "exact",
+    "extending",
+    "ids",
+    "model",
+    "named",
+    "names",
+    "quote",
+    "ruling",
+    "similarly"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:43.661610+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:43.661610+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:43.661610+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:43.827330+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "A ruling on a retired Mac quantisation was blurred with a different Windows model that shared the quantisation suffix.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:43.661610+00:00"
+      ],
+      "lessons_sha": "ca0d4fecf904"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:43.827320+00:00",
+  "reviewer": "claude-code",
+  "rationale": "A ruling on a retired Mac quantisation was blurred with a different Windows model that shared the quantisation suffix.",
+  "supersedes": null
+}

@@ -1,0 +1,58 @@
+{
+  "id": "253c509bd443",
+  "key": "manual_253c50",
+  "name": "manual_253c50",
+  "claim": "To assert on what a child process writes to stderr, capture file descriptors (pytest capfd). Under capsys the child's output is never captured, so an assertion that depends on its absence cannot fail.",
+  "conditions": [
+    "absence",
+    "assert",
+    "assertion",
+    "cannot",
+    "capfd",
+    "capsys",
+    "capture",
+    "captured",
+    "child",
+    "depends",
+    "descriptors",
+    "fail",
+    "file",
+    "never",
+    "output",
+    "process",
+    "pytest",
+    "stderr",
+    "under",
+    "writes"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:08.610273+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:08.610273+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:08.610273+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:08.730894+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "orama-system f4074f5b fixed an arrival-timeout assertion in a launcher drain test that could not fail.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:08.610273+00:00"
+      ],
+      "lessons_sha": "04c5407b58a8"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:08.730886+00:00",
+  "reviewer": "claude-code",
+  "rationale": "orama-system f4074f5b fixed an arrival-timeout assertion in a launcher drain test that could not fail.",
+  "supersedes": null
+}

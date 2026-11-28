@@ -1,0 +1,61 @@
+{
+  "id": "0f5406509d11",
+  "key": "manual_0f5406",
+  "name": "manual_0f5406",
+  "claim": "A guard in front of a service must act only on the endpoint the caller named. A request aimed at any other local port, such as a fake server in a test, must be refused, never served by the real engine.",
+  "conditions": [
+    "act",
+    "aimed",
+    "any",
+    "caller",
+    "endpoint",
+    "engine",
+    "fake",
+    "front",
+    "guard",
+    "local",
+    "named",
+    "never",
+    "only",
+    "other",
+    "port",
+    "real",
+    "refused",
+    "request",
+    "served",
+    "server",
+    "service",
+    "such",
+    "test"
+  ],
+  "evidence_ids": [
+    "2026-11-28T04:28:35.212815+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T04:28:35.212815+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T04:28:35.212815+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T04:28:35.379294+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "The gate treated every local address as its configured engine, so a test pointing at a dead port still caused a load on the real one.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T04:28:35.212815+00:00"
+      ],
+      "lessons_sha": "d7a5880f83d5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T04:28:35.379282+00:00",
+  "reviewer": "claude-code",
+  "rationale": "The gate treated every local address as its configured engine, so a test pointing at a dead port still caused a load on the real one.",
+  "supersedes": null
+}

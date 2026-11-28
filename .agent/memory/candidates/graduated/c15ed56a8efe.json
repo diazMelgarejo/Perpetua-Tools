@@ -1,0 +1,68 @@
+{
+  "id": "c15ed56a8efe",
+  "key": "manual_c15ed5",
+  "name": "manual_c15ed5",
+  "claim": "Operator rule for the shared Mac: run strictly one local LLM or inference model at a time, embeddings included and across all engines. After an unexplained freeze, load no model and run no startup script that warms one until the cause is known; diagnose from reports and logs.",
+  "conditions": [
+    "across",
+    "after",
+    "all",
+    "cause",
+    "diagnose",
+    "embeddings",
+    "engines",
+    "freeze",
+    "included",
+    "inference",
+    "known",
+    "llm",
+    "load",
+    "local",
+    "logs",
+    "mac",
+    "model",
+    "one",
+    "operator",
+    "reports",
+    "rule",
+    "run",
+    "script",
+    "shared",
+    "startup",
+    "strictly",
+    "time",
+    "unexplained",
+    "until",
+    "warms"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:42.401674+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:42.401674+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:42.401674+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:42.578624+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "Operator ruling after the freeze that followed a model load. It tightens the earlier rule against running two engines under concurrent load.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:42.401674+00:00"
+      ],
+      "lessons_sha": "b0398a08e0a2"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:42.578606+00:00",
+  "reviewer": "claude-code",
+  "rationale": "Operator ruling after the freeze that followed a model load. It tightens the earlier rule against running two engines under concurrent load.",
+  "supersedes": null
+}

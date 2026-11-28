@@ -1,0 +1,44 @@
+{
+  "id": "f4f9f38c1880",
+  "key": "manual_f4f9f3",
+  "name": "manual_f4f9f3",
+  "claim": "The one-local-model gate is enforced only on macOS; on Windows it reports not enforced. Until a separate piece of work gives Windows the same protection, treat every Windows model load as manual: check what Ollama and LM Studio already hold before loading, and before running tests that can reach an engine.",
+  "conditions": [
+    "gate",
+    "lm-studio",
+    "local-model",
+    "ollama",
+    "one-barrel",
+    "windows"
+  ],
+  "evidence_ids": [
+    "2026-11-28T14:32:33.529312+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T14:32:33.529312+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T14:32:33.529312+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T14:32:33.653560+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-28: the gate config enforces on darwin only. The Windows start-up sets Ollama one-model limits but asks for no approval and does not stop LM Studio loading a model alongside. Follow-up work, not part of the current drafts: Windows probes for loaded models and memory, a human approval step, and one slot across both engines.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T14:32:33.529312+00:00"
+      ],
+      "lessons_sha": "d57e29c53456"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T14:32:33.653547+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-28: the gate config enforces on darwin only. The Windows start-up sets Ollama one-model limits but asks for no approval and does not stop LM Studio loading a model alongside. Follow-up work, not part of the current drafts: Windows probes for loaded models and memory, a human approval step, and one slot across both engines.",
+  "supersedes": null
+}

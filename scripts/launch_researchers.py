@@ -43,6 +43,7 @@ import httpx  # noqa: E402
 
 from orchestrator.agent_tracker import AgentTracker  # noqa: E402
 from orchestrator.control_plane_auth import auth_headers  # noqa: E402
+from perpetua_tools import local_model_gate  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -127,10 +128,11 @@ def _append_event(
 
 async def _ollama_chat(endpoint: str, model: str, prompt: str) -> str:
     url = f"{endpoint.rstrip('/')}/api/generate"
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-        r = await client.post(url, json={"model": model, "prompt": prompt, "stream": False})
-        r.raise_for_status()
-        return r.json().get("response", "").strip()
+    async with local_model_gate.local_slot_async("ollama", model, url):
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+            r = await client.post(url, json={"model": model, "prompt": prompt, "stream": False})
+            r.raise_for_status()
+            return r.json().get("response", "").strip()
 
 
 async def _lmstudio_chat(endpoint: str, model: str, prompt: str) -> str:
@@ -143,10 +145,11 @@ async def _lmstudio_chat(endpoint: str, model: str, prompt: str) -> str:
         "max_tokens": 256,
         "stream":     False,
     }
-    async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
-        r = await client.post(url, json=payload, headers=headers)
-        r.raise_for_status()
-        return r.json()["choices"][0]["message"]["content"].strip()
+    async with local_model_gate.local_slot_async("lm-studio", model, url):
+        async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
+            r = await client.post(url, json=payload, headers=headers)
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"].strip()
 
 
 # ── crash recovery ────────────────────────────────────────────────────────────

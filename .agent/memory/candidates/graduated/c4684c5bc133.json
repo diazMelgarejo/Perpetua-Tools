@@ -1,0 +1,62 @@
+{
+  "id": "c4684c5bc133",
+  "key": "manual_c4684c",
+  "name": "manual_c4684c",
+  "claim": "Never report test isolation that was not verified path by path: every test directory, child processes, and each environment variable the code actually reads. Check the engine's loaded-model list and request log after each run.",
+  "conditions": [
+    "actually",
+    "after",
+    "check",
+    "child",
+    "code",
+    "directory",
+    "each",
+    "engine",
+    "environment",
+    "every",
+    "isolation",
+    "list",
+    "loaded-model",
+    "log",
+    "never",
+    "path",
+    "processes",
+    "reads",
+    "report",
+    "request",
+    "run",
+    "test",
+    "variable",
+    "verified"
+  ],
+  "evidence_ids": [
+    "2026-11-28T04:28:34.743499+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T04:28:34.743499+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T04:28:34.743499+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T04:28:34.906185+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "2026-11-28 local 12:18:50: a run reported as engine-blocked loaded bge-m3 again three seconds after it started. Its first file sat outside the guarded test directory and starts a child process. The cause was found in the engine log, not by the run.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T04:28:34.743499+00:00"
+      ],
+      "lessons_sha": "47b586c856b6"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T04:28:34.906174+00:00",
+  "reviewer": "claude-code",
+  "rationale": "2026-11-28 local 12:18:50: a run reported as engine-blocked loaded bge-m3 again three seconds after it started. Its first file sat outside the guarded test directory and starts a child process. The cause was found in the engine log, not by the run.",
+  "supersedes": null
+}

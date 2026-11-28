@@ -1,0 +1,64 @@
+{
+  "id": "f12befe73718",
+  "key": "manual_f12bef",
+  "name": "manual_f12bef",
+  "claim": "Code that can fall back to a live subnet sweep must reuse the outcome for a short window while still reading faster sources first, because per-model host resolution multiplies the sweep. Tests that are not about discovery must disable live probes.",
+  "conditions": [
+    "about",
+    "back",
+    "because",
+    "code",
+    "disable",
+    "discovery",
+    "fall",
+    "faster",
+    "first",
+    "host",
+    "live",
+    "multiplies",
+    "outcome",
+    "per-model",
+    "probes",
+    "reading",
+    "resolution",
+    "reuse",
+    "short",
+    "sources",
+    "still",
+    "subnet",
+    "sweep",
+    "tests",
+    "while",
+    "window"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:44.149325+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:44.149325+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:44.149325+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:44.327182+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "One route_task call asked for the Windows host 60 times at about 20 seconds per sweep, which stalled the policy-stack tests whenever no override, fresh snapshot or environment endpoint existed. Counted with discovery replaced by a counter.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:44.149325+00:00"
+      ],
+      "lessons_sha": "293ab7bd0d7a"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:44.327170+00:00",
+  "reviewer": "claude-code",
+  "rationale": "One route_task call asked for the Windows host 60 times at about 20 seconds per sweep, which stalled the policy-stack tests whenever no override, fresh snapshot or environment endpoint existed. Counted with discovery replaced by a counter.",
+  "supersedes": null
+}

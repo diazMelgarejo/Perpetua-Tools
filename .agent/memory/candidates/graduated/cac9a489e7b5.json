@@ -1,0 +1,69 @@
+{
+  "id": "cac9a489e7b5",
+  "key": "manual_cac9a4",
+  "name": "manual_cac9a4",
+  "claim": "An idle-unload timeout only limits how long a model stays in memory; it does not stop the load or prevent memory exhaustion. Before calling a machine safe from model loads, check every automatic loader: startup and bootstrap scripts, gateway fallback chains, heartbeat models and login items.",
+  "conditions": [
+    "automatic",
+    "before",
+    "bootstrap",
+    "calling",
+    "chains",
+    "check",
+    "every",
+    "exhaustion",
+    "fallback",
+    "gateway",
+    "heartbeat",
+    "idle-unload",
+    "items",
+    "limits",
+    "load",
+    "loader",
+    "loads",
+    "login",
+    "long",
+    "machine",
+    "memory",
+    "model",
+    "models",
+    "only",
+    "prevent",
+    "safe",
+    "scripts",
+    "startup",
+    "stays",
+    "stop",
+    "timeout"
+  ],
+  "evidence_ids": [
+    "2026-11-28T03:43:42.658065+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T03:43:42.658065+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T03:43:42.658065+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T03:43:42.836902+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "A five-minute keep-alive was set in draft branches while the main branch startup script pinned the model indefinitely and the running gateway listed the same local model as a fallback and heartbeat.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T03:43:42.658065+00:00"
+      ],
+      "lessons_sha": "f1e10e29f65f"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T03:43:42.836886+00:00",
+  "reviewer": "claude-code",
+  "rationale": "A five-minute keep-alive was set in draft branches while the main branch startup script pinned the model indefinitely and the running gateway listed the same local model as a fallback and heartbeat.",
+  "supersedes": null
+}

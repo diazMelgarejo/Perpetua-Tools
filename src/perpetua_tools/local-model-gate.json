@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "updated": "2026-11-28",
+  "description": "One barrel: at most one local model on a host, across every engine. Extends the double-barrel rule. Enforced by perpetua_tools.local_model_gate; loosening any value here makes the gate refuse everything.",
+  "max_loaded_models": 1,
+  "never_evict": true,
+  "enforce_on": ["darwin"],
+  "idle_unload": "5m",
+  "conflict": {
+    "wait_seconds": 5,
+    "swap": "human_confirmed"
+  },
+  "approval": {
+    "required": true,
+    "max_minutes": 720,
+    "file": "~/.openclaw/state/local-model-approvals.json"
+  },
+  "lock_file": "~/.openclaw/state/local-model-gate.lock",
+  "lock_timeout_s": 600,
+  "fit": {
+    "size_factor": 1.15,
+    "reserve_gib": 2,
+    "max_idle_gpu_allocated_gib": 6
+  },
+  "engines": {
+    "ollama": {
+      "url": "http://localhost:11434",
+      "automatic_loads": true,
+      "server_env": {
+        "OLLAMA_MAX_LOADED_MODELS": "1",
+        "OLLAMA_NUM_PARALLEL": "1",
+        "OLLAMA_KEEP_ALIVE": "5m"
+      }
+    },
+    "lm-studio": {
+      "url": "http://localhost:1234",
+      "automatic_loads": false,
+      "required_settings": {
+        "developer.unloadPreviousJITModelOnLoad": true
+      }
+    }
+  }
+}

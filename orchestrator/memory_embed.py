@@ -21,6 +21,8 @@ from typing import Optional
 
 import httpx
 
+from perpetua_tools import local_model_gate
+
 
 _OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 _EMBED_MODEL = os.environ.get("EMBED_MODEL", "bge-m3")
@@ -36,6 +38,9 @@ def probe_embed_dim() -> int:
       1. EMBED_DIM env var (explicit override, testing / alternative models)
       2. Live Ollama probe via /api/embeddings with a dummy string
       3. Fallback 1024 (bge-m3 default — keeps system functional when Ollama is down)
+
+    Raises LocalModelRefused, and caches nothing, when the one-model gate declines: a refusal says nothing about
+    the size, so the next call probes again. It never waits for the gate, because it may run on an event loop.
     """
     global _PROBED_DIM
     if _PROBED_DIM is not None:
@@ -47,15 +52,18 @@ def probe_embed_dim() -> int:
         return _PROBED_DIM
 
     try:
-        response = httpx.post(
-            f"{_OLLAMA_URL}/api/embeddings",
-            json={"model": _EMBED_MODEL, "prompt": "probe"},
-            timeout=5.0,
-        )
+        with local_model_gate.local_slot("ollama", _EMBED_MODEL, _OLLAMA_URL, wait=False):
+            response = httpx.post(
+                f"{_OLLAMA_URL}/api/embeddings",
+                json={"model": _EMBED_MODEL, "prompt": "probe"},
+                timeout=5.0,
+            )
         response.raise_for_status()
         data = response.json()
         _PROBED_DIM = len(data["embedding"])
         return _PROBED_DIM
+    except local_model_gate.LocalModelRefused:
+        raise
     except Exception:
         _PROBED_DIM = 1024  # bge-m3 default
         return _PROBED_DIM
@@ -66,14 +74,17 @@ async def get_embedding(text: str) -> list[float]:
 
     Uses httpx async client (already a hard PT dependency).
     Raises on network/model error — callers should catch and mark embed_status='failed'.
+    Raises LocalModelRefused when the one-model gate declines; that is not a failure, so retry later.
     """
     model = os.environ.get("EMBED_MODEL", _EMBED_MODEL)
     base_url = os.environ.get("OLLAMA_BASE_URL", _OLLAMA_URL)
 
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.post(
-            f"{base_url}/api/embeddings",
-            json={"model": model, "prompt": text},
-        )
-        resp.raise_for_status()
-        return resp.json()["embedding"]
+    # Refused or busy raises, and callers carry on without a vector.
+    async with local_model_gate.local_slot_async("ollama", model, base_url):
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                f"{base_url}/api/embeddings",
+                json={"model": model, "prompt": text},
+            )
+            resp.raise_for_status()
+            return resp.json()["embedding"]

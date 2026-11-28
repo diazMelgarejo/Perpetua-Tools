@@ -1,0 +1,72 @@
+{
+  "id": "85f2961c28f4",
+  "key": "manual_85f296",
+  "name": "manual_85f296",
+  "claim": "Before running any test that can reach model code, including a first run that is expected to fail, make the engines unreachable and prove it: a kernel sandbox for the agent's own runs, and an audit hook above every test directory that refuses the engine ports. A failing test executes the old, unguarded code for real.",
+  "conditions": [
+    "above",
+    "agent",
+    "any",
+    "audit",
+    "before",
+    "code",
+    "directory",
+    "engine",
+    "engines",
+    "every",
+    "executes",
+    "expected",
+    "fail",
+    "failing",
+    "first",
+    "hook",
+    "including",
+    "kernel",
+    "make",
+    "model",
+    "old",
+    "own",
+    "ports",
+    "prove",
+    "reach",
+    "real",
+    "refuses",
+    "run",
+    "running",
+    "runs",
+    "sandbox",
+    "test",
+    "unguarded",
+    "unreachable"
+  ],
+  "evidence_ids": [
+    "2026-11-28T04:28:34.490000+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T04:28:34.490000+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T04:28:34.490000+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T04:28:34.658110+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "2026-11-28 local 12:17:19: a first-run test executed memory code not yet routed through the gate and loaded bge-m3 with no person's approval. The runner had set only one of the endpoint variables the code could read.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T04:28:34.490000+00:00"
+      ],
+      "lessons_sha": "dbc2a2f10bf9"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T04:28:34.658099+00:00",
+  "reviewer": "claude-code",
+  "rationale": "2026-11-28 local 12:17:19: a first-run test executed memory code not yet routed through the gate and loaded bge-m3 with no person's approval. The runner had set only one of the endpoint variables the code could read.",
+  "supersedes": null
+}

@@ -1,0 +1,42 @@
+{
+  "id": "8f010088181a",
+  "key": "manual_8f0100",
+  "name": "manual_8f0100",
+  "claim": "Use temporary reversible redirects only after qualifying the HTML route matrix on both hosts; keep API and WebSocket contracts outside page consolidation.",
+  "conditions": [
+    "portal",
+    "redirect",
+    "rollback",
+    "route-parity"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:48.721450+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:48.721450+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:48.721450+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:48.872592+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "Orama #534 did not qualify or activate the route changes. Mac and Windows have distinct legacy entry points and consumers. Verify status, auth, deep links and rollback before retiring either view.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:48.721450+00:00"
+      ],
+      "lessons_sha": "e38bf72961a5"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:48.872583+00:00",
+  "reviewer": "learn.py",
+  "rationale": "Orama #534 did not qualify or activate the route changes. Mac and Windows have distinct legacy entry points and consumers. Verify status, auth, deep links and rollback before retiring either view.",
+  "supersedes": null
+}

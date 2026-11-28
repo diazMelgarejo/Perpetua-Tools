@@ -1,0 +1,65 @@
+{
+  "id": "873f1e2a912a",
+  "key": "manual_873f1e",
+  "name": "manual_873f1e",
+  "claim": "In an append-only memory merge, resolve LESSONS.md to one clean side before running the renderer, then confirm lessons.jsonl is byte-identical after rendering: the renderer imports bullets found below its sentinel that have no matching row, so leftover merge text can enter the ledger.",
+  "conditions": [
+    "after",
+    "append-only",
+    "before",
+    "below",
+    "bullets",
+    "byte-identical",
+    "clean",
+    "confirm",
+    "enter",
+    "found",
+    "imports",
+    "jsonl",
+    "ledger",
+    "leftover",
+    "lessons",
+    "matching",
+    "memory",
+    "merge",
+    "one",
+    "renderer",
+    "rendering",
+    "resolve",
+    "row",
+    "running",
+    "sentinel",
+    "side",
+    "text"
+  ],
+  "evidence_ids": [
+    "2026-11-27T21:57:09.529994+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T21:57:09.529994+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T21:57:09.529994+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T21:57:09.654898+00:00",
+      "action": "graduated",
+      "reviewer": "claude-code",
+      "notes": "migrate_legacy_bullets in .agent/memory/render_lessons.py appends rows for unknown bullets. Applied when merging 4bcbf5d4 into the portal attestation draft; both ledgers kept every line.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T21:57:09.529994+00:00"
+      ],
+      "lessons_sha": "7a0f66a37fc3"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T21:57:09.654889+00:00",
+  "reviewer": "claude-code",
+  "rationale": "migrate_legacy_bullets in .agent/memory/render_lessons.py appends rows for unknown bullets. Applied when merging 4bcbf5d4 into the portal attestation draft; both ledgers kept every line.",
+  "supersedes": null
+}

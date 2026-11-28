@@ -1,0 +1,42 @@
+{
+  "id": "49c2d0655b71",
+  "key": "manual_49c2d0",
+  "name": "manual_49c2d0",
+  "claim": "Make web CI run the standard TypeScript-aware build and lint as well as tests; a Vite-only bundle or passing unit tests does not establish type or lint correctness.",
+  "conditions": [
+    "ci",
+    "frontend",
+    "typescript",
+    "vite"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:47.567053+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:47.567053+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:47.567053+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:47.730973+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "The Orama #534 local follow-up found three TypeScript failures and mixed React Fast Refresh exports despite 248 passing tests. Type checks, lint, and all 248 tests passed together after repair.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:47.567053+00:00"
+      ],
+      "lessons_sha": "8b0495b2cd1e"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:47.730952+00:00",
+  "reviewer": "learn.py",
+  "rationale": "The Orama #534 local follow-up found three TypeScript failures and mixed React Fast Refresh exports despite 248 passing tests. Type checks, lint, and all 248 tests passed together after repair.",
+  "supersedes": null
+}

@@ -45,6 +45,10 @@ of open work across both repos"):
   PeerObservation, confidence scoring, heartbeat/liveness, replay/dedup,
   witness quorum, threat-model premise checks, or PR #203/#205 review history.
 
+**Windows RTX 5080 pending actions (2026-11-28):**
+[`2026-11-28-windows-rtx5080-pending-actions.md`](2026-11-28-windows-rtx5080-pending-actions.md)
+— DiffusionGemma and runtime-support follow-ups; load nothing without the operator's go.
+
 ## Contents
 
 | Doc | Topic | Historical / current status |

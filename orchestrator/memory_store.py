@@ -156,15 +156,21 @@ def get_lance_store(
       2. EMBED_DIM environment variable
       3. probe_embed_dim() — live Ollama probe
       4. 1024 — bge-m3 default fallback
+
+    A gate refusal from the probe propagates and creates no store: a refusal is not a size.
     """
     if dim is None:
         env_dim = os.environ.get("EMBED_DIM")
         if env_dim:
             dim = int(env_dim)
         else:
+            from perpetua_tools import local_model_gate  # noqa: PLC0415
+
             try:
                 from orchestrator.memory_embed import probe_embed_dim  # noqa: PLC0415
                 dim = probe_embed_dim()
+            except local_model_gate.LocalModelRefused:
+                raise
             except Exception:
                 dim = 1024
 

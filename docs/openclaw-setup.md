@@ -47,7 +47,7 @@ openclaw channels login --channel whatsapp
 
 Scan the displayed QR code with WhatsApp → Linked Devices → Link a Device.
 
-The bot will connect as your personal WhatsApp account. Your number (`+14159419166`) is set as the
+The bot will connect as your personal WhatsApp account. Your number is set as the
 command owner.
 
 **Why "whatsapp notification failed" before**: the plugin was in the `plugins.allow` list but the
@@ -55,7 +55,7 @@ Baileys runtime hadn't loaded yet because the plugin wasn't in the allowlist. Fi
 added `whatsapp` to `plugins.allow`, added `channels.whatsapp` config, Baileys auto-installs on
 gateway start.
 
-**Format**: `whatsapp:+14159419166` (with `+`, E.164 format). The `+` IS required.
+**Format**: `whatsapp:<YOUR_NUMBER_E164>` (with `+`, E.164 format). The `+` IS required.
 
 ---
 
@@ -66,7 +66,7 @@ Controls who can run privileged commands (`/config`, `/diagnostics`, exec approv
 ```bash
 # Current value
 openclaw config get commands.ownerAllowFrom
-# → ["whatsapp:+14159419166"]
+# → ["whatsapp:<YOUR_NUMBER_E164>"]
 
 # To change (example — telegram user ID)
 openclaw config set commands.ownerAllowFrom '["telegram:123456789"]'
@@ -206,6 +206,37 @@ The fresh-install procedure, the staged restore order, the dated provider and se
 credential handling and the backup and recovery process are one card in orama-system:
 `bin/orama-system/references/openclaw-staged-restore-and-recovery.md`. The dated record is
 `.agent/memory/semantic/SESSION_CHRONICLE_2026-11-26_OPENCLAW_SEATS_ENV_AND_STAGED_RESTORE.md`.
+
+### OpenClaw defaults: one source of truth (2026-11-27)
+
+The model chain, the two research seats, the seat tool policy, the env rules and the baseline live in
+`config/openclaw-defaults.json`: names only, never a key value. `perpetua_tools.openclaw_defaults`
+loads and validates it (no Mac LM Studio in any chain, W&B in every chain, human-gated models in no
+default, no secret-looking value), renders the config patches the staged restore applies, and reports
+drift read-only.
+
+Human-gated, for explicit operator choice only: OpenAI Astra and Sol, `gemini-main/gemini-pro-latest`
+and `openrouter/google/gemini-4-argon`. Orama's model rules additionally require an escalation token
+for Gemini Pro, and an escalation token and a budget cap for Argon.
+
+Besides the built-in `google` provider, the `gemini-main` and `gemini-fallback` providers each read
+their own key variable: `OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY` and
+`OPENCLAW_MODELS_PROVIDERS_GEMINI_FALLBACK_APIKEY`.
+
+```bash
+python -m perpetua_tools.openclaw_defaults --validate
+python -m perpetua_tools.openclaw_defaults --render-patch --shape entries  # emits only
+python -m perpetua_tools.openclaw_defaults --check ~/.openclaw/openclaw.json
+python -m perpetua_tools.openclaw_defaults --vendor-copy                   # prints only
+```
+
+Consumers in other repositories read the live file first, then a **stamped vendored copy**. The
+stamp holds the
+source fingerprint, the source date and the copy date. A copy that differs from the live file, is
+older than
+30 days while the live file is unreachable, or was edited by hand is reported loudly at start-up. A
+sync never
+runs by itself: it shows the diff and waits for a human to confirm.
 
 ### Restore in baby steps (after step 5)
 

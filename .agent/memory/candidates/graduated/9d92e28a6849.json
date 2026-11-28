@@ -1,0 +1,42 @@
+{
+  "id": "9d92e28a6849",
+  "key": "manual_9d92e2",
+  "name": "manual_9d92e2",
+  "claim": "Keep operator billing attestation, independent launcher review, installed CLI capabilities, and enforced wire-level budget limits as separate dispatch gates.",
+  "conditions": [
+    "billing",
+    "cline-wandb",
+    "launcher",
+    "spend-limit"
+  ],
+  "evidence_ids": [
+    "2026-11-27T02:59:49.409368+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-27T02:59:49.409368+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-27T02:59:49.409368+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-27T02:59:49.561270+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "In the Portal round a Cline-WandB command was reported to reject the cap flags; the time-limited fallback was not equivalent. Console output and provider usage observed after generation do not prove admission-time enforcement. Do not treat approval as a substitute for verified technical bounds or silently switch providers.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-27T02:59:49.409368+00:00"
+      ],
+      "lessons_sha": "f9462956c2db"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-27T02:59:49.561261+00:00",
+  "reviewer": "learn.py",
+  "rationale": "In the Portal round a Cline-WandB command was reported to reject the cap flags; the time-limited fallback was not equivalent. Console output and provider usage observed after generation do not prove admission-time enforcement. Do not treat approval as a substitute for verified technical bounds or silently switch providers.",
+  "supersedes": null
+}

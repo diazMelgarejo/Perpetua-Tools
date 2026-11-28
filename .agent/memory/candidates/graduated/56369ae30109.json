@@ -1,0 +1,43 @@
+{
+  "id": "56369ae30109",
+  "key": "manual_56369a",
+  "name": "manual_56369a",
+  "claim": "Before moving a scheduled reminder, read the script it runs: a year or one-time guard can make a new calendar date do nothing. Rehearse the script with stand-in tools for the target date, then verify the trigger the scheduler actually loaded.",
+  "conditions": [
+    "certificate",
+    "cron",
+    "launchd",
+    "reminder",
+    "schedule"
+  ],
+  "evidence_ids": [
+    "2026-11-28T06:18:10.111215+00:00"
+  ],
+  "cluster_size": 1,
+  "canonical_salience": 8.0,
+  "staged_at": "2026-11-28T06:18:10.111215+00:00",
+  "status": "accepted",
+  "decisions": [
+    {
+      "ts": "2026-11-28T06:18:10.111215+00:00",
+      "action": "staged",
+      "reviewer": "learn"
+    },
+    {
+      "ts": "2026-11-28T06:18:10.290239+00:00",
+      "action": "graduated",
+      "reviewer": "learn.py",
+      "notes": "2026-11-28: both certificate reminders were calendar jobs whose script exited unless the year was 2026, so moving only the dates to January 2027 would have failed silently.",
+      "provisional": false,
+      "evidence_snapshot": [
+        "2026-11-28T06:18:10.111215+00:00"
+      ],
+      "lessons_sha": "aa2592aa0bde"
+    }
+  ],
+  "rejection_count": 0,
+  "accepted_at": "2026-11-28T06:18:10.290223+00:00",
+  "reviewer": "learn.py",
+  "rationale": "2026-11-28: both certificate reminders were calendar jobs whose script exited unless the year was 2026, so moving only the dates to January 2027 would have failed silently.",
+  "supersedes": null
+}

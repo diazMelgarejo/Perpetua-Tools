@@ -50,6 +50,7 @@ from orchestrator.distance_bucket import KBucketTable
 from orchestrator.equivocation import EquivocationLog
 from orchestrator.reputation import ReputationLedger
 from orchestrator.gate import gate_permits, load_frugality_tier_by_name
+from perpetua_tools import local_model_gate
 try:
     from loguru import logger
 except ImportError:
@@ -321,15 +322,16 @@ async def call_lmstudio(prompt: str, endpoint: str = "", model: str = "") -> Opt
     }
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.post(
-                f"{ep}/v1/chat/completions", json=payload, headers=headers,
-                timeout=aiohttp.ClientTimeout(total=LMS_TIMEOUT),
-            ) as resp:
-                data = await resp.json()
-                choices = data.get("choices", [])
-                if choices:
-                    return choices[0].get("message", {}).get("content")
-                return None
+            async with local_model_gate.local_slot_async("lm-studio", mdl, ep):
+                async with session.post(
+                    f"{ep}/v1/chat/completions", json=payload, headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=LMS_TIMEOUT),
+                ) as resp:
+                    data = await resp.json()
+                    choices = data.get("choices", [])
+                    if choices:
+                        return choices[0].get("message", {}).get("content")
+                    return None
         except Exception as e:
             logger.error(f"LM Studio error ({ep}): {e}")
             return None
@@ -344,9 +346,10 @@ async def call_ollama(prompt: str, model: str, endpoint: str):
     }
     async with aiohttp.ClientSession() as session:
         try:
-            async with session.post(url, json=payload) as resp:
-                data = await resp.json()
-                return data['response']
+            async with local_model_gate.local_slot_async("ollama", model, url):
+                async with session.post(url, json=payload) as resp:
+                    data = await resp.json()
+                    return data['response']
         except Exception as e:
             logger.error(f"Ollama error: {e}")
             return None

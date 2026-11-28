@@ -3,9 +3,11 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 import sqlite3
+import time
 import uuid
 from pathlib import Path
 from typing import Literal, Optional
@@ -43,8 +45,12 @@ def resolve_gossip_db_path(state_dir: Path | str | None = None) -> str:
     return str((root / "perpetua_core.db").resolve())
 
 
+logger = logging.getLogger(__name__)
+
 _pending_embeds: set[asyncio.Task] = set()
 _MAX_PENDING = 500
+_RETRY_BATCH = 20  # events retried after one successful embedding
+_RETRY_MIN_AGE_S = 900  # longer than a first attempt can take, model load included
 
 
 async def cancel_pending_embeddings_for_current_loop() -> None:
@@ -236,7 +242,6 @@ class GossipBus:
             and ``durable_payload`` to ``schedule_embedding()`` only when
             ``inserted`` is ``True``.
         """
-        import time
 
         from orchestrator.memory_governance import classify_and_redact
 
@@ -421,18 +426,67 @@ class GossipBus:
             return []
 
     async def _embed_and_store(self, row_id: int, payload: dict) -> None:
-        """Embed an event and record whether its vector was stored."""
+        """Embed an event. A success also retries a bounded batch of events the gate refused earlier."""
+        if await self._embed_one(row_id, payload) == "embedded":
+            try:
+                await self._retry_pending()
+            except (aiosqlite.Error, sqlite3.Error, OSError) as exc:
+                logger.debug("gossip: pending embeddings were not retried: %s", exc)
+
+    async def _embed_one(self, row_id: int, payload: dict) -> str:
+        """Embed one event, record the outcome and return it."""
+        from perpetua_tools import local_model_gate
+
         try:
             from orchestrator.memory_embed import get_embedding
             from orchestrator.memory_store import get_lance_store
 
             text = json.dumps(payload)
             embedding = await get_embedding(text)
-            store = get_lance_store()
+            store = get_lance_store(dim=len(embedding))  # the vector says its own size: no second probe
             await store.add(row_id=row_id, text=text, embedding=embedding)
-            await self._update_embed_status(row_id, "embedded")
+            status = "embedded"
+        except local_model_gate.LocalModelRefused:
+            status = "pending"  # another model holds the host
         except Exception:
-            await self._update_embed_status(row_id, "failed")
+            status = "failed"
+        await self._update_embed_status(row_id, status)
+        return status
+
+    async def _retry_pending(self) -> None:
+        """Embed up to one batch of older ``pending`` events.
+
+        Runs only after a success, so a gate that keeps refusing causes no retries; the first refusal ends the
+        batch. Each event is claimed before it is embedded, so two processes never take the same one, and a claim
+        whose process died is taken over once it is old. Events newer than the age limit are left to the task
+        that is still embedding them.
+        """
+        now = int(time.time())
+        async with self.connect() as db:
+            cursor = await db.execute(
+                "SELECT id, payload_json, embed_status FROM gossip "
+                "WHERE embed_status != 'embedded' AND ts <= ? AND (embed_status = 'pending' OR "
+                "(embed_status LIKE 'retrying:%' AND CAST(substr(embed_status, 10) AS INTEGER) <= ?)) "
+                "ORDER BY id LIMIT ?",
+                (now - _RETRY_MIN_AGE_S, now - _RETRY_MIN_AGE_S, _RETRY_BATCH),
+            )
+            rows = await cursor.fetchall()
+        for row_id, payload_json, seen in rows:
+            async with self.connect() as db:
+                claim = await db.execute(
+                    "UPDATE gossip SET embed_status = ? WHERE id = ? AND embed_status = ?",
+                    (f"retrying:{int(time.time())}", row_id, seen),
+                )
+                await db.commit()
+            if claim.rowcount != 1:
+                continue  # another process took it
+            try:
+                payload = json.loads(payload_json)
+            except ValueError:
+                await self._update_embed_status(row_id, "failed")  # it can never be embedded
+                continue
+            if await self._embed_one(row_id, payload) == "pending":
+                return
 
     async def _update_embed_status(self, row_id: int, status: str) -> None:
         """Persist the embedding status for one event."""
