@@ -5,27 +5,33 @@ Every test uses fake engines. Nothing here talks to Ollama, LM Studio or the GPU
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import json
+import os
 import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
 
+from perpetua_tools import file_lock
 from perpetua_tools import local_model_gate as gate
 
 ROOT = Path(__file__).resolve().parents[1]
 GIB = 1024**3
+REAL_DEFAULT_GATE = gate.default_gate  # taken before the suite swaps in its idle stand-in
 QWEN = "qwen3.5:9b-mlx"
 EMBED = "bge-m3"
 # Assembled so the tracked-address gate sees no literal.
 LOOPBACK_V4 = ".".join(("127", "0", "0", "1"))
 LOOPBACK_V6 = ":" * 2 + "1"
+JIT_SETTING = "developer.unloadPreviousJITModelOnLoad"
 
 
 @pytest.fixture()
 def config() -> dict:
-    return copy.deepcopy(gate.load_config(ROOT / "config" / "local-model-gate.json"))
+    return copy.deepcopy(gate.load_config())
 
 
 class FakeEngines:
@@ -102,6 +108,18 @@ def test_the_shipped_config_allows_exactly_one_model_and_never_evicts(config: di
         lambda c: c.__setitem__("never_evict", False),
         lambda c: c["engines"]["ollama"]["server_env"].__setitem__("OLLAMA_MAX_LOADED_MODELS", "3"),
         lambda c: c["engines"]["ollama"].__setitem__("url", "http://example.invalid:11434"),
+        lambda c: c["engines"]["lm-studio"].pop("required_settings"),
+        lambda c: c["engines"]["lm-studio"]["required_settings"].__setitem__(JIT_SETTING, False),
+        lambda c: c.__setitem__("lock_timeout_s", "600"),
+        lambda c: c.__setitem__("lock_timeout_s", 0),
+        lambda c: c.pop("idle_unload"),
+        lambda c: c.pop("engines"),
+        lambda c: c.__setitem__("approval", "required"),
+        lambda c: c.__setitem__("enforce_on", "darwin"),
+        lambda c: c["conflict"].__setitem__("wait_seconds", "5"),
+        lambda c: c["fit"].pop("max_idle_gpu_allocated_gib"),
+        lambda c: c["engines"]["ollama"].pop("url"),
+        lambda c: c["engines"].__setitem__("lm-studio", None),
     ],
 )
 def test_a_loosened_config_refuses_everything(config: dict, tmp_path: Path, mutate) -> None:
@@ -111,6 +129,12 @@ def test_a_loosened_config_refuses_everything(config: dict, tmp_path: Path, muta
     with pytest.raises(gate.LocalModelRefused, match="config"):
         make(config, engines, tmp_path).ensure("ollama", QWEN)
     assert engines.loads == []
+
+
+def test_a_missing_lock_file_is_named_as_a_problem(config: dict) -> None:
+    del config["lock_file"]  # checked here because ``make`` supplies a lock file of its own
+
+    assert gate.validate_config(config) == ["lock_file is missing or has the wrong type"]
 
 
 def test_an_empty_host_with_room_loads_the_model_once_and_is_idempotent(config: dict, tmp_path: Path) -> None:
@@ -270,13 +294,17 @@ def test_require_asks_the_gate_only_when_the_request_would_load_here(monkeypatch
     asked: list[tuple[str, str]] = []
 
     class Recorder:
-        def require(self, engine: str, model: str, url: str) -> gate.Decision:
+        @contextmanager
+        def slot(self, engine: str, model: str, url: str, wait: bool = True):
             asked.append((engine, model))
-            return gate.Decision("already_loaded", "")
+            yield gate.Decision("already_loaded", "")
 
     monkeypatch.setattr(gate, "default_gate", lambda: Recorder())
-    gate.require_local_slot("ollama", QWEN, "http://localhost:11434")
-    gate.require_local_slot("lm-studio", "m", "http://192.0.2.7:1234")
+    with gate.local_slot("ollama", QWEN, "http://localhost:11434") as here:
+        pass
+    with gate.local_slot("lm-studio", "m", "http://192.0.2.7:1234") as remote:
+        pass
+    assert here.action == "already_loaded" and remote is None
 
     assert asked == [("ollama", QWEN)]
 
@@ -574,7 +602,8 @@ def test_a_request_for_another_local_endpoint_never_touches_the_managed_engine(
     engines = FakeEngines()
 
     with pytest.raises(gate.LocalModelRefused, match="managed endpoint"):
-        make(config, engines, tmp_path).require("ollama", QWEN, url)
+        with make(config, engines, tmp_path).slot("ollama", QWEN, url):
+            raise AssertionError("no request may be sent")
 
     assert engines.loads == []
 
@@ -583,7 +612,258 @@ def test_the_real_engines_refuse_every_load_and_request_while_a_test_is_running(
     system = gate.SystemEngines(config)
 
     assert system.under_test is True
-    for call in (lambda: system.load("ollama", EMBED, "5m"), lambda: system.unload("ollama", EMBED),
-                 lambda: gate.Gate(config, system).require("ollama", EMBED, "http://localhost:11434")):
+    def request() -> None:
+        with gate.Gate(config, system).slot("ollama", EMBED, "http://localhost:11434"):
+            raise AssertionError("no request may be sent")
+
+    for call in (lambda: system.load("ollama", EMBED, "5m"), lambda: system.unload("ollama", EMBED), request):
         with pytest.raises(gate.LocalModelRefused, match="test"):
             call()
+
+
+# --------------------------------------------------------------- the check stays true until the request is done
+
+ENGINE_URL = "http://localhost:11434"
+
+
+def test_a_swap_waits_while_a_request_for_the_loaded_model_is_in_flight(config: dict, tmp_path: Path) -> None:
+    g, engines, _ = busy_host(config, tmp_path)
+    swapper = make(config, engines, tmp_path)
+    swapped = threading.Thread(target=swapper.swap, args=("ollama", EMBED, lambda held, wanted: True))
+
+    with g.slot("ollama", QWEN, ENGINE_URL) as decision:
+        swapped.start()
+        swapped.join(0.5)
+        assert swapped.is_alive() and engines.unloads == [], "the model must stay while it is being used"
+    swapped.join(5)
+
+    assert decision.action == "already_loaded" and engines.ollama == [EMBED]
+
+
+def test_two_requests_for_the_loaded_model_run_side_by_side(config: dict, tmp_path: Path) -> None:
+    engines = FakeEngines()
+    engines.ollama.append(QWEN)
+    g = make(config, engines, tmp_path)
+
+    with g.slot("ollama", QWEN, ENGINE_URL):
+        with g.slot("ollama", QWEN, ENGINE_URL, wait=False) as second:
+            assert second.action == "already_loaded"
+
+
+def test_a_slot_loads_an_empty_host_and_releases_the_gate_if_the_request_fails(config: dict, tmp_path: Path) -> None:
+    engines = FakeEngines()
+    g = make(config, engines, tmp_path)
+
+    with pytest.raises(RuntimeError, match="request failed"):
+        with g.slot("ollama", QWEN, ENGINE_URL) as decision:
+            assert engines.ollama == [QWEN] and decision.action in ("loaded", "already_loaded")
+            raise RuntimeError("request failed")
+
+    with file_lock.locked(tmp_path / "gate.lock", 0):
+        pass
+    assert engines.loads == [("ollama", QWEN)]
+
+
+def test_a_slot_for_another_model_is_busy_and_holds_nothing(config: dict, tmp_path: Path) -> None:
+    g, engines, waits = busy_host(config, tmp_path)
+
+    with pytest.raises(gate.LocalModelBusy, match="another model"):
+        with g.slot("ollama", EMBED, ENGINE_URL):
+            raise AssertionError("no request may be sent")
+
+    assert waits == [5] and engines.loads == []
+    with file_lock.locked(tmp_path / "gate.lock", 0):
+        pass
+
+
+def test_a_caller_that_may_not_wait_is_refused_at_once_while_a_load_holds_the_gate(config: dict, tmp_path: Path) -> None:
+    g = make(config, FakeEngines(), tmp_path)
+
+    with file_lock.locked(tmp_path / "gate.lock", 0):
+        with pytest.raises(gate.LocalModelRefused, match="held the gate"):
+            with g.slot("ollama", QWEN, ENGINE_URL, wait=False):
+                raise AssertionError("no request may be sent")
+
+
+def test_async_slots_never_stall_the_event_loop_and_a_cancelled_waiter_leaks_nothing(
+    config: dict, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    engines = FakeEngines()
+    engines.ollama.append(QWEN)
+    g = make(config, engines, tmp_path)
+    monkeypatch.setattr(gate, "default_gate", lambda: g)
+    served: list[int] = []
+
+    async def request(number: int) -> None:
+        async with gate.local_slot_async("ollama", QWEN, ENGINE_URL):
+            await asyncio.sleep(0.01)
+            served.append(number)
+
+    async def scenario() -> None:
+        await asyncio.wait_for(asyncio.gather(*(request(n) for n in range(12))), 5)
+        with file_lock.locked(tmp_path / "gate.lock", 0):
+            waiter = asyncio.create_task(request(99))
+            await asyncio.sleep(0.15)
+            waiter.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await waiter
+        await asyncio.sleep(0.4)  # the abandoned entry finishes and gives the gate back
+        with file_lock.locked(tmp_path / "gate.lock", 0):
+            pass
+
+    asyncio.run(scenario())
+    assert sorted(served) == list(range(12))
+
+
+# --------------------------------------------------------------------------------- what is true after a load
+
+
+@pytest.mark.parametrize("field", ["unknown", "strays"])
+def test_a_load_that_cannot_be_verified_is_not_reported_as_loaded(config: dict, tmp_path: Path, field: str) -> None:
+    engines = FakeEngines()
+    real_load = engines.load
+
+    def load_then_go_dark(engine: str, model: str, idle_unload: str) -> None:
+        real_load(engine, model, idle_unload)
+        getattr(engines, field).append("LM Studio is running but its server did not answer")
+
+    engines.load = load_then_go_dark
+    with pytest.raises(gate.LocalModelRefused, match="after loading"):
+        make(config, engines, tmp_path).ensure("ollama", QWEN)
+
+
+def test_two_instances_of_one_lm_studio_model_count_as_two(config: dict, monkeypatch: pytest.MonkeyPatch) -> None:
+    studio = {"models": [{"key": "m", "loaded_instances": [{"id": "m"}, {"id": "m:2"}]}]}
+
+    snap = probes(config, monkeypatch, processes=[], ps_models=[], studio=studio)
+
+    assert len(snap.loaded) == 2
+    assert gate.decide(config, "lm-studio", "m", snap, GIB).action == "refuse"
+
+
+@pytest.mark.parametrize(
+    "ollama, studio",
+    [
+        ([], None),
+        ({"models": ["name-only"]}, None),
+        ({"models": [{"size": 3}]}, None),
+        ({"models": []}, []),
+        ({"models": []}, {"models": [None]}),
+        ({"models": []}, {"models": [{"key": "m", "loaded_instances": "yes"}]}),
+    ],
+)
+def test_a_malformed_inventory_is_unknown_not_a_crash(
+    config: dict, monkeypatch: pytest.MonkeyPatch, ollama, studio
+) -> None:
+    system = gate.SystemEngines(config)
+    monkeypatch.setattr(system, "_run", lambda *command: None)
+    monkeypatch.setattr(system, "_inventory", lambda engine, path: ollama if engine == "ollama" else studio)
+
+    snap = system.snapshot()
+
+    assert any("unexpected shape" in reason for reason in snap.unknown), snap
+    engine = "ollama" if studio is None else "lm-studio"
+    assert system.model_size(engine, "m") is None
+
+
+# ----------------------------------------------------------------------------------- the policy and approvals
+
+
+@pytest.mark.parametrize("content", [None, "not json", "[1]"])
+def test_a_policy_that_cannot_be_read_is_a_refusal(tmp_path: Path, content: str | None) -> None:
+    path = tmp_path / "policy.json"
+    if content is not None:
+        path.write_text(content, encoding="utf-8")
+
+    with pytest.raises(gate.LocalModelRefused, match="policy"):
+        gate.load_config(path)
+
+
+def test_the_policy_ships_inside_the_package() -> None:
+    import tomllib
+
+    declared = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert gate.DEFAULT_CONFIG_PATH.parent == Path(gate.__file__).resolve().parent
+    assert gate.DEFAULT_CONFIG_PATH.is_file()
+    assert gate.DEFAULT_CONFIG_PATH.name in declared["tool"]["setuptools"]["package-data"]["perpetua_tools"]
+
+
+def test_the_command_line_reports_an_unreadable_policy_as_a_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(gate, "DEFAULT_CONFIG_PATH", tmp_path / "absent.json")
+    monkeypatch.setattr(gate, "default_gate", REAL_DEFAULT_GATE)
+
+    assert gate.main(["check", "ollama", QWEN]) == 3
+    assert json.loads(capsys.readouterr().out)["action"] == "refuse"
+
+
+def test_a_revoke_cannot_be_undone_by_a_grant_already_in_progress(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    approvals = gate.Approvals(tmp_path / "approvals.json")
+    approvals.grant("ollama", QWEN, minutes=30)
+    reading, resume = threading.Event(), threading.Event()
+    granting = gate.Approvals(tmp_path / "approvals.json")
+    real_rows = granting._rows
+
+    def slow_rows():
+        rows = real_rows()
+        reading.set()
+        resume.wait(5)
+        return rows
+
+    monkeypatch.setattr(granting, "_rows", slow_rows)
+    grant = threading.Thread(target=granting.grant, args=("ollama", EMBED, 30))
+    revoke = threading.Thread(target=approvals.revoke)
+    grant.start()
+    assert reading.wait(5)
+    revoke.start()
+    revoke.join(0.3)
+    resume.set()
+    grant.join(5)
+    revoke.join(5)
+
+    assert approvals.allows("ollama", QWEN) is False and approvals.allows("ollama", EMBED) is False
+
+
+def test_each_approval_write_uses_its_own_private_temporary_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources: list[str] = []
+    real_replace = os.replace
+    monkeypatch.setattr(gate.os, "replace", lambda src, dst: (sources.append(str(src)), real_replace(src, dst)))
+    approvals = gate.Approvals(tmp_path / "approvals.json")
+
+    approvals.grant("ollama", QWEN, minutes=5)
+    approvals.revoke()
+
+    assert len(set(sources)) == 2
+    if os.name == "posix":
+        assert (tmp_path / "approvals.json").stat().st_mode & 0o777 == 0o600
+
+
+def test_the_file_lock_works_without_fcntl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    held: set[int] = set()
+    calls: list[tuple[int, int]] = []
+
+    class Msvcrt:
+        LK_NBLCK, LK_UNLCK = 1, 0
+
+        def locking(self, descriptor: int, mode: int, size: int) -> None:
+            calls.append((mode, size))
+            if mode == self.LK_NBLCK:
+                if held:
+                    raise OSError("already locked")
+                held.add(descriptor)
+            else:
+                held.discard(descriptor)
+
+    monkeypatch.setattr(file_lock, "fcntl", None)
+    monkeypatch.setattr(file_lock, "msvcrt", Msvcrt())
+
+    with file_lock.locked(tmp_path / "x.lock", 0, shared=True):
+        with pytest.raises(file_lock.LockTimeout):
+            with file_lock.locked(tmp_path / "x.lock", 0):
+                raise AssertionError("two holders")
+    assert held == set() and calls[0] == (1, 1)

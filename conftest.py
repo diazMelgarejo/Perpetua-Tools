@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import errno
 import sys
+from contextlib import contextmanager
 
 import pytest
 
@@ -34,7 +35,8 @@ def _call_sites_see_a_gate_that_touches_nothing(monkeypatch):
         return
 
     class IdleGate:
-        def require(self, engine: str, model: str, url: str):
-            return local_model_gate.Decision("already_loaded", "test stub")
+        @contextmanager
+        def slot(self, engine: str, model: str, url: str, wait: bool = True):
+            yield local_model_gate.Decision("already_loaded", "test stub")
 
     monkeypatch.setattr(local_model_gate, "default_gate", IdleGate)

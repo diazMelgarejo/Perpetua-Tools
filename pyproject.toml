@@ -151,6 +151,10 @@ where = [".", "src"]
 include = ["orchestrator*", "perpetua*", "perpetua_tools*", "utils*", "observability*", "src*"]
 exclude = ["tests*", "vendor*", ".state*"]
 
+[tool.setuptools.package-data]
+# The one-model gate reads its policy from beside the module, so a wheel install must carry it.
+perpetua_tools = ["local-model-gate.json"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests", "src/tests"]
 python_files = ["test_*.py"]

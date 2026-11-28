@@ -173,11 +173,11 @@ async def _ollama_mac_worker(spec: Any) -> dict:
         "messages": [{"role": "user", "content": prompt}],
         "stream": False,
     }
-    await local_model_gate.require_local_slot_async("ollama", model, endpoint)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(endpoint, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    async with local_model_gate.local_slot_async("ollama", model, endpoint):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(endpoint, json=payload)
+            resp.raise_for_status()
+            data = resp.json()
 
     return {
         "backend": "ollama-mac",
@@ -219,11 +219,11 @@ async def _lmstudio_mac_worker(spec: Any) -> dict:
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
-    await local_model_gate.require_local_slot_async("lm-studio", model, endpoint)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(endpoint, json=payload)
-        resp.raise_for_status()
-        data = resp.json()
+    async with local_model_gate.local_slot_async("lm-studio", model, endpoint):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.post(endpoint, json=payload)
+            resp.raise_for_status()
+            data = resp.json()
 
     return {
         "backend": "lmstudio-mac",

@@ -30,7 +30,7 @@ def test_the_block_covers_every_test_directory() -> None:
 def test_a_child_process_cannot_use_a_real_engine_through_the_gate() -> None:
     code = (
         "from perpetua_tools import local_model_gate as g\n"
-        "try:\n    g.require_local_slot('ollama', 'bge-m3', 'http://localhost:11434')\n"
+        "try:\n    with g.local_slot('ollama', 'bge-m3', 'http://localhost:11434'):\n        print('sent')\n"
         "except g.LocalModelRefused as exc:\n    print('refused:', exc)\n"
     )
     env = {**os.environ, "PYTHONPATH": os.pathsep.join((str(ROOT), str(ROOT / "src")))}
