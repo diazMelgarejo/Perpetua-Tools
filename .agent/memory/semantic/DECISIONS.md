@@ -1344,3 +1344,13 @@ Choosing between the two models is not an exception to the one-model rule. It is
 `local-agents` JavaScript client) are not behind the gate; Windows nodes have no probes.
 
 **Status:** local only when recorded; the operator has said not to push yet.
+
+## 2026-11-29: Correction to 'One barrel, enforced' (scope of enforcement)
+
+**Correction:** the 2026-11-28 entry reads as if the gate enforced the rule for every engine and caller. It
+enforces it **only for callers that go through it, on macOS only**. Direct callers (listed there as open) and
+Windows and Linux hosts are not covered, so loads there stay manual. The rule itself is unchanged. Full coverage
+is still open.
+
+**Also changed by the PR 526 review:** the policy now lives at `src/perpetua_tools/local-model-gate.json`, so an
+installed package carries it, and a request is sent while the gate is held, so a swap cannot happen under it.
