@@ -422,6 +422,8 @@ class GossipBus:
 
     async def _embed_and_store(self, row_id: int, payload: dict) -> None:
         """Embed an event and record whether its vector was stored."""
+        from perpetua_tools import local_model_gate
+
         try:
             from orchestrator.memory_embed import get_embedding
             from orchestrator.memory_store import get_lance_store
@@ -431,6 +433,8 @@ class GossipBus:
             store = get_lance_store()
             await store.add(row_id=row_id, text=text, embedding=embedding)
             await self._update_embed_status(row_id, "embedded")
+        except local_model_gate.LocalModelRefused:
+            await self._update_embed_status(row_id, "pending")  # another model holds the host
         except Exception:
             await self._update_embed_status(row_id, "failed")
 

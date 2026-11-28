@@ -260,3 +260,24 @@ def test_a_gated_google_model_can_never_become_a_default(data: dict, model: str)
     data["chain"]["default"].remove(model)
     data["seats"]["autoresearcher"]["model"] = model
     assert any("human-gated" in problem and model in problem for problem in od.validate(data))
+
+
+@pytest.mark.parametrize(
+    "mutate",
+    [
+        lambda d: d["chain"]["default"].insert(3, "ollama/second:7b"),
+        lambda d: d["seats"]["autoresearcher"]["heartbeat"].__setitem__("model", "ollama/second:7b"),
+        lambda d: d["seats"]["biafra"].__setitem__("model", "ollama/second:7b"),
+    ],
+)
+def test_routes_may_name_only_one_local_model(data: dict, mutate) -> None:
+    """One barrel: two local routes would ask one host to hold two models."""
+    mutate(data)
+
+    assert any("one local model" in problem for problem in od.validate(data))
+
+
+def test_a_cloud_model_served_through_ollama_does_not_count_as_local(data: dict) -> None:
+    data["chain"]["default"].insert(3, "ollama/glm-5.3-flash:cloud")
+
+    assert not any("one local model" in problem for problem in od.validate(data))

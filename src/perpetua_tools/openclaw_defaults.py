@@ -66,6 +66,11 @@ def _walk(obj: Any, path: str = ""):
         yield path, obj
 
 
+def _is_local_model(model: str) -> bool:
+    """True for a route that loads weights on the host: Ollama or Mac LM Studio, not an Ollama cloud model."""
+    return model.startswith(("ollama/", "lmstudio-mac/")) and not model.endswith((":cloud", "-cloud"))
+
+
 def validate(data: dict[str, Any]) -> list[str]:
     """Return a list of problems; an empty list means the defaults satisfy every invariant."""
     problems: list[str] = []
@@ -118,6 +123,13 @@ def validate(data: dict[str, Any]) -> list[str]:
         for target in seat.get("subagents_allow", []):
             if target not in seats:
                 problems.append("seat %s allows unknown seat %s" % (name, target))
+
+    local = {model for model in data["chain"]["default"] if _is_local_model(model)}
+    for seat in seats.values():
+        heartbeat = (seat.get("heartbeat") or {}).get("model", "")
+        local.update(model for model in (seat["model"], heartbeat) if _is_local_model(model))
+    if len(local) > 1:
+        problems.append("routes may name only one local model (one barrel), found %s" % ", ".join(sorted(local)))
 
     for name, prov in data["manual_only"].items():
         if prov.get("enabled") is not False:

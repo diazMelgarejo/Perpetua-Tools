@@ -43,6 +43,7 @@ import httpx  # noqa: E402
 
 from orchestrator.agent_tracker import AgentTracker  # noqa: E402
 from orchestrator.control_plane_auth import auth_headers  # noqa: E402
+from perpetua_tools import local_model_gate  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -127,6 +128,7 @@ def _append_event(
 
 async def _ollama_chat(endpoint: str, model: str, prompt: str) -> str:
     url = f"{endpoint.rstrip('/')}/api/generate"
+    await local_model_gate.require_local_slot_async("ollama", model, url)
     async with httpx.AsyncClient(timeout=REQUEST_TIMEOUT) as client:
         r = await client.post(url, json={"model": model, "prompt": prompt, "stream": False})
         r.raise_for_status()
@@ -135,6 +137,7 @@ async def _ollama_chat(endpoint: str, model: str, prompt: str) -> str:
 
 async def _lmstudio_chat(endpoint: str, model: str, prompt: str) -> str:
     url = f"{endpoint.rstrip('/')}/v1/chat/completions"
+    await local_model_gate.require_local_slot_async("lm-studio", model, url)
     token = os.getenv("LM_STUDIO_API_TOKEN", "")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     payload = {

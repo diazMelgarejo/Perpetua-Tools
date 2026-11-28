@@ -21,6 +21,8 @@ from typing import Optional
 
 import httpx
 
+from perpetua_tools import local_model_gate
+
 
 _OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
 _EMBED_MODEL = os.environ.get("EMBED_MODEL", "bge-m3")
@@ -47,6 +49,7 @@ def probe_embed_dim() -> int:
         return _PROBED_DIM
 
     try:
+        local_model_gate.require_local_slot("ollama", _EMBED_MODEL, _OLLAMA_URL)
         response = httpx.post(
             f"{_OLLAMA_URL}/api/embeddings",
             json={"model": _EMBED_MODEL, "prompt": "probe"},
@@ -66,10 +69,13 @@ async def get_embedding(text: str) -> list[float]:
 
     Uses httpx async client (already a hard PT dependency).
     Raises on network/model error — callers should catch and mark embed_status='failed'.
+    Raises LocalModelRefused when the one-model gate declines; that is not a failure, so retry later.
     """
     model = os.environ.get("EMBED_MODEL", _EMBED_MODEL)
     base_url = os.environ.get("OLLAMA_BASE_URL", _OLLAMA_URL)
 
+    # Refused or busy raises, and callers carry on without a vector.
+    await local_model_gate.require_local_slot_async("ollama", model, base_url)
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
             f"{base_url}/api/embeddings",
