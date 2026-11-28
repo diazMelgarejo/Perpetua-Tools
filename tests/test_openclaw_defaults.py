@@ -223,3 +223,40 @@ def test_the_stamp_also_covers_the_vendored_module(data: dict) -> None:
     assert edited["status"] == "tampered" and "module" in edited["message"]
     bare = od.vendored_copy(data, now=NOW)  # stamped without a module hash
     assert od.verify_vendored(bare, now=NOW, module_source=source)["status"] == "invalid"
+
+
+GATED_GOOGLE = {"gemini-main/gemini-pro-latest", "openrouter/google/gemini-4-argon"}
+
+
+def test_the_pinned_google_providers_keep_their_names_keys_and_bare_model_ids(data: dict) -> None:
+    expected = {
+        "gemini-main": ("OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY",
+                        ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-pro-latest"]),
+        "gemini-fallback": ("OPENCLAW_MODELS_PROVIDERS_GEMINI_FALLBACK_APIKEY", ["gemini-flash-latest"]),
+    }
+    for name, (key_name, ids) in expected.items():
+        provider = data["providers"][name]
+        assert provider["api"] == "google-generative-ai"
+        assert provider["api_key_env"] == key_name
+        assert [model["id"] for model in provider["models"]] == ids
+
+
+def test_every_pinned_google_model_is_allowed_for_explicit_selection(data: dict) -> None:
+    allowed = od.render_patch(data)["agents"]["defaults"]["models"]
+    for name in ("gemini-main", "gemini-fallback"):
+        for model in data["providers"][name]["models"]:
+            assert f"{name}/{model['id']}" in allowed
+    assert "openrouter/google/gemini-4-argon" in allowed
+
+
+def test_gemini_pro_and_argon_are_human_gated(data: dict) -> None:
+    assert GATED_GOOGLE <= set(data["human_gated_models"])
+
+
+@pytest.mark.parametrize("model", sorted(GATED_GOOGLE))
+def test_a_gated_google_model_can_never_become_a_default(data: dict, model: str) -> None:
+    data["chain"]["default"].append(model)
+    assert any("human-gated" in problem and model in problem for problem in od.validate(data))
+    data["chain"]["default"].remove(model)
+    data["seats"]["autoresearcher"]["model"] = model
+    assert any("human-gated" in problem and model in problem for problem in od.validate(data))

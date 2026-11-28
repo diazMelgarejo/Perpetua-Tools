@@ -211,9 +211,17 @@ credential handling and the backup and recovery process are one card in orama-sy
 
 The model chain, the two research seats, the seat tool policy, the env rules and the baseline live in
 `config/openclaw-defaults.json`: names only, never a key value. `perpetua_tools.openclaw_defaults`
-loads and
-validates it (no Mac LM Studio in any chain, W&B in every chain, Astra and Sol human-gated, no secret-looking
-value), renders the config patches the staged restore applies, and reports drift read-only.
+loads and validates it (no Mac LM Studio in any chain, W&B in every chain, human-gated models in no
+default, no secret-looking value), renders the config patches the staged restore applies, and reports
+drift read-only.
+
+Human-gated, for explicit operator choice only: OpenAI Astra and Sol, `gemini-main/gemini-pro-latest`
+and `openrouter/google/gemini-4-argon`. Orama's model rules additionally require an escalation token
+for Gemini Pro, and an escalation token and a budget cap for Argon.
+
+Besides the built-in `google` provider, the `gemini-main` and `gemini-fallback` providers each read
+their own key variable: `OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY` and
+`OPENCLAW_MODELS_PROVIDERS_GEMINI_FALLBACK_APIKEY`.
 
 ```bash
 python -m perpetua_tools.openclaw_defaults --validate

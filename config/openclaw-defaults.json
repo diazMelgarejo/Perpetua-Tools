@@ -42,6 +42,56 @@
         }
       ]
     },
+    "gemini-main": {
+      "api": "google-generative-ai",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "api_key_env": "OPENCLAW_MODELS_PROVIDERS_GEMINI_MAIN_APIKEY",
+      "models": [
+        {
+          "id": "gemini-3.8-flash",
+          "name": "Gemini 3.8 Flash (General Default Use)",
+          "reasoning": true,
+          "input": ["text", "image"],
+          "context_window": 1048576,
+          "max_tokens": 65536,
+          "cost": {"input": 0.75, "output": 3.75, "cache_read": 0, "cache_write": 0}
+        },
+        {
+          "id": "gemini-3.5-flash-lite",
+          "name": "Gemini 3.5 Flash-Lite (Fast Economical Subagents)",
+          "reasoning": false,
+          "input": ["text"],
+          "context_window": 1048576,
+          "max_tokens": 65536,
+          "cost": {"input": 0.15, "output": 1.0, "cache_read": 0, "cache_write": 0}
+        },
+        {
+          "id": "gemini-pro-latest",
+          "name": "Gemini Pro Latest (HITL Escalation, Opus 5.5 class)",
+          "reasoning": false,
+          "input": ["text"],
+          "context_window": 2097152,
+          "max_tokens": 65536,
+          "cost": {"input": 1.25, "output": 5.0, "cache_read": 0, "cache_write": 0}
+        }
+      ]
+    },
+    "gemini-fallback": {
+      "api": "google-generative-ai",
+      "base_url": "https://generativelanguage.googleapis.com/v1beta",
+      "api_key_env": "OPENCLAW_MODELS_PROVIDERS_GEMINI_FALLBACK_APIKEY",
+      "models": [
+        {
+          "id": "gemini-flash-latest",
+          "name": "Gemini Flash Latest (Dynamic Stable Alias)",
+          "reasoning": false,
+          "input": ["text"],
+          "context_window": 65536,
+          "max_tokens": 32768,
+          "cost": {"input": 0, "output": 0, "cache_read": 0, "cache_write": 0}
+        }
+      ]
+    },
     "ollama": {
       "api": "ollama",
       "base_url": "http://localhost:11434",
@@ -74,7 +124,12 @@
     "wandb/deepseek-ai/DeepSeek-V4.1-Flash-1017": {"alias": "wandb-deepseek"},
     "google/gemini-3.8-flash": {"alias": "gemini-flash", "params": {"thinking": "medium"}},
     "ollama/qwen3.5:9b-mlx": {"alias": "local"},
-    "openrouter/free": {"alias": "free-router"}
+    "openrouter/free": {"alias": "free-router"},
+    "gemini-main/gemini-3.8-flash": {"alias": "gemini-main-flash"},
+    "gemini-main/gemini-3.5-flash-lite": {"alias": "gemini-lite"},
+    "gemini-main/gemini-pro-latest": {"alias": "gemini-pro"},
+    "gemini-fallback/gemini-flash-latest": {"alias": "gemini-fallback"},
+    "openrouter/google/gemini-4-argon": {"alias": "argon"}
   },
   "plugins": {"codex": {"enabled": true}},
   "seats": {
@@ -106,7 +161,12 @@
       }
     }
   },
-  "human_gated_models": ["openai/gpt-6.2-astra", "openai/gpt-6.2-sol"],
+  "human_gated_models": [
+    "openai/gpt-6.2-astra",
+    "openai/gpt-6.2-sol",
+    "gemini-main/gemini-pro-latest",
+    "openrouter/google/gemini-4-argon"
+  ],
   "manual_only": {
     "lmstudio-mac": {
       "enabled": false,
