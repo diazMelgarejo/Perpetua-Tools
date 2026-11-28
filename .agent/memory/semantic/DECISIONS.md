@@ -1321,3 +1321,26 @@ rests on timing and memory figures.
 whether to remove the warm-up is not yet decided.
 
 **Status:** local only when recorded; the operator has said not to push yet.
+
+## 2026-11-28: One barrel, enforced; no model loads without a person's approval
+
+**Decision:** The double-barrel rule is extended to one local model per host, across every engine,
+embeddings included. `perpetua_tools.local_model_gate` enforces it from `config/local-model-gate.json`:
+
+- a load needs a person's approval for that model, typed in a terminal, with an expiry;
+- when another model holds the host the gate waits five seconds, looks again, then reports busy, and the
+  caller runs without a local model (memory search answers from keywords);
+- only a person can swap the loaded model; the gate never unloads on its own;
+- anything it cannot determine is a refusal, and no test may reach an engine.
+
+Choosing between the two models is not an exception to the one-model rule. It is a narrow exception to
+"never unload", and only a person can take it.
+
+**Occurrences that led here:** three loads on 2026-11-28, two of them with no approval. The full record is
+`INCIDENT_LOCAL_MODEL_LOADS_2026-11-28.md` beside this file. The doctrine is in orama-system
+`docs/v2/17-hardware-policy-enforcement.md`.
+
+**Open:** callers that reach an engine directly (OpenClaw gateway, gbrain, code-review-graph, the
+`local-agents` JavaScript client) are not behind the gate; Windows nodes have no probes.
+
+**Status:** local only when recorded; the operator has said not to push yet.
