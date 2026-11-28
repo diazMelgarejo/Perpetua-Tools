@@ -263,3 +263,157 @@ def test_authority_still_refuses_windows_construction(tmp_path: Path) -> None:
         pytest.skip("Windows-only refusal check")
     with pytest.raises(RuntimeError, match="requires POSIX"):
         private_authority.Authority(tmp_path / "private")
+
+
+def test_renew_advances_version_and_fences_stale(memory_authority: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Renew advances version only, preserves claim metadata, and rejects stale handles."""
+    from dataclasses import replace
+
+    monkeypatch.setattr(private_authority, "_utc_now", lambda: 100.0)
+    memory_authority.add("task-renew")
+    h1 = memory_authority.claim("task-renew", "worker-1")
+    assert h1.version == 2
+    assert h1.generation == 1
+
+    h2 = memory_authority.renew(h1)
+    assert h2.version == 3
+    assert h2.generation == 1
+    assert h2.claim_id == h1.claim_id
+    assert h2.incarnation == h1.incarnation
+    assert h2.claimed_at == h1.claimed_at
+
+    # Stale h1 cannot renew or complete
+    with pytest.raises(private_authority.Conflict):
+        memory_authority.renew(h1)
+    with pytest.raises(private_authority.Conflict):
+        memory_authority.complete(h1)
+
+    # h2 completes successfully
+    memory_authority.complete(h2)
+    assert memory_authority.get("task-renew")["state"] == "completed"
+
+    # Completed task cannot be renewed
+    with pytest.raises(private_authority.Conflict):
+        memory_authority.renew(h2)
+
+    with memory_authority._transaction() as db:
+        actions = [row[0] for row in db.execute("SELECT action FROM audit WHERE task_id='task-renew' ORDER BY id").fetchall()]
+        assert actions == ["add", "claim", "renew", "completed"]
+
+
+def test_fail_transitions_to_failed_and_fences_stale(memory_authority: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fail moves task to terminal failed state, clears claims, and rejects stale operations."""
+    monkeypatch.setattr(private_authority, "_utc_now", lambda: 100.0)
+    memory_authority.add("task-fail")
+    h = memory_authority.claim("task-fail", "worker-fail")
+    memory_authority.fail(h, detail="worker crashed")
+
+    assert memory_authority.get("task-fail")["state"] == "failed"
+
+    # Terminal state: cannot be claimed
+    with pytest.raises(private_authority.Conflict):
+        memory_authority.claim("task-fail", "worker-retry")
+
+    # Stale handle cannot fail or complete again
+    with pytest.raises(private_authority.Conflict):
+        memory_authority.fail(h)
+    with pytest.raises(private_authority.Conflict):
+        memory_authority.complete(h)
+
+    with memory_authority._transaction() as db:
+        row = db.execute("SELECT claim_id, incarnation, claimed_at FROM tasks WHERE id='task-fail'").fetchone()
+        assert row == (None, None, None)
+        actions = [row[0] for row in db.execute("SELECT action FROM audit WHERE task_id='task-fail' ORDER BY id").fetchall()]
+        assert actions == ["add", "claim", "failed"]
+
+
+def test_authority_service_no_verifier_blocks_all_routes_without_writes(memory_authority: Any) -> None:
+    """Service without an explicit verifier returns 401 on every route and writes nothing."""
+    from perpetua.coordination.authority_service import AuthorityService
+
+    service = AuthorityService(memory_authority, authenticate=None)
+    service.start()
+
+    routes = [
+        ("POST", "/authority/tasks", {"task_id": "t-unauth"}),
+        ("POST", "/authority/claim", {"task_id": "t-unauth", "incarnation": "inc"}),
+        ("POST", "/authority/renew", {"task_id": "t-unauth", "claim_id": "c", "generation": 1, "version": 1, "incarnation": "i", "claimed_at": 100.0}),
+        ("POST", "/authority/release", {"task_id": "t-unauth", "claim_id": "c", "generation": 1, "version": 1, "incarnation": "i", "claimed_at": 100.0}),
+        ("POST", "/authority/complete", {"task_id": "t-unauth", "claim_id": "c", "generation": 1, "version": 1, "incarnation": "i", "claimed_at": 100.0}),
+        ("POST", "/authority/fail", {"task_id": "t-unauth", "claim_id": "c", "generation": 1, "version": 1, "incarnation": "i", "claimed_at": 100.0}),
+        ("GET", "/authority/tasks/t-unauth", None),
+    ]
+
+    for method, path, body in routes:
+        status, resp = service.handle_request(method, path, body=body)
+        assert status == 401
+        assert resp["error"]["code"] == "unauthenticated"
+
+    # Zero writes occurred
+    with memory_authority._transaction() as db:
+        assert db.execute("SELECT COUNT(*) FROM tasks").fetchone()[0] == 0
+        assert db.execute("SELECT COUNT(*) FROM audit").fetchone()[0] == 0
+
+
+def test_authority_service_lifecycle_and_error_handling(memory_authority: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Service enforces lifecycle states (503), scopes (403), 404s, 400s, and generic 503s."""
+    from perpetua.coordination.authority_service import AuthorityService
+
+    monkeypatch.setattr(private_authority, "_utc_now", lambda: 100.0)
+
+    # 1. Stopped service returns 503
+    service = AuthorityService(memory_authority, authenticate=lambda *a: True)
+    assert not service.is_running
+    status, resp = service.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 503
+    assert resp["error"]["code"] == "unavailable"
+
+    # 2. Scope check: 403 on missing scope
+    def scope_checker(auth: Any, scope: str) -> bool:
+        if scope == "authority:write":
+            raise private_authority.Forbidden("write scope required")
+        return True
+
+    service = AuthorityService(memory_authority, authenticate=scope_checker)
+    service.start()
+    status, resp = service.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 403
+    assert resp["error"]["code"] == "forbidden"
+
+    # 3. Import route is not exposed via service (404)
+    service = AuthorityService(memory_authority, authenticate=lambda *a: True)
+    service.start()
+    status, resp = service.handle_request("POST", "/authority/import", body={"tasks": []})
+    assert status == 404
+    assert resp["error"]["code"] == "task_not_found"
+
+    # 4. Unknown route (404)
+    status, resp = service.handle_request("GET", "/authority/unknown", body=None)
+    assert status == 404
+
+    # 5. Missing required field (400)
+    status, resp = service.handle_request("POST", "/authority/claim", body={"task_id": "t1"})
+    assert status == 400
+    assert resp["error"]["code"] == "invalid_request"
+
+    # 6. Full happy path workflow via service
+    status, resp = service.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 201
+    assert resp["state"] == "queued"
+
+    status, claim_resp = service.handle_request("POST", "/authority/claim", body={"task_id": "t1", "incarnation": "w1"})
+    assert status == 200
+    assert claim_resp["version"] == 2
+
+    status, renew_resp = service.handle_request("POST", "/authority/renew", body=claim_resp)
+    assert status == 200
+    assert renew_resp["version"] == 3
+
+    status, comp_resp = service.handle_request("POST", "/authority/complete", body=renew_resp)
+    assert status == 200
+    assert comp_resp["status"] == "completed"
+
+    status, get_resp = service.handle_request("GET", "/authority/tasks/t1")
+    assert status == 200
+    assert get_resp["state"] == "completed"
+

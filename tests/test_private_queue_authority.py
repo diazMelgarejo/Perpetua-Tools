@@ -368,3 +368,58 @@ def test_legacy_import_is_one_time_and_holds_active_claims(tmp_path: Path) -> No
     assert fresh.get("canonical") == before
     with sqlite3.connect(tmp_path / "fresh-private" / "queue.sqlite3") as db:
         assert db.execute("SELECT COUNT(*) FROM legacy_imports").fetchone()[0] == 0
+
+
+def test_renew_lease_advances_version_and_fences_stale(tmp_path: Path) -> None:
+    """Exercise renew advances version without advancing generation and fences stale handles."""
+    authority = Authority(tmp_path / "private")
+    authority.add("task")
+    h1 = authority.claim("task", "worker")
+    h2 = authority.renew(h1)
+    assert h2.version == h1.version + 1
+    assert h2.generation == h1.generation
+    assert h2.claim_id == h1.claim_id
+    assert h2.incarnation == h1.incarnation
+    with pytest.raises(Conflict):
+        authority.renew(h1)
+    with pytest.raises(Conflict):
+        authority.complete(h1)
+    authority.complete(h2)
+    assert authority.get("task")["state"] == "completed"
+
+
+def test_fail_acquisition_marks_failed_and_fences_stale(tmp_path: Path) -> None:
+    """Exercise fail moves acquisition to terminal failed state and fences stale calls."""
+    authority = Authority(tmp_path / "private")
+    authority.add("task")
+    h = authority.claim("task", "worker")
+    authority.fail(h, detail="worker fault")
+    assert authority.get("task")["state"] == "failed"
+    with pytest.raises(Conflict):
+        authority.claim("task", "worker2")
+    with pytest.raises(Conflict):
+        authority.fail(h)
+
+
+def test_authority_service_dispatch_and_unauthenticated_guard(tmp_path: Path) -> None:
+    """Exercise AuthorityService with strict authentication on POSIX."""
+    from perpetua.coordination.authority_service import AuthorityService
+
+    authority = Authority(tmp_path / "private")
+    service = AuthorityService(authority, authenticate=None)
+    service.start()
+    status, resp = service.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 401
+    assert resp["error"]["code"] == "unauthenticated"
+
+    service_auth = AuthorityService(authority, authenticate=lambda *a: True)
+    service_auth.start()
+    status, resp = service_auth.handle_request("POST", "/authority/tasks", body={"task_id": "t1"})
+    assert status == 201
+    status, claim = service_auth.handle_request("POST", "/authority/claim", body={"task_id": "t1", "incarnation": "w1"})
+    assert status == 200
+    status, renew = service_auth.handle_request("POST", "/authority/renew", body=claim)
+    assert status == 200
+    assert renew["version"] == claim["version"] + 1
+    status, comp = service_auth.handle_request("POST", "/authority/complete", body=renew)
+    assert status == 200

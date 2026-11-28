@@ -391,8 +391,14 @@ class Authority:
             self._record(db, task_id, "claim", generation, version, now)
             return ClaimHandle(task_id, claim_id, generation, version, incarnation, now)
 
-    def _finish(self, handle: ClaimHandle, state: str) -> None:
-        """Apply a transition only for the exact current acquisition and version."""
+    def _transition(
+        self,
+        handle: ClaimHandle,
+        new_state: str,
+        action: str | None = None,
+        clear_claim: bool = True,
+    ) -> ClaimHandle | None:
+        """Apply a fenced transition for the exact current acquisition and version."""
         if (not isinstance(handle, ClaimHandle) or
                 not all(isinstance(value, str) and value.strip()
                         for value in (handle.task_id, handle.claim_id, handle.incarnation)) or
@@ -402,24 +408,54 @@ class Authority:
         claimed_at = _timestamp(handle.claimed_at, "claimed_at")
         with self._transaction() as db:
             now = _advance_clock(db)
-            result = db.execute(
-                "UPDATE tasks SET state=?, version=version+1, claim_id=NULL, incarnation=NULL, claimed_at=NULL "
-                "WHERE id=? AND state='claimed' AND claim_id=? AND generation=? AND version=? "
-                "AND incarnation=? AND claimed_at=?",
-                (state, handle.task_id, handle.claim_id, handle.generation, handle.version,
-                 handle.incarnation, claimed_at),
-            )
+            if clear_claim:
+                result = db.execute(
+                    "UPDATE tasks SET state=?, version=version+1, claim_id=NULL, incarnation=NULL, claimed_at=NULL "
+                    "WHERE id=? AND state='claimed' AND claim_id=? AND generation=? AND version=? "
+                    "AND incarnation=? AND claimed_at=?",
+                    (new_state, handle.task_id, handle.claim_id, handle.generation, handle.version,
+                     handle.incarnation, claimed_at),
+                )
+            else:
+                result = db.execute(
+                    "UPDATE tasks SET state=?, version=version+1 "
+                    "WHERE id=? AND state='claimed' AND claim_id=? AND generation=? AND version=? "
+                    "AND incarnation=? AND claimed_at=?",
+                    (new_state, handle.task_id, handle.claim_id, handle.generation, handle.version,
+                     handle.incarnation, claimed_at),
+                )
             if result.rowcount != 1:
                 raise Conflict("stale acquisition")
-            self._record(db, handle.task_id, state, handle.generation, handle.version + 1, now)
+            new_version = handle.version + 1
+            self._record(db, handle.task_id, action or new_state, handle.generation, new_version, now)
+            if not clear_claim:
+                return ClaimHandle(
+                    handle.task_id, handle.claim_id, handle.generation, new_version,
+                    handle.incarnation, handle.claimed_at,
+                )
+            return None
+
+    def _finish(self, handle: ClaimHandle, state: str) -> None:
+        """Apply a transition only for the exact current acquisition and version."""
+        self._transition(handle, state, action=state, clear_claim=True)
+
+    def renew(self, handle: ClaimHandle) -> ClaimHandle:
+        """Renew the acquisition lease, advancing version without changing generation."""
+        res = self._transition(handle, "claimed", action="renew", clear_claim=False)
+        assert res is not None
+        return res
+
+    def fail(self, handle: ClaimHandle, detail: str = "") -> None:
+        """Fail the current acquisition; terminal state for this task."""
+        self._transition(handle, "failed", action="failed", clear_claim=True)
 
     def release(self, handle: ClaimHandle) -> None:
         """Release the current acquisition back to the queued state."""
-        self._finish(handle, "queued")
+        self._transition(handle, "queued", action="release", clear_claim=True)
 
     def complete(self, handle: ClaimHandle) -> None:
         """Complete only the current acquisition."""
-        self._finish(handle, "completed")
+        self._transition(handle, "completed", action="completed", clear_claim=True)
 
     def get(self, task_id: str) -> dict:
         """Read canonical task state without disclosing the incarnation."""
