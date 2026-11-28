@@ -34,6 +34,7 @@ SECRET_KEY = re.compile(r"api_?key|token|secret|password|credential", re.I)
 KEY_FIELDS = ("apiKey", "api_key_env", "api_key_placeholder")  # each has its own rule in _key_field_problem
 LOCAL_PLACEHOLDERS = ("ollama-local", "lm-studio")  # what a local engine takes where it needs no credential
 ENV_REFERENCE = re.compile(r"^\$\{(?:env:)?[A-Z][A-Z0-9_]*\}$")
+PROVIDER_NAME = re.compile(r"^[a-z][a-z0-9_-]{0,23}$")  # the name of a secret provider, not a secret
 REDACTED = "<redacted>"
 MISSING = "<missing>"
 
@@ -73,6 +74,8 @@ def _key_field_problem(field: str, value: Any) -> str | None:
         allowed = value in LOCAL_PLACEHOLDERS or bool(ENV_REFERENCE.match(value))
     else:
         allowed = (isinstance(value, dict) and set(value) == {"source", "provider", "id"} and value["source"] == "env"
+                   and isinstance(value["provider"], str) and bool(PROVIDER_NAME.match(value["provider"]))
+                   and not SECRET_VALUE.search(value["provider"])
                    and isinstance(value["id"], str) and bool(ENV_NAME.match(value["id"])))
     return None if allowed else "must be an env reference or a documented local placeholder, not a value"
 

@@ -296,6 +296,12 @@ GOOGLE_STYLE_KEY = "AIza" + "Sy" + "Q" * 33
         lambda d: d["providers"]["google"].__setitem__("apiKey", {"source": "file", "id": "GEMINI_API_KEY"}),
         lambda d: d["providers"]["ollama"].__setitem__("api_key_placeholder", GOOGLE_STYLE_KEY),
         lambda d: d["manual_only"]["lmstudio-mac"].__setitem__("api_key_placeholder", "hunter2-real"),
+        lambda d: d["providers"]["google"].__setitem__(
+            "apiKey", {"source": "env", "provider": GOOGLE_STYLE_KEY, "id": "GEMINI_API_KEY"}),
+        lambda d: d["providers"]["google"].__setitem__(
+            "apiKey", {"source": "env", "provider": "sk-" + "a" * 24, "id": "GEMINI_API_KEY"}),
+        lambda d: d["providers"]["google"].__setitem__(
+            "apiKey", {"source": "env", "provider": {"value": GOOGLE_STYLE_KEY}, "id": "GEMINI_API_KEY"}),
     ],
 )
 def test_a_literal_credential_in_any_key_field_is_a_problem(data: dict, mutate) -> None:
